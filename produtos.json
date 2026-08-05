@@ -1,0 +1,52 @@
+{
+  "btcweather": {
+    "id": "btcweather",
+    "nome": "BTC Weather Panel",
+    "url": "https://btcweatherpanel.com/btc-weather-panel/",
+    "plano": {
+      "preco": 47,
+      "moeda": "BRL",
+      "periodo": "mensal",
+      "trialDias": 7
+    },
+    "checkout": "Kiwify",
+    "checkoutUrl": "https://pay.kiwify.com.br/ffphj4e",
+    "canal": "telegram",
+    "persona": "Investidor de cripto que quer melhorar timing de entrada e saída sem depender de análise técnica complexa.",
+    "argumentos": [
+      "Sinais objetivos de tendência para BTC",
+      "7 dias grátis sem cartão",
+      "R$47/mês, cancela quando quiser",
+      "Garantia de satisfação (reembolso sem perguntas)"
+    ],
+    "ativacao": {
+      "tipo": "trial",
+      "endpoint": "http://127.0.0.1:3334/api/trial",
+      "linkTemplate": "https://btcweatherpanel.com/btc-weather-panel/?code={code}",
+      "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAbra o link, use o código e aproveite 7 dias VIP do BTC Weather Panel. Qualquer dúvida, me chama!"
+    }
+  },
+  "severino-consultor-ia": {
+    "id": "severino-consultor-ia",
+    "nome": "SeverinoConsultorIA",
+    "url": "https://btcweatherpanel.com/severino-ia/",
+    "plano": {
+      "preco": null,
+      "moeda": "BRL",
+      "periodo": null,
+      "status": "teste"
+    },
+    "checkout": null,
+    "canal": "telegram",
+    "persona": "Empreendedor/CLT que quer respostas de consultoria estratégica 24/7 por um custo acessível.",
+    "argumentos": [
+      "Consultoria IA 24/7",
+      "Em validação (teste gratuito)"
+    ],
+    "ativacao": {
+      "tipo": "link",
+      "link": "https://btcweatherpanel.com/severino-ia/",
+      "mensagem": "🎉 Seu acesso ao SeverinoConsultorIA está liberado, {nome}!\n👉 {link}\n\nO produto está em validação (teste gratuito). Qualquer dúvida, me chama!"
+    }
+  }
+}
