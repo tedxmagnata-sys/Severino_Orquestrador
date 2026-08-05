@@ -142,3 +142,4 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - orquestrador.js: tick tick.conteudo a cada ECOSISTEMA_CONTEUDO_INTERVAL (default 600s)
 - Backups: rota.pre-fase6, orquestrador.pre-fase6
 - Testado 05/ago (e2e real): POST campanha.nova -> videasta submeteu wan2.2 ($0.04) -> 2min depois tick marcou completed + postou conteudo.pronto -> produziu novo automaticamente. video #1 baixado (1.6MB). data/videos.json com historico. Video #2 deixado em processing como demonstracao (custo ~$0.04)
+# 08/05/2026 10:55:01 - marco inicial de backup automatico
