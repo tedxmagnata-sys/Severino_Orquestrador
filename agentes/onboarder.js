@@ -33,7 +33,7 @@ async function processar(evento, ctx) {
   let mensagem = null;
   try {
     if (ativacao.tipo === 'trial') {
-      const resp = await fetch(ativacao.endpoint, { method: 'POST' });
+      const resp = await fetch(ativacao.endpoint, { method: 'POST', headers: { 'x-ecosystem': '1' } });
       const data = await resp.json();
       if (data && data.ok && data.code) code = data.code;
       link = ativacao.linkTemplate.replace('{code}', code || '');

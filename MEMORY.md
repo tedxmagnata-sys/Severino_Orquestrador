@@ -142,4 +142,47 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - orquestrador.js: tick tick.conteudo a cada ECOSISTEMA_CONTEUDO_INTERVAL (default 600s)
 - Backups: rota.pre-fase6, orquestrador.pre-fase6
 - Testado 05/ago (e2e real): POST campanha.nova -> videasta submeteu wan2.2 ($0.04) -> 2min depois tick marcou completed + postou conteudo.pronto -> produziu novo automaticamente. video #1 baixado (1.6MB). data/videos.json com historico. Video #2 deixado em processing como demonstracao (custo ~$0.04)
-# 08/05/2026 10:55:01 - marco inicial de backup automatico
+
+## Ecossistema IA — Fase 7 (07/ago) — Observador publica videos nas redes
+
+- agentes/observador.js (NOVO): consumia conteudo.pronto mas nao existia (rota so "rastreava"). Agora:
+  - recebe conteudo.pronto (videoId, url, legenda, hashtags, produto) -> faz upload do video no Postiz via POST /api/public/v1/upload-from-url (aceita URL do CDN MuAPI, retorna {id, path}; limite 1GB video) -> publica no X e Instagram via POST /api/public/v1/posts com image:[{id,path}] no array value (MESMO campo de imagem; MediaDto aceita video/mp4)
+  - substitui [link] e {CHECKOUT} na legenda pelo checkoutUrl REAL de produtos.json (padrao guardiao — nunca confiar em URL do LLM); trunca X em 240 chars
+  - anti-repeticao: grava publicacoes[] em data/videos.json por etapa (upload/X/Instagram); pula etapas ja ok; marca publicado=true so quando X E IG ok (corrigido: nao conta 'upload' no total)
+  - avisa admin (Telegram) em sucesso e erro
+- rota.js: adicionado agentes.observador (require). Fallback de eventos desconhecidos continua 'observador' (rastreado) — agora so processa conteudo.pronto
+- Config usada: POSTIZ_API_URL/POSTIZ_API_KEY do .env; integracoes X=cmshy3hgm0001ny6ng293kp4j, IG=cmsibf1tc0007qu62xujvp6r6
+- Backups: rota.pre-observador
+- Testado 07/ago (e2e real x2): conteudo.pronto postado no bus -> observador publicou X+IG, posts PUBLISHED no DB Postiz; videos marcados publicado:true com publicacoes[]; 2o teste validou fix do flag publicado
+- Nota: 8 videos completos anteriores ficaram nao-publicados (aguardando decisao de ritmo); proximos videos do Videasta serao publicados automaticamente
+
+## Ecossistema IA — Fase 8 (07/ago) — Post educativo diario "Ciclo do Medo" (Sugestao 1)
+
+- gerar_post_educativo.js (novo): le data/clima_card.json e gera 1 post educativo por dia usando dados REAIS do dia, rotativo por dia da semana (7 temas): estacoes, fear-greed, rsi, suporte-resistencia, periodos, plano, semana. CTA suave no fim (7 dias gratis -> /oferta). Saida: data/posts_educativo.json
+- publicar_educativo.js (novo): publica o post educativo no X e Instagram via Postiz (image do card_today.png no upload; IG precisa post_type:'post' no settings — corrigido no 2o deploy)
+- Limites: texto do X <= 280 chars (validado: todos os 7 temas <= 280); IG reutiliza texto do X (<=2200 ok)
+- Cron: card as 08:10 (postar_card+gerar_post_redes+publicar_redes) + educativo as 19:00 (gerar_post_educativo+publicar_educativo)
+- Testado 07/ago (e2e real): 1o post (X 201, IG 400 sem post_type) -> corrigido -> 2o post X+IG 201, PUBLISHED no DB Postiz; duplicado do X deletado via API (tweet deletado:true)
+- Nota: videos de teste do observador foram REMOVIDOS do X via API OAuth 1.0a (3 tweets deleted:true); Reels do IG nao podem ser deletados por API Graph (permissao) — remocao manual pendente no app (3 reels de teste em @severinomagnate)
+
+
+## Ecossistema IA — Fase 9 (07/ago) — Motor de conversão conectado ao funil
+
+### Diagnóstico (0 vendas com 52 trials ativados)
+- servidor.js POST /api/trial gerava+ativava código mas NUNCA emitia trial.ativado pro orquestrador -> retentor nunca via leads de site. Mesmo para /api/license/activate.
+- Webhook de compra (/api/purchase/webhook) gerava código + entregava por Telegram, mas NÃO emitia venda.confirmada -> retentor/cobrador não marcavam comprador como pago.
+- funil.json tinha 1 lead de teste; 52 códigos ativados sem rastreio. Retentor só agia com telegramId (e-mail fora por decisão do usuário).
+- Realidade: único vínculo Telegram real = Arthur (5854115851 -> VIP7-TDPZIN, código NUNCA ativado); trials frontend-offer de 06/08 (VIP7-RQW0CN adriano, VIP7-EAD060 John) só e-mail, sem Telegram. João/Rosa/Prospecção = IDs falsos de teste.
+
+### Correções implementadas
+- servidor.js: função emitirTrialAtivado({code,email,nome,source}) -> POST /api/ecosystem/enviar (tipo trial.ativado, leadId 'lic-'+code) para o orquestrador (127.0.0.1:3335, X-Admin-Secret). Chamada em /api/trial (salva customerEmail/nome/telegram no license; pula se header x-ecosystem=1) e /api/license/activate. Resolução de telegramId via notifications.json (licenseCode -> chatId), sem fallback em leads.json (evita vínculo errado).
+- servidor.js: emitirVendaConfirmada({code,email,nome,value}) -> tipo venda.confirmada, chamada no webhook após gravar purchase.
+- onboarder.js: fetch do /api/trial agora envia header x-ecosystem:1 (evita dupla postagem de trial.ativado).
+- retentor.js: trial.ativado salva nome/email/telegramId; venda.confirmada casa por email OU trialCode/leadId lic-CODIGO; tick.followups resolve telegramId tardio via código (telegramDoTrialCode); envio que falha NÃO marca ultimaFollowup (retry na próxima rodada); reativação: trial expirado (>8 dias, sem pagamento, status vip) recebe UMA mensagem de recuperação com checkout -> status expirado + reativado:true (só quando o envio dá certo).
+
+### Testado (07/ago, e2e real)
+- POST /api/trial -> funil ganha lead lic-CODIGO status vip com email/nome (telegramId null quando não vinculado). Limpeza após teste.
+- POST /api/purchase/webhook (X-Kiwify-Token) -> lead vira status pago + vipPago + comprouEm + renovacaoEm (cobrador agora vê renovação).
+- tick.followups com lead de 8 dias -> dispara upsell; com 9 dias + sem envio -> reativacao(falhou envio) e status continua vip (retry). Envio real Telegram validado (enviarTelegram true).
+- Backups: servidor.js.pre-trial-funil, agente onboarder/retentor no histórico git.
+- Pendências: leads de site sem Telegram ficam rastreados no funil mas sem followup (e-mail fora por decisão); revisar registros de teste (purchases x@y.com, maria@test.com, teste-fase3 são falsos — não são pagantes reais).
