@@ -104,9 +104,20 @@ function handleWebhook(req, res) {
       let responseText = "";
       const lower = text.toLowerCase();
 
-      if (text === "/start") {
-        responseText = "━━━━━━━━━━━━━━━━━━━━━━\n🚀 <b>BTC Weather Panel</b>\n🦾 <b>Bot Severino</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n<b>Comandos:</b>\n👤 /codigo — Gerar código VIP\n🔑 /meucodigo — Recuperar seu código\n🎫 /resgatar EMAIL — Código da sua compra\n🔗 /vincular CODIGO — Vincular Telegram\n⚙️ /notificacoes — Configurar alertas\n📊 /diaria on|off — Análise BTC 9h\n🌦️ /clima on|off — Alerta de clima\n📡 /sinais on|off — Sinal operacional\n📧 /email EMAIL — Cadastrar e-mail\n📋 /status — Status da assinatura\n❓ /ajuda — Ajuda\n\n━━━━━━━━━━━━━━━━━━━━━━\n🔗 https://btcweatherpanel.com/";
+      if (text === "/start" || text === "/iniciar") {
+        responseText = onboardingTexto(from, text);
       
+      } else if (text.startsWith("/start ")) {
+        // Deep link: t.me/btcweatherpanel_bot?start=CODIGO → tenta vincular direto
+        const codigo = text.replace("/start ", "").trim().toUpperCase();
+        const lic = loadJSON(LICENSES_PATH);
+        if (lic[codigo]) {
+          notif.updateUser(chatId, { licenseCode: codigo, telegramId: from.id, nome: from.first_name + (from.last_name ? " " + from.last_name : "") });
+          responseText = "━━━━━━━━━━━━━━━━━━━━━━\n🔗 <b>Conta Vinculada</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n✅ Código <code>" + codigo + "</code> conectado com sucesso!\n\n📊 Você receberá análise BTC diária às 9h\n📡 Sinais operacionais em tempo real\n🌦️ Alertas de clima\n\nUse /notificacoes para configurar.\n\n📋 Veja seu status com /status.";
+        } else {
+          responseText = "━━━━━━━━━━━━━━━━━━━━━━\n❌ Código Não Encontrado\n━━━━━━━━━━━━━━━━━━━━━━\n\nO código <code>" + codigo + "</code> não foi reconhecido.\n\nVerifique se copiou certo ou use:\n🎫 /resgatar seu@email — se comprou na Kiwify\n👤 /codigo — para gerar um VIP grátis\n\n🔗 https://btcweatherpanel.com/";
+        }
+
       } else if (text === "/ajuda" || text === "/help") {
         responseText = "━━━━━━━━━━━━━━━━━━━━━━\n❓ <b>Ajuda — Comandos</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n👤 <b>/codigo</b> — Gera código VIP 7 dias\n🎫 <b>/resgatar</b> email@… — Pega o código da sua compra Kiwify\n🔑 <b>/meucodigo</b> — Mostra seu código\n🔗 <b>/vincular VIP7-XXXXX</b> — Vincula Telegram\n📊 <b>/diaria on|off</b> — Análise BTC 9h\n🌦️ <b>/clima on|off</b> — Alerta de clima\n📧 <b>/email</b> user@email.com — Cadastra e-mail\n📋 <b>/status</b> — Status VIP\n⚙️ <b>/notificacoes</b> — Suas configs\n\n━━━━━━━━━━━━━━━━━━━━━━\n🔗 https://btcweatherpanel.com/";
 
@@ -280,6 +291,12 @@ function sendTelegram(chatId, text, token) {
   req.on("error", () => {});
   req.write(payload);
   req.end();
+}
+
+function onboardingTexto(from, textoCompleto) {
+  const nome = (from.first_name || '').split(' ')[0];
+  const sauda = nome ? nome + '!' : 'seja bem-vindo(a)!';
+  return "━━━━━━━━━━━━━━━━━━━━━━\n🚀 <b>BTC Weather Panel</b>\n🦾 <b>Bot Severino</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n👋 Oi, " + sauda + " Aqui você recebe:\n📊 Análise BTC diária às 9h\n📡 Sinais operacionais em tempo real\n🌦️ Alertas de clima\n\n<b>Como ativar seu acesso:</b>\n\n1️⃣ <b>Já comprou?</b> Envie:\n🎫 /resgatar seuemail@…\n\n2️⃣ <b>Ainda não tem código?</b> Envie:\n👤 /codigo (VIP grátis 7 dias)\n\n3️⃣ <b>Já tem código?</b> Envie:\n🔗 /vincular SEUCODIGO\n\n━━━━━━━━━━━━━━━━━━━━━━\n📋 /status — Ver sua assinatura\n⚙️ /notificacoes — Configurar alertas\n❓ /ajuda — Todos os comandos\n\n🔗 https://btcweatherpanel.com/";
 }
 
 module.exports = { handleWebhook, sendTelegram };

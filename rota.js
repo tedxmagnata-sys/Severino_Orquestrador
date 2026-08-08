@@ -11,7 +11,8 @@ const agentes = {
   analista: require('./agentes/analista'),
   estrategista: require('./agentes/estrategista'),
   videasta: require('./agentes/videasta'),
-  observador: require('./agentes/observador')
+  observador: require('./agentes/observador'),
+  captador: require('./agentes/captador')
 };
 
 const AGENTES = {
@@ -24,6 +25,7 @@ const AGENTES = {
   'reembolso.pedido': 'cobrador',
   'tick.renovacao': 'cobrador',
   'tick.followups': 'retentor',
+  'tick.captura': 'captador',
   'gerar.relatorio': 'analista',
   'relatorio.diario': 'estrategista',
   'campanha.nova': 'videasta',

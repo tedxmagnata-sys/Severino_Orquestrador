@@ -268,3 +268,27 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - PENDENTE: confirmar 4 registros Brevo no Cloudflare (TXT brevo-code, CNAME brevo1/brevo2._domainkey,
   TXT _dmarc) + Verificar configuracao no Brevo; criar agente email->Telegram (convite + amostra
   de sinal + /vincular) e onboarding no /start do bot.
+
+## Ecossistema IA — Fase D2 (08/ago) — Captador e-mail->Telegram + onboarding do bot
+
+- VERIFICADO: 4 registros Brevo presentes no Cloudflare (TXT brevo-code, CNAME
+  brevo1/brevo2._domainkey, TXT _dmarc) e resolvendo nos NS anirban/zelda.
+- NOVO agente agentes/captador.js: processa tick.captura. Para cada lead vip com
+  email e SEM telegramId, envia UM e-mail de convite (apos 1h do trial, anti-spam):
+  amostra de valor (card diario + sinais), link t.me/btcweatherpanel_bot?start=CODIGO
+  (deep link -> /start CODIGO -> vincula automatico), e instrucao manual /vincular.
+  Marca conviteEmail com timestamp p/ nao repetir.
+- BOT_USERNAME real = btcweatherpanel_bot (getMe confirma). app.html apontava para
+  t.me/btcweatherpanel (username INEXISTENTE) — CORRIGIDO para btcweatherpanel_bot
+  + deep link ?start=CODIGO dinamico em showTelegram().
+- telegram_bot.js: /start agora usa onboardingTexto() (3 passos: /resgatar se comprou,
+  /codigo se nao tem, /vincular se ja tem). NOVO /start CODIGO (deep link) -> tenta
+  vincular automaticamente; codigo invalido -> orienta /resgatar ou /codigo. /iniciar
+  e alias de /start.
+- rota.js: registra captador + 'tick.captura': 'captador'.
+- orquestrador.js: posta tick.captura junto ao tick.followups (se existir lead elegivel).
+- TESTADO: tick.captura manual enviou convites reais p/ adriano/John (conviteEmail
+  marcado no funil); webhook simulado /start OK, /start VIP7-RQW0CN vinculou e /start
+  invalido orientou corretamente. Chat/lead de teste 999000111 removidos apos validacao.
+- REGRA: testes de webhook com codigo REAL sujam notifications/funil — usar codigo
+  de teste ou limpar apos validar.

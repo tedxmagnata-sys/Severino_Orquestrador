@@ -265,6 +265,9 @@ setInterval(() => {
     if (leads.some(l => l.status === 'vip')) {
       bus.postar({ tipo: 'tick.followups', origem: 'orquestrador', produto: null, payload: {} });
     }
+    if (leads.some(l => l.status === 'vip' && l.email && !l.telegramId && !l.conviteEmail)) {
+      bus.postar({ tipo: 'tick.captura', origem: 'orquestrador', produto: null, payload: {} });
+    }
     if (leads.some(l => l.status === 'pago' && l.renovacaoEm)) {
       bus.postar({ tipo: 'tick.renovacao', origem: 'orquestrador', produto: null, payload: {} });
     }
