@@ -10,7 +10,8 @@ const agentes = {
   cobrador: require('./agentes/cobrador'),
   analista: require('./agentes/analista'),
   estrategista: require('./agentes/estrategista'),
-  videasta: require('./agentes/videasta')
+  videasta: require('./agentes/videasta'),
+  observador: require('./agentes/observador')
 };
 
 const AGENTES = {
@@ -36,7 +37,7 @@ function agenteDo(tipo) {
 
 async function processar(evento, ctx) {
   const nome = agenteDo(evento.tipo);
-  if (nome === 'observador' || !agentes[nome]) {
+  if (!agentes[nome]) {
     return { agente: nome, acao: 'rastreado', novosEventos: [] };
   }
   return agentes[nome].processar(evento, ctx);
