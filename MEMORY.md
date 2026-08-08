@@ -212,3 +212,21 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - Enquanto SMTP Zoho não ativa: enviarEmail retorna false -> retentor tenta e falha
   silenciosamente, retry no próximo tick. Sem spam, sem marcar ultimaFollowup.
 - Próximo: preencher SMTP_PASS no .env e validar envio real.
+
+## Ecossistema IA — Fase A (07/ago) — Multi-produto (fundação)
+
+- Objetivo do usuário: severinobot.com = hub com VÁRIOS micro-saas validados. Cada sessão do opencode
+  desenvolve um produto novo. Esta Fase A criou a fundação p/ isso sem conflito.
+- Decisões: subdomínios app.<slug>.severinobot.com + catálogo central produtos.json.
+- produtos.json agora é catálogo multi-produto: btcweather (3334), severino-consultor-ia (teste),
+  padrao-produto-novo (template de referência, porta 3340). Campos: id, slug, subdominio, caminho,
+  porta, pm2, status, plano, checkout, checkoutUrl, canal, persona, argumentos, ativacao.
+  Backup do antigo: produtos.json.pre-faseA / .pre-faseA-2. Commit 629bed3.
+- templates/produto-novo/: app.js (backend Node isolado, PORTA via env/argv), public/index.html
+  (landing com POST /api/trial), nginx.conf (snippet subdomínio), README.md.
+- provisionar-produto.sh: cria produto novo isolado (porta própria, PM2 produto-<slug>). Validado e2e:
+  produto-teste-prod subiu, /api/health + landing + POST /api/trial OK, sem tocar 3334/3335.
+  FIX aplicado: PORTA agora é passada via env no PM2 (antes caía no default 3340).
+- Documento oficial: /root/severino/MULTIPRODUTO.md + referência no ORGANIZACAO_VPS.md.
+- REGRA: NUNCA editar servidor.js para produto novo — usar provisionar-produto.sh.
+- PENDENTE: quando criar próximo produto, seguir MULTIPRODUTO.md (nginx + SSL expand + catálogo).
