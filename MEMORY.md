@@ -230,3 +230,20 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - Documento oficial: /root/severino/MULTIPRODUTO.md + referência no ORGANIZACAO_VPS.md.
 - REGRA: NUNCA editar servidor.js para produto novo — usar provisionar-produto.sh.
 - PENDENTE: quando criar próximo produto, seguir MULTIPRODUTO.md (nginx + SSL expand + catálogo).
+
+## Ecossistema IA — Fase C (08/ago) — Brevo SMTP ATIVO ✅
+
+- DNS: btcweatherpanel.com movido de HostGator para Cloudflare (nameservers anirban/zelda.ns.cloudflare.com). 
+  O Cloudflare agora gerencia todo o DNS. HostGator não salvava registros (bug do cPanel Zone Editor).
+- Brevo (Sendinblue): plano grátis 300 emails/dia, sem cartão. Conta: tedxmagnata@gmail.com.
+- SMTP configurado no .env:
+  - SMTP_HOST=smtp-relay.brevo.com
+  - SMTP_PORT=587
+  - SMTP_SECURE=false
+  - SMTP_USER=b4d1af001@smtp-brevo.com
+  - SMTP_PASS=xsmtpsib-... (chave SMTP do Brevo)
+  - EMAIL_FROM=suporte@btcweatherpanel.com
+- Teste de envio real: ENVIO OK para tedxmagnata@gmail.com (Message ID: 1481a61f...)
+- Retentor agora envia follow-up por E-MAIL quando lead não tem Telegram (fallback email). 
+  Já backfaz os 2 leads reais do site (adriano/John) no funil com retentorInicio=06/ago.
+- Próximo: follow-ups automáticos disparam no próximo tick (check-in dia 3 para adriano/John ≈ 09/ago).
