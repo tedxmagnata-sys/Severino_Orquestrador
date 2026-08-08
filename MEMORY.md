@@ -247,3 +247,24 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - Retentor agora envia follow-up por E-MAIL quando lead não tem Telegram (fallback email). 
   Já backfaz os 2 leads reais do site (adriano/John) no funil com retentorInicio=06/ago.
 - Próximo: follow-ups automáticos disparam no próximo tick (check-in dia 3 para adriano/John ≈ 09/ago).
+
+## Ecossistema IA — Fase D (08/ago) — Dupla captura no site + deploy servidor.js
+
+- OBJETIVO do usuário: capturar leads no site com estrategia dupla (email + Telegram).
+- app.html reescrito (backup app.html.pre-duplacaptura): trial agora pede nome + email
+  (obrigatorio/validado); pos-ativacao mostra tela view-telegram com codigo do trial,
+  3 passos (abrir t.me/btcweatherpanel, /iniciar, /vincular CODIGO) + botoes.
+  Servidor /api/trial ja salva customerEmail/customerName (teste VIP7-P0DWEX).
+- servidor.js: nova rota host-aware: host app.btcweatherpanel.com -> serve /root/btc-weather-panel/app.html.
+  IMPORTANTE: app.html fica em /root/btc-weather-panel (weatherRoot), NAO em ROOT.
+  LICAO: deploy anterior gravou o arquivo base64 sem decodificar -> servidor.js virou texto base64
+  (0 JS). Sintoma: node --check falhava, rota / nao achava app.html (ENOENT /root/.openclaw/canvas/app.html).
+  FIX: base64 -d /root/severino/servidor.js > /tmp/servidor_decoded.js; validar node --check;
+  instalar; ajustar path para /root/btc-weather-panel; pm2 restart severino.
+- VALIDADO: https://app.btcweatherpanel.com/ -> HTTP 200, contem trial-email/view-telegram.
+  severinobot.com/ continua servindo consultor.html (HTTP 200). PM2 severino online.
+- Regra de deploy reforcada: enviar JS via base64 exige DECODIFICAR no VPS antes de usar;
+  sempre rodar node --check antes de pm2 restart.
+- PENDENTE: confirmar 4 registros Brevo no Cloudflare (TXT brevo-code, CNAME brevo1/brevo2._domainkey,
+  TXT _dmarc) + Verificar configuracao no Brevo; criar agente email->Telegram (convite + amostra
+  de sinal + /vincular) e onboarding no /start do bot.
