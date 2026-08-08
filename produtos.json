@@ -1,8 +1,14 @@
 {
   "btcweather": {
     "id": "btcweather",
+    "slug": "btcweather-panel",
     "nome": "BTC Weather Panel",
     "url": "https://btcweatherpanel.com/btc-weather-panel/",
+    "subdominio": "app.btcweatherpanel.com",
+    "caminho": "/root/btc-weather-panel/",
+    "porta": 3334,
+    "pm2": "severino",
+    "status": "ativo",
     "plano": {
       "preco": 47,
       "moeda": "BRL",
@@ -28,8 +34,14 @@
   },
   "severino-consultor-ia": {
     "id": "severino-consultor-ia",
+    "slug": "severino-ia",
     "nome": "SeverinoConsultorIA",
     "url": "https://btcweatherpanel.com/severino-ia/",
+    "subdominio": "app.severino-ia.severinobot.com",
+    "caminho": "/root/.openclaw/canvas/",
+    "porta": null,
+    "pm2": null,
+    "status": "teste",
     "plano": {
       "preco": null,
       "moeda": "BRL",
@@ -47,6 +59,37 @@
       "tipo": "link",
       "link": "https://btcweatherpanel.com/severino-ia/",
       "mensagem": "🎉 Seu acesso ao SeverinoConsultorIA está liberado, {nome}!\n👉 {link}\n\nO produto está em validação (teste gratuito). Qualquer dúvida, me chama!"
+    }
+  },
+  "padrao-produto-novo": {
+    "id": "padrao-produto-novo",
+    "slug": "produto-novo",
+    "nome": "Novo Produto",
+    "url": "https://app.<slug>.severinobot.com/",
+    "subdominio": "app.<slug>.severinobot.com",
+    "caminho": "/root/severino/produtos/<slug>/",
+    "porta": 3340,
+    "pm2": "produto-<slug>",
+    "status": "ideia",
+    "plano": {
+      "preco": 0,
+      "moeda": "BRL",
+      "periodo": "mensal",
+      "trialDias": 7
+    },
+    "checkout": "Kiwify",
+    "checkoutUrl": "https://pay.kiwify.com.br/",
+    "canal": "telegram",
+    "persona": "Descreva a persona aqui.",
+    "argumentos": [
+      "Benefício 1",
+      "Benefício 2"
+    ],
+    "ativacao": {
+      "tipo": "trial",
+      "endpoint": "http://127.0.0.1:334X/api/trial",
+      "linkTemplate": "https://app.<slug>.severinobot.com/?code={code}",
+      "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAproveite 7 dias VIP. Qualquer dúvida, me chama!"
     }
   }
 }
