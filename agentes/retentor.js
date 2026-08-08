@@ -9,6 +9,7 @@
 const funil = require('../funil');
 const canais = require('../canais');
 const produtos = require('../produtos.json');
+const { isentoPorTelegramId } = require('../isentos');
 
 const CHECKIN_DIAS = 3;
 const UPSELL_DIAS = 7;
@@ -39,17 +40,21 @@ async function enviarFollowup(lead, etapa) {
   const info = produtos[lead.produto] || produtos.btcweather;
   const nome = lead.nome || '';
   let ok = false;
+  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
+  const valor = (info && info.plano && info.plano.valor) || 'R$47';
   if (etapa === 'checkin') {
     const msg = `Oi ${nome}! Vi que você está aproveitando o ${info.nome} há uns dias. Está curtindo os sinais? Qualquer dúvida é só me chamar 🙂`;
-    ok = await canais.enviarTelegram(lead.telegramId, msg);
+    ok = lead.telegramId
+      ? await canais.enviarTelegram(lead.telegramId, msg)
+      : await canais.enviarEmail(lead.email, `${info.nome} — está curtindo?`, msg);
   } else {
-    const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
-    const valor = (info && info.plano && info.plano.valor) || 'R$47';
     const msg = `Oi ${nome}! Seu teste gratuito está chegando ao fim. Quer continuar recebendo os sinais diários? O plano é ${valor}/mês e você garante agora aqui: ${checkout} 😉`;
-    ok = await canais.enviarTelegram(lead.telegramId, msg);
+    ok = lead.telegramId
+      ? await canais.enviarTelegram(lead.telegramId, msg)
+      : await canais.enviarEmail(lead.email, `${info.nome} — seu teste está acabando`, msg);
   }
   if (ok) {
-    funil.upsertLead({ leadId: lead.leadId, ultimaFollowup: etapa, ultimoFollowupEm: new Date().toISOString() });
+    funil.upsertLead({ leadId: lead.leadId, ultimaFollowup: etapa, ultimoFollowupEm: new Date().toISOString(), ultimoCanal: lead.telegramId ? 'telegram' : 'email' });
   }
   return ok;
 }
@@ -97,8 +102,12 @@ async function processar(evento, ctx) {
     for (const lead of leads) {
       // Resolve telegramId tardio: lead do site que vinculou o código no bot depois
       const telegramId = lead.telegramId || telegramDoTrialCode(lead.trialCode);
-      if (!telegramId) continue;
-      if (telegramId !== lead.telegramId) funil.upsertLead({ leadId: lead.leadId, telegramId });
+      if (telegramId) {
+        if (isentoPorTelegramId(telegramId)) continue; // testador: sem cobrança/upsell
+        if (telegramId !== lead.telegramId) funil.upsertLead({ leadId: lead.leadId, telegramId });
+      }
+      // Sem Telegram E sem e-mail → sem como contactar
+      if (!telegramId && !lead.email) continue;
       const dias = (Date.now() - new Date(lead.retentorInicio).getTime()) / 86400000;
 
       // Reativação: trial venceu e não pagou → UMA mensagem de recuperação
@@ -108,7 +117,9 @@ async function processar(evento, ctx) {
         const valor = (info && info.plano && info.plano.valor) || 'R$47';
         const msg = `Oi ${lead.nome || ''}! Seu teste gratuito terminou 😉 Se gostou dos sinais, dá pra continuar por ${valor}/mês: ${checkout} Ainda dá tempo de pegar o valor promocional de lançamento.`;
         try {
-          const ok = await canais.enviarTelegram(telegramId, msg);
+          const ok = telegramId
+            ? await canais.enviarTelegram(telegramId, msg)
+            : await canais.enviarEmail(lead.email, 'BTC Weather Panel — seu teste terminou', msg);
           if (ok) funil.upsertLead({ leadId: lead.leadId, status: 'expirado', reativado: true, reativadoEm: new Date().toISOString() });
           acoes.push(`${lead.leadId}:reativacao${ok ? '' : '(falhou envio)'}`);
         } catch (e) {

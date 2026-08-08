@@ -7,6 +7,7 @@ const path = require('path');
 const funil = require('../funil');
 const canais = require('../canais');
 const produtos = require('../produtos.json');
+const { isentoPorTelegramId } = require('../isentos');
 
 const AVISO_DIAS = 2;      // avisa X dias antes do vencimento
 const VENCIDO_DIAS = 2;    // checa Y dias após o vencimento se renovou
@@ -82,6 +83,7 @@ async function processar(evento, ctx) {
     const leads = funil.listLeads().filter(l => l.status === 'pago' && l.renovacaoEm && l.telegramId);
     const acoes = [];
     for (const lead of leads) {
+      if (!lead.telegramId || isentoPorTelegramId(lead.telegramId)) continue;
       const dias = Math.ceil((new Date(lead.renovacaoEm).getTime() - agora) / 86400000);
       const info = produtos[lead.produto] || produtos.btcweather;
       try {

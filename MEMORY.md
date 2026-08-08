@@ -186,3 +186,13 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - tick.followups com lead de 8 dias -> dispara upsell; com 9 dias + sem envio -> reativacao(falhou envio) e status continua vip (retry). Envio real Telegram validado (enviarTelegram true).
 - Backups: servidor.js.pre-trial-funil, agente onboarder/retentor no histórico git.
 - Pendências: leads de site sem Telegram ficam rastreados no funil mas sem followup (e-mail fora por decisão); revisar registros de teste (purchases x@y.com, maria@test.com, teste-fase3 são falsos — não são pagantes reais).
+
+## Ecossistema IA — Fase 10 (07/ago) — Isento Arthur + Canal de e-mail
+
+- Decisão do usuário: Arthur (5854115851) é TESTADOR real de usabilidade, SEM cobrança. Nunca recebe upsell/renovação.
+- isentos.js (novo) + data/isentos.json: lista central de telegramIds imunes a cobrança (contém 5854115851). Require em retentor.js e cobrador.js — ambos pulam leads isentos nos followups/renovação. Testado: retentor com Arthur de 8 dias retorna "nada vencido".
+- Decisão: e-mail personalizado via Zoho Mail (Free). suporte@btcweatherpanel.com.
+- canais.js: enviarEmail(to, assunto, texto) via nodemailer (instalado no ecosystem). Lê SMTP_HOST/PORT/SECURE/USER/PASS/EMAIL_FROM do .env. Sem credenciais → retorna false (sem quebrar). Adicionadas vars SMTP ao .env (SMTP_PASS placeholder TROQUE_AQUI).
+- retentor.js: follow-up/reativação usa Telegram SE telegramId, senão E-MAIL se lead.email. Grava ultimoCanal (telegram|email). Testado: enviarEmail stub retorna false sem SMTP.
+- suporte-email.md (novo em /root/severino): guia passo-a-passo para o usuário criar Zoho Mail + DNS Porkbun (MX/SPF/DKIM) + App Password.
+- PENDENTE (ação humana): usuário cria conta Zoho + DNS + App Password → preencher SMTP_PASS no .env → testar envio real → follow-up por e-mail ativo.
