@@ -196,3 +196,19 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - retentor.js: follow-up/reativação usa Telegram SE telegramId, senão E-MAIL se lead.email. Grava ultimoCanal (telegram|email). Testado: enviarEmail stub retorna false sem SMTP.
 - suporte-email.md (novo em /root/severino): guia passo-a-passo para o usuário criar Zoho Mail + DNS Porkbun (MX/SPF/DKIM) + App Password.
 - PENDENTE (ação humana): usuário cria conta Zoho + DNS + App Password → preencher SMTP_PASS no .env → testar envio real → follow-up por e-mail ativo.
+
+## Ecossistema IA — Fase 10b (07/ago) — Backfill dos 2 leads reais do site
+
+- ROOT CAUSE: a ponte emitirTrialAtivado foi adicionada ao servidor.js em 07/ago 21:52.
+  Os 2 trials reais do site (VIP7-RQW0CN adrianonunes98@yahoo.com.br e VIP7-EAD060
+  JOHN DOURADO johnlennondourado07@gmail.com) foram ativados em 06/ago — ANTES da
+  ponte existir. Por isso nunca entraram no funil (funil.json só tinha lead-e2e-f4).
+- FIX: backfill manual via /tmp/backfill_funil.js usando funil.upsertLead:
+  leadId 'lic-CODE', status vip, trialDias 7, email, retentorInicio = activatedAt (06/ago).
+- Estado atual do funil:
+  - lead-e2e-f4 (teste): sem tg nem email -> retentor ignora (continue).
+  - lic-VIP7-RQW0CN (adriano, email): dia 1.4, checkin dia 3 (~09/ago).
+  - lic-VIP7-EAD060 (John, email): dia 1.4, checkin dia 3 (~09/ago).
+- Enquanto SMTP Zoho não ativa: enviarEmail retorna false -> retentor tenta e falha
+  silenciosamente, retry no próximo tick. Sem spam, sem marcar ultimaFollowup.
+- Próximo: preencher SMTP_PASS no .env e validar envio real.
