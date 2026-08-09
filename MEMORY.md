@@ -292,3 +292,39 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
   invalido orientou corretamente. Chat/lead de teste 999000111 removidos apos validacao.
 - REGRA: testes de webhook com codigo REAL sujam notifications/funil — usar codigo
   de teste ou limpar apos validar.
+## Ecossistema IA — Fase B (09/ago) — Prospector Instagram (comentário -> CTA bot)
+
+- OBJETIVO: prospecção ativa via Instagram. Postiz NÃO suporta DM e não sincroniza
+  comentários externos. Decisão do usuário: MONITORAR comentários dos posts IG e
+  RESPONDER publicamente com CTA do bot do Telegram (sem DM, sem risco de ação do IG).
+- CAMINHO TÉCNICO (validado ao vivo): usar a Graph API do Facebook DIRETO, não o Postiz.
+  - Token: guardado no Postgres do Postiz, formato "accessToken___pageToken".
+    `docker exec postiz-postgres psql -U postiz-user -d postiz-db-local -t -A -c "SELECT token FROM \"Integration\" WHERE \"providerIdentifier\"='instagram' AND \"deletedAt\" IS NULL LIMIT 1;"` -> pega parte antes de ___ (EAAW...).
+  - Instagram Business Account ID = internalId na tabela Integration = 17841440273845195.
+  - GET /{igId}/media?fields=id,permalink,media_type,timestamp -> lista media (permalink /p/ e /reel/).
+  - GET /{mediaId}/comments?fields=id,text,from,created_time -> comentários.
+  - POST /{mediaId}/comments?message=... -> responde (retorna id do comentário).
+  - DELETE /{commentId} -> apaga comentário.
+  - IMPORTANTE: token começa com EAAW (Graph API FB), NÃO funciona no graph.instagram.com
+    (erro "Invalid OAuth access token - Cannot parse access token"). Base certa: graph.facebook.com/v20.0.
+- NOVO agente agentes/prospector.js (evento tick.prospeccao):
+  - lista media recentes (janela 7 dias), lê comentários de cada um;
+  - filtra: não respondido antes, não é o dono da conta, não é spam (bloqueia
+    bloqueio amigo/siga o/www./whatsapp/golpe etc);
+  - para cada comentário acionável (limite MAX_POR_RODADA default 5): gera código
+    VIP7-XXXXXX (mesmo formato do servidor.js), RESPONDE publicamente com CTA
+    "@username Obrigado! 🎯 Testa grátis o painel de clima do Bitcoin... Chama o bot:
+    https://t.me/btcweatherpanel_bot?start=CODIGO" e registra lead no funil
+    (leadId ig-<comentarioId>, status vip, origem instagram, trialCode).
+  - anti-repetição: data/prospeccao.json { respondidos: {comentarioId: {ts, mediaId, username}}, ultimaRodada }.
+  - token IG lido do Postgres em runtime via execSync docker (nunca fica no código).
+  - PROSPECTOR_TEST_MODE=1 = processa comentários da própria conta (SÓ diagnóstico; nunca em produção).
+- rota.js: registra prospector + 'tick.prospeccao': 'prospector'.
+- orquestrador.js: posta tick.prospeccao a cada ECOSISTEMA_PROSPECCAO_INTERVAL (default 3600s=1h).
+- TESTADO E2E: comentário de teste postado no media real -> tick -> prospector respondeu
+  publicamente com CTA + código VIP7 + lead no funil (origem instagram); anti-repetição
+  salvou. Limpeza total depois (4 comentários deletados, 2 leads ig-* removidos, estado resetado).
+- REGRA: comentários postados via Graph API com o token da conta aparecem como
+  from=severinomagnate (o próprio perfil) -> filtro de dono os bloqueia em produção (correto).
+- PENDENTE: comentário real de seguidor real testará o fluxo em produção; monitorar
+  tick.prospeccao no log e leads ig-* no funil após posts novos.

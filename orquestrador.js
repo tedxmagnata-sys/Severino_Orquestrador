@@ -299,3 +299,13 @@ setInterval(() => {
     bus.postar({ tipo: 'tick.conteudo', origem: 'orquestrador', produto: null, payload: {} });
   } catch {}
 }, CONTEUDO_INTERVAL);
+
+// Tick de prospecção ativa (Prospector — Instagram). Posta tick.prospeccao a cada
+// intervalo (default 3600s = 1h) para o Prospector varrer comentários novos e
+// responder com CTA do bot. Intervalo configurável via ECOSISTEMA_PROSPECCAO_INTERVAL.
+const PROSPECCAO_INTERVAL = parseInt(process.env.ECOSISTEMA_PROSPECCAO_INTERVAL || '3600', 10) * 1000;
+setInterval(() => {
+  try {
+    bus.postar({ tipo: 'tick.prospeccao', origem: 'orquestrador', produto: null, payload: {} });
+  } catch {}
+}, PROSPECCAO_INTERVAL);
