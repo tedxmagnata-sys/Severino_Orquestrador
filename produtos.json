@@ -30,7 +30,8 @@
       "endpoint": "http://127.0.0.1:3334/api/trial",
       "linkTemplate": "https://btcweatherpanel.com/btc-weather-panel/?code={code}",
       "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAbra o link, use o código e aproveite 7 dias VIP do BTC Weather Panel. Qualquer dúvida, me chama!"
-    }
+    },
+    "checkoutAnualUrl": "https://pay.kiwify.com.br/vim8bDb"
   },
   "severino-consultor-ia": {
     "id": "severino-consultor-ia",

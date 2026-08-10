@@ -48,13 +48,14 @@ async function enviarFollowup(lead, etapa) {
   let ok = false;
   const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
   const valor = precoDoProduto(info);
+  const linkAnual = (info && info.checkoutAnualUrl) || 'https://pay.kiwify.com.br/vim8bDb';
   if (etapa === 'checkin') {
     const msg = `Oi ${nome}! Vi que você está aproveitando o ${info.nome} há uns dias. Está curtindo os sinais? Qualquer dúvida é só me chamar 🙂`;
     ok = lead.telegramId
       ? await canais.enviarTelegram(lead.telegramId, msg)
       : await canais.enviarEmail(lead.email, `${info.nome} — está curtindo?`, msg);
   } else {
-    const msg = `Oi ${nome}! Seu teste gratuito está chegando ao fim. Quer continuar recebendo os sinais diários? O plano é ${valor}/mês e você garante agora aqui: ${checkout} 😉`;
+    const msg = `Oi ${nome}! Seu teste gratuito está chegando ao fim. Quer continuar recebendo os sinais diários? O plano é ${valor}/mês (${checkout}) ou anual com melhor preço (${linkAnual}). Você garante agora aqui: ${checkout} 😉`;
     ok = lead.telegramId
       ? await canais.enviarTelegram(lead.telegramId, msg)
       : await canais.enviarEmail(lead.email, `${info.nome} — seu teste está acabando`, msg);
@@ -121,7 +122,9 @@ async function processar(evento, ctx) {
         const info = produtos[lead.produto] || produtos.btcweather;
         const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
         const valor = precoDoProduto(info);
-        const msg = `Oi ${lead.nome || ''}! Seu teste gratuito terminou 😉 Se gostou dos sinais, dá pra continuar por ${valor}/mês: ${checkout} Ainda dá tempo de pegar o valor promocional de lançamento.`;
+        // Oferta com as 2 opções (mensal + anual) pra não perder quem prefere anual.
+        const linkAnual = (info && info.checkoutAnualUrl) || 'https://pay.kiwify.com.br/vim8bDb';
+        const msg = `Oi ${lead.nome || ''}! Seu teste gratuito terminou 😉 Se gostou dos sinais, dá pra continuar:\n\n📆 Mensal: ${valor}/mês → ${checkout}\n📅 Anual (melhor preço): → ${linkAnual}\n\nAinda dá tempo de pegar o valor promocional de lançamento.`;
         try {
           const ok = telegramId
             ? await canais.enviarTelegram(telegramId, msg)

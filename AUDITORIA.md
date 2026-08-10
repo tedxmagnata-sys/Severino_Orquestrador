@@ -6,9 +6,15 @@
 ## Resumo executivo
 
 O ciclo **captura → trial → venda → status pago** funciona de ponta a ponta (testado E2E real).
-Foram encontrados **1 BLOCKER crítico (corrigido)**, **1 bug MEDIUM (corrigido)** e riscos
-registrados. O ponto fraco estratégico NÃO é técnico — é **aquisição e conversão**: existem
-apenas 4 leads no funil e **0 compras** em produção.
+Foram encontrados **2 BLOCKERs (1 corrigido, 1 exige ação manual)** e **1 bug MEDIUM (corrigido)**.
+O ponto fraco estratégico NÃO é técnico — é **aquisição e conversão**: existem apenas 4 leads
+no funil e **0 compras** em produção.
+
+> ⚠️ **ATUALIZAÇÃO (10/08, pós-auditoria)**: e-mail SMTP Brevo parou de autenticar
+> (`535 Authentication failed`). Últimos envios OK em 09/08; senha idêntica ao backup
+> pré-Fase E → **senha revogada/expirada no painel Brevo**. Ação manual necessária
+> (rotacionar senha SMTP em app.brevo.com e atualizar `SMTP_PASS` no `.env`).
+> Impacto: captador, retentor (follow-up por e-mail) e cobrador.
 
 ---
 
@@ -48,6 +54,7 @@ apenas 4 leads no funil e **0 compras** em produção.
 | Severidade | Problema | Status |
 |---|---|---|
 | **BLOCKER** | Prospector gerava código fora do `licenses.json` → deep link do bot falhava ("Código Não Encontrado") | ✅ Corrigido (via `/api/trial` local) |
+| **BLOCKER** | SMTP Brevo `535 Authentication failed` — senha revogada/expirada (e-mails parados desde ~09/08) | 🔴 Exige ação manual (rotacionar senha no Brevo + atualizar `.env`) |
 | **MEDIUM** | Retentor lia `plano.valor`, mas produtos.json tem `plano.preco` → preço sempre caía no fallback `R$47` | ✅ Corrigido (`precoDoProduto`) |
 
 ## Riscos / Observações (não-bugs)
@@ -88,6 +95,7 @@ apenas 4 leads no funil e **0 compras** em produção.
 
 1. ~~Corrigir prospector (BLOCKER)~~ ✅
 2. ~~Corrigir preço retentor (MEDIUM)~~ ✅
-3. Validar checkouts Kiwify (mensal/anual ativos).
-4. Decidir: escala do prospector para comentários de terceiros.
-5. Definir preço final (A/B simples) e ativar campanha de recrutamento dos 3 leads expirados.
+3. 🔴 **Rotacionar senha SMTP Brevo** (ação manual) — sem isso, e-mail morreu.
+4. ~~Validar checkouts Kiwify~~ ✅ (mensal `ffphj4e` e anual `vim8bDb` ativos, HTTP 200)
+5. Reativação melhorada: retentor oferece mensal + anual (upsell D7 e reativação D8).
+6. Definir preço final (A/B simples) e ativar campanha de recrutamento dos 3 leads expirados.

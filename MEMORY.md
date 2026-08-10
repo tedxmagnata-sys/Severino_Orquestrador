@@ -372,3 +372,14 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - REALIDADE: 4 leads, 0 compras. 3 trials do site já expiraram e ninguém pagou. Foco agora é conversão (não técnico).
 - PRÓXIMOS PASSOS: validar checkouts Kiwify (ffphj4e mensal / vim8bDb anual), definir preço final, recrutar os 3 leads expirados por e-mail com oferta de reativação.
 - DETALHES em /root/severino/ecosystem/AUDITORIA.md.
+
+## BLOCKER #4 (10/08): SMTP Brevo parado — exige ação manual
+
+- ERRO: "535 5.7.8 Authentication failed" no SMTP (smtp-relay.brevo.com:587). Últimos envios OK
+  em 08-09/ago; hoje falha. Senha no .env é IDÊNTICA ao backup .env.pre-fasee → a senha foi
+  revogada/expirada no painel do Brevo (não é limite diário).
+- IMPACTO: captador (convite e-mail), retentor (follow-up e-mail D3/D7/D8), cobrador. O chatbot
+  Telegram segue OK (canal separado).
+- AÇÃO MANUAL NECESSÁRIA: gerar nova SMTP key em app.brevo.com (SMTP & API) e atualizar SMTP_PASS
+  no /root/severino/.env + pm2 restart severino ecosistema --update-env.
+- OBS: retentor foi melhorado para oferecer mensal+anual (checkoutAnualUrl no produtos.json).
