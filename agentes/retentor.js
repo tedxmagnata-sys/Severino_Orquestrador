@@ -36,12 +36,18 @@ function etapaDoDia(dias) {
   return null;
 }
 
+function precoDoProduto(info) {
+  if (info && info.plano && info.plano.preco) return `R$${info.plano.preco}`;
+  if (info && info.plano && info.plano.valor) return `R$${info.plano.valor}`;
+  return 'R$47';
+}
+
 async function enviarFollowup(lead, etapa) {
   const info = produtos[lead.produto] || produtos.btcweather;
   const nome = lead.nome || '';
   let ok = false;
   const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
-  const valor = (info && info.plano && info.plano.valor) || 'R$47';
+  const valor = precoDoProduto(info);
   if (etapa === 'checkin') {
     const msg = `Oi ${nome}! Vi que você está aproveitando o ${info.nome} há uns dias. Está curtindo os sinais? Qualquer dúvida é só me chamar 🙂`;
     ok = lead.telegramId
@@ -114,7 +120,7 @@ async function processar(evento, ctx) {
       if (dias >= REATIVACAO_DIAS && lead.status === 'vip' && !lead.reativado) {
         const info = produtos[lead.produto] || produtos.btcweather;
         const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
-        const valor = (info && info.plano && info.plano.valor) || 'R$47';
+        const valor = precoDoProduto(info);
         const msg = `Oi ${lead.nome || ''}! Seu teste gratuito terminou 😉 Se gostou dos sinais, dá pra continuar por ${valor}/mês: ${checkout} Ainda dá tempo de pegar o valor promocional de lançamento.`;
         try {
           const ok = telegramId

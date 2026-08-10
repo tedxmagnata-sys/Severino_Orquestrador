@@ -363,3 +363,12 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - PRÓXIMO (semana 1): pricing btcweather + automação conversão trial (retentor D-3/D-1, cobrador) + métricas.
 - PROMPTS atualizados (commit 3db21bc): prospector responde citando o comentário (outbound), videasta
   com hooks IG/Twitter, captador subject benefit-led. Inspirado no repo msitarzewski/agency-agents.
+
+## Auditoria Adversarial (10/ago) — preparar p/ 10 pagantes
+
+- Auditado funil real de ponta a ponta: captura site -> trial -> bot -> webhook Kiwify -> status pago. Ciclo FUNCIONA (testado E2E real e limpo).
+- BLOCKER CORRIGIDO: prospector gerava código fora do licenses.json -> deep link do bot dava "Código Não Encontrado". Agora usa POST /api/trial local (127.0.0.1:3334, header x-ecosystem:1) que grava no licenses.json sem duplicar trial.ativado. Testado.
+- MEDIUM CORRIGIDO: retentor lia plano.valor (inexistente) -> fallback R$47 fixo. Agora precoDoProduto() usa plano.preco.
+- REALIDADE: 4 leads, 0 compras. 3 trials do site já expiraram e ninguém pagou. Foco agora é conversão (não técnico).
+- PRÓXIMOS PASSOS: validar checkouts Kiwify (ffphj4e mensal / vim8bDb anual), definir preço final, recrutar os 3 leads expirados por e-mail com oferta de reativação.
+- DETALHES em /root/severino/ecosystem/AUDITORIA.md.

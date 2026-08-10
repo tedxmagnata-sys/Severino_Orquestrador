@@ -27,6 +27,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const canais = require('../canais');
 const funil = require('../funil');
+const produtos = require('../produtos.json');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const ESTADO = path.join(DATA_DIR, 'prospeccao.json');
@@ -81,11 +82,27 @@ function obterTokenIg() {
   return part;
 }
 
-function gerarCodigo() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = 'VIP7-';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+// Gera o código via /api/trial do servidor (127.0.0.1:3334) com header
+// x-ecosystem: 1 → grava em licenses.json (o bot /start e /vincular validam
+// contra esse arquivo) e NÃO emite trial.ativado duplicado (o prospector
+// registra o lead no funil por conta própria). Retorna o código.
+async function gerarCodigoServidor(nome) {
+  const porta = (produtos && produtos.btcweather && produtos.btcweather.porta) || 3334;
+  const url = `http://127.0.0.1:${porta}/api/trial`;
+  const body = JSON.stringify({ source: 'instagram', nome: nome || '' });
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-ecosystem': '1'
+    },
+    body
+  });
+  const r = await res.json();
+  if (!res.ok || !r.code) {
+    throw new Error(`servidor não gerou código (${res.status}): ${JSON.stringify(r).slice(0, 150)}`);
+  }
+  return r.code;
 }
 
 function ehSpam(texto) {
@@ -151,7 +168,13 @@ async function responderComentario(comentario, token, tokenCache) {
     return { ok: false, motivo: `sem mediaId para ${mediaUrl}` };
   }
 
-  const code = gerarCodigo();
+  const nome = comentario.from && comentario.from.name ? comentario.from.name : null;
+  let code;
+  try {
+    code = await gerarCodigoServidor(nome);
+  } catch (e) {
+    return { ok: false, motivo: `gerar código: ${e.message}` };
+  }
   const linkBot = `https://t.me/${BOT_USERNAME}?start=${code}`;
   // CTA curto (limite de comentários do IG) + sem link "externo" estranho.
   const resposta = montarResposta(username, comentario.text, linkBot);
@@ -168,7 +191,7 @@ async function responderComentario(comentario, token, tokenCache) {
   // Registra lead no funil (já com código e trial ativo -> status vip).
   funil.upsertLead({
     leadId: 'ig-' + comentario.id,
-    nome: comentario.from && comentario.from.name ? comentario.from.name : null,
+    nome,
     status: 'vip',
     trialCode: code,
     trialDias: 7,
