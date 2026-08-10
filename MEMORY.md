@@ -349,3 +349,17 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
   determinístico até ter saldo).
 - .env.backup: .env.pre-fasee-<timestamp>.
 - REGRA: manter LLM_BUDGET_TOKENS_DIA baixo; monitorar /auth/key (usage) semanalmente.
+
+## Roadmap 100 leads pagantes (10/ago)
+
+- VISÃO: severinobot.com como plataforma de micro-SaaS + automação com IA na VPS; Severino
+  orquestrador faz prospecção, marketing e venda. Primeiros cases: btcweatherpanel e severinovendedor.
+- PLANO em /root/severino/ecosystem/ROADMAP.md (163 linhas): Fase 0 fundação (pronta) -> Fase 1
+  monetizar btcweather (meta 10 pagantes) -> Fase 2 severinovendedor (meta 10) -> Fase 3 prospecção
+  multicanal (meta 50 total) -> Fase 4 vitrine severinobot.com (meta 70) -> Fase 5 novos micro-SaaS
+  (meta 100) -> Fase 6 escala pós-100 (500/meta semestral).
+- PRINCÍPIO: provar no pequeno -> medir -> escalar só o canal que converteu. KPI-mestre: trial->pago >= 5%,
+  CPL < preço do plano, churn < 10%.
+- PRÓXIMO (semana 1): pricing btcweather + automação conversão trial (retentor D-3/D-1, cobrador) + métricas.
+- PROMPTS atualizados (commit 3db21bc): prospector responde citando o comentário (outbound), videasta
+  com hooks IG/Twitter, captador subject benefit-led. Inspirado no repo msitarzewski/agency-agents.
