@@ -328,3 +328,24 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
   from=severinomagnate (o próprio perfil) -> filtro de dono os bloqueia em produção (correto).
 - PENDENTE: comentário real de seguidor real testará o fluxo em produção; monitorar
   tick.prospeccao no log e leads ig-* no funil após posts novos.
+## Ecossistema IA — Fase E (09/ago) — Corte de custos LLM + rotação de chave
+
+- PROBLEMA: consumo de créditos OpenRouter muito rápido (conta gastou ~$40.60; chave do
+  ecossistema $18.99, chave do whatsapp $10.31, ~$11 de uso externo não rastreado). O
+  usuário viu consumo com modelo caro gpt-5.6-sol ($5/M in, $30/M out).
+- INVESTIGAÇÃO: gpt-5.6-sol NÃO existe em nenhum arquivo do VPS (grep em todos os .js/.ts/
+  .env/.sh/.log/histórico). Modelos reais no servidor: barato=deepseek/deepseek-v4-flash
+  (o mais econômico), forte=anthropic/claude-sonnet-5 (usado em vendedor_ai.js treinar,
+  $2/M in $10/M out). Testes de imagem passados (flux-pro, gemini-3-pro-image) são caros.
+  Endpoint de gerações do OpenRouter mudou (exige id) -> não dá pra auditar por modelo via API.
+- DECISÃO (aplicada):
+  - LLM_MODEL_FORTE: anthropic/claude-sonnet-5 -> openai/gpt-5.6-terra (out $6/M, 40% mais barato).
+  - LLM_BUDGET_TOKENS_DIA: 100000 -> 30000 (corte de 70%).
+  - LLM_API_KEY rotacionada (nova chave gerada no painel, antiga pode ter vazado/uso externo).
+  - pm2 restart severino + ecosistema --update-env (releem o .env).
+- VALIDAÇÃO: nova chave ativa (auth/key usage=0), mas chamada real retorna 402
+  "Insufficient credits" -> a conta OpenRouter está ZERADA ($40 consumidos). Precisa
+  recarregar créditos no painel. Os processos seguem online (degradam p/ fallback
+  determinístico até ter saldo).
+- .env.backup: .env.pre-fasee-<timestamp>.
+- REGRA: manter LLM_BUDGET_TOKENS_DIA baixo; monitorar /auth/key (usage) semanalmente.
