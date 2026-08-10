@@ -124,6 +124,24 @@ function mediaIdDeUrl(url, dados) {
 }
 
 // ========== fluxo ==========
+// Abordagem do Outbound Strategist: resposta só vale se referenciar o que a
+// pessoa escreveu (sinal) + valor específico + CTA único de baixo atrito.
+function montarResposta(username, textoComentario, linkBot) {
+  const citacao = String(textoComentario || '')
+    .replace(/@\w+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
+  const abertura = citacao
+    ? `Sobre "${citacao}": é exatamente o que o painel acompanha todo dia. `
+    : '';
+  return (
+    `@${username} ${abertura}` +
+    `Testa grátis o painel de clima do Bitcoin: análise diária + sinais de operação na hora certa. ` +
+    `1 toque pra começar: ${linkBot} 🚀`
+  );
+}
+
 async function responderComentario(comentario, token, tokenCache) {
   const mediaUrl = comentario.mediaPermalink;
   const username = (comentario.from && (comentario.from.username || comentario.from.name)) || 'amigo';
@@ -136,9 +154,7 @@ async function responderComentario(comentario, token, tokenCache) {
   const code = gerarCodigo();
   const linkBot = `https://t.me/${BOT_USERNAME}?start=${code}`;
   // CTA curto (limite de comentários do IG) + sem link "externo" estranho.
-  const resposta =
-    `@${username} Obrigado! 🎯 Testa grátis o painel de clima do Bitcoin (sinais + análise diária). ` +
-    `Chama o bot: ${linkBot} 🚀`;
+  const resposta = montarResposta(username, comentario.text, linkBot);
 
   try {
     await grafPost(

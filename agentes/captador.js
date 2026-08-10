@@ -84,7 +84,8 @@ async function processar(evento) {
     const inicio = new Date(lead.retentorInicio).getTime();
     if (Date.now() - inicio < GAP_HORAS * 3600000) continue;
 
-    const assunto = 'BTC Weather Panel — receba seus sinais no Telegram 📲';
+    // Subject benefit-led e específico (Email Strategist): sinal de valor + 1 clique.
+    const assunto = 'Seu teste do BTC Weather Panel está pronto — sinais no Telegram 📲';
     const texto = templateConvite(lead, info);
     try {
       const ok = await canais.enviarEmail(lead.email, assunto, texto);
