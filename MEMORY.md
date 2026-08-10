@@ -383,3 +383,10 @@ ome, e 	elegramId (busca em data/notifications.json pelo email)
 - AÇÃO MANUAL NECESSÁRIA: gerar nova SMTP key em app.brevo.com (SMTP & API) e atualizar SMTP_PASS
   no /root/severino/.env + pm2 restart severino ecosistema --update-env.
 - OBS: retentor foi melhorado para oferecer mensal+anual (checkoutAnualUrl no produtos.json).
+
+## FIX SMTP Brevo (10/ago) — RESOLVIDO
+
+- Nova chave SMTP configurada no /root/severino/.env (SMTP_PASS atualizado, backup .env.pre-smtpfix-<ts>).
+- pm2 restart severino + ecosistema --update-env. AUTH OK ✓ e envio real confirmado (canais.enviarEmail → sucesso).
+- E-mail operacional de novo (captador, retentor, cobrador).
+- REGRA: se 535 Authentication failed reaparecer, é a chave Brevo expirada de novo → rotacionar no painel.
