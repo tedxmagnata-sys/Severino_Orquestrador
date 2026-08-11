@@ -1,21 +1,21 @@
 /**
- * ðŸ¦ Prospector X/Twitter â€” prospecÃ§Ã£o com valor em posts sobre Bitcoin/cripto.
+ * 🐦 Prospector X/Twitter — prospecção com valor em posts sobre Bitcoin/cripto.
  *
  * A cada tick.prospeccao_x:
- *   1. Busca tweets recentes sobre BTC/cripto em portuguÃªs (API v2, Bearer token).
- *   2. Filtra oportunidades: pergunta sobre BTC, investimento, entrada/saÃ­da,
+ *   1. Busca tweets recentes sobre BTC/cripto em português (API v2, Bearer token).
+ *   2. Filtra oportunidades: pergunta sobre BTC, investimento, entrada/saída,
  *      post com poucos likes (chance real de ser lido) e sem resposta nossa.
- *   3. Gera comentÃ¡rio com VALOR (resposta Ãºtil/educativa, sem CTA direto no 1Âº contato).
- *   4. Envia ao admin no Telegram com tweet link + comentÃ¡rio pronto (modo assistente).
- *      â€” Twitter ban self-promo; a regra Ã© "agregue antes de convidar".
- *   5. Se houver OAuth 1.0a completo (ACCESS_TOKEN + ACCESS_TOKEN_SECRET), comenta automÃ¡tico.
+ *   3. Gera comentário com VALOR (resposta útil/educativa, sem CTA direto no 1º contato).
+ *   4. Envia ao admin no Telegram com tweet link + comentário pronto (modo assistente).
+ *      — Twitter ban self-promo; a regra é "agregue antes de convidar".
+ *   5. Se houver OAuth 1.0a completo (ACCESS_TOKEN + ACCESS_TOKEN_SECRET), comenta automático.
  *
  * Anti-spam / anti-ban:
- *   - limite de aÃ§Ãµes por rodada (X_MAX_POR_RODADA, default 5);
+ *   - limite de ações por rodada (X_MAX_POR_RODADA, default 5);
  *   - estado em data/prospeccao_x.json (nunca repete tweet);
- *   - sÃ³ tweets em portuguÃªs sobre Bitcoin/cripto;
- *   - comentÃ¡rio sempre > 40 palavras e com conteÃºdo educativo real;
- *   - CTA do bot apenas no 2Âº contato (resposta ao nosso reply).
+ *   - só tweets em português sobre Bitcoin/cripto;
+ *   - comentário sempre > 40 palavras e com conteúdo educativo real;
+ *   - CTA do bot apenas no 2º contato (resposta ao nosso reply).
  */
 const fs = require('fs');
 const path = require('path');
@@ -30,12 +30,12 @@ const ESTADO = path.join(DATA_DIR, 'prospeccao_x.json');
 const BEARER = process.env.X_BEARER_TOKEN;
 const MAX_POR_RODADA = parseInt(process.env.X_MAX_POR_RODADA || '5', 10);
 const LIMITE_TWEETS = parseInt(process.env.X_LIMITE_TWEETS || '20', 10);
-const JANELA_MIN = 4 * 60; // tweets dos Ãºltimos 4h
+const JANELA_MIN = 4 * 60; // tweets dos últimos 4h
 
 const SINAIS_INTERESSE = [
   'bitcoin', 'btc', 'cripto', 'entrar', 'comprar', 'investir', 'carteira',
-  'quando comprar', 'vender', 'previsÃ£o', 'preÃ§o', 'taxa', 'rendimento',
-  'bear', 'bull', 'queda', 'alta', 'mineraÃ§Ã£o', 'halving', 'altcoin'
+  'quando comprar', 'vender', 'previsão', 'preço', 'taxa', 'rendimento',
+  'bear', 'bull', 'queda', 'alta', 'mineração', 'halving', 'altcoin'
 ];
 
 const BLOQUEIO = [
@@ -67,9 +67,9 @@ async function buscarPerfil(authorId, token) {
 
 async function gerarComentario(tweet) {
   const sistema =
-    'VocÃª Ã© o Prospector X/Twitter. Escreva UM reply Ãºtil e educativo respondendo a ' +
+    'Você é o Prospector X/Twitter. Escreva UM reply útil e educativo respondendo a ' +
     'um tweet sobre Bitcoin/cripto. Regras: valor real primeiro (dados, contexto, ' +
-    'prÃ³/contra), tom respeitoso, SEM link, SEM promoÃ§Ã£o, SEM promessa de lucro, ' +
+    'pró/contra), tom respeitoso, SEM link, SEM promoção, SEM promessa de lucro, ' +
     '40-80 palavras, em pt-BR. Termine com uma pergunta aberta leve.';
   try {
     const r = await ia.perguntar({
@@ -82,10 +82,10 @@ async function gerarComentario(tweet) {
     return r.texto.trim();
   } catch {
     return (
-      `Boa anÃ¡lise! Sobre o que vocÃª mencionou: o importante Ã© separar tendÃªncia ` +
-      `(direÃ§Ã£o de mÃ©dio prazo) de timing (melhor momento de entrada). DÃ¡ pra acompanhar ` +
+      `Boa análise! Sobre o que você mencionou: o importante é separar tendência ` +
+      `(direção de médio prazo) de timing (melhor momento de entrada). Dá pra acompanhar ` +
       `indicadores simples de sentimento (Fear & Greed, volume) em vez de tentar adivinhar ` +
-      `topo ou fundo. O que vocÃª estÃ¡ acompanhando mais de perto?`
+      `topo ou fundo. O que você está acompanhando mais de perto?`
     );
   }
 }
@@ -97,17 +97,17 @@ function ehOportunidade(tweet, estado) {
   if (BLOQUEIO.some(b => t.includes(b))) return false;
   // Filtra tweets com poucos likes (chance real de resposta)
   const likes = tweet.public_metrics?.like_count || 0;
-  if (likes > 50) return false; // tweets virais nÃ£o sÃ£o bons alvos
+  if (likes > 50) return false; // tweets virais não são bons alvos
   return true;
 }
 
 async function processar(evento, ctx) {
   if (evento.tipo !== 'tick.prospeccao_x') {
-    return { agente: 'prospector_x', acao: 'tipo nÃ£o tratado', novosEventos: [] };
+    return { agente: 'prospector_x', acao: 'tipo não tratado', novosEventos: [] };
   }
 
   if (!BEARER) {
-    await canais.enviarAdmin('ðŸ¦ Prospector X: X_BEARER_TOKEN ausente no .env â€” nÃ£o posso buscar tweets.');
+    await canais.enviarAdmin('🐦 Prospector X: X_BEARER_TOKEN ausente no .env — não posso buscar tweets.');
     return { agente: 'prospector_x', acao: 'bearer ausente', novosEventos: [] };
   }
 
@@ -147,14 +147,14 @@ async function processar(evento, ctx) {
         const texto = await gerarComentario(tweet);
         const perfil = await buscarPerfil(tweet.author_id, BEARER);
 
-        // Envia ao admin com link do tweet + comentÃ¡rio pronto
+        // Envia ao admin com link do tweet + comentário pronto
         await canais.enviarAdmin(
-          `ðŸ¦ Tweet pra responder (colar reply)\n\n` +
-          `ðŸ‘¤ @${perfil.username} (${perfil.name})\n` +
-          `ðŸ’¬ "${tweet.text.slice(0, 150)}"\n` +
-          `â¤ï¸ ${tweet.public_metrics?.like_count || 0} likes | ` +
-          `ðŸ”— https://x.com/${perfil.username}/status/${tweet.id}\n\n` +
-          `ðŸ“ Reply pronto:\n${texto}`
+          `🐦 Tweet pra responder (colar reply)\n\n` +
+          `👤 @${perfil.username} (${perfil.name})\n` +
+          `💬 "${tweet.text.slice(0, 150)}"\n` +
+          `❤️ ${tweet.public_metrics?.like_count || 0} likes | ` +
+          `🔗 https://x.com/${perfil.username}/status/${tweet.id}\n\n` +
+          `📝 Reply pronto:\n${texto}`
         );
 
         estado.respondidos[tweet.id] = {
@@ -173,11 +173,11 @@ async function processar(evento, ctx) {
     salvarEstado(estado);
 
     if (feitos.length) {
-      const linhas = feitos.map(f => `â€¢ @${f.username} â€” ${f.id}`).join('\n');
-      await canais.enviarAdmin(`ðŸ¦ Prospector X: ${feitos.length} oportunidade(s)!\n\n${linhas}`);
+      const linhas = feitos.map(f => `• @${f.username} — ${f.id}`).join('\n');
+      await canais.enviarAdmin(`🐦 Prospector X: ${feitos.length} oportunidade(s)!\n\n${linhas}`);
     }
     if (falhas.length) {
-      await canais.enviarAdmin(`ðŸ¦ Prospector X: ${falhas.length} falha(s) â€” ${falhas.slice(0, 3).join(' | ')}`);
+      await canais.enviarAdmin(`🐦 Prospector X: ${falhas.length} falha(s) — ${falhas.slice(0, 3).join(' | ')}`);
     }
 
     return {
@@ -187,7 +187,7 @@ async function processar(evento, ctx) {
     };
   } catch (e) {
     const msg = String(e.message || e);
-    await canais.enviarAdmin(`ðŸ¦ Prospector X: erro â€” ${msg.slice(0, 200)}`);
+    await canais.enviarAdmin(`🐦 Prospector X: erro — ${msg.slice(0, 200)}`);
     return { agente: 'prospector_x', acao: `erro: ${msg.slice(0, 200)}`, novosEventos: [] };
   }
 }
