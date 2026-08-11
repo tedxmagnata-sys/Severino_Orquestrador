@@ -14,7 +14,8 @@ const agentes = {
   observador: require('./agentes/observador'),
   captador: require('./agentes/captador'),
   prospector: require('./agentes/prospector'),
-  prospectorReddit: require('./agentes/prospector_reddit')
+  prospectorReddit: require('./agentes/prospector_reddit'),
+  prospectorX: require('./agentes/prospector_x')
 };
 
 const AGENTES = {
@@ -30,6 +31,7 @@ const AGENTES = {
   'tick.captura': 'captador',
   'tick.prospeccao': 'prospector',
   'tick.prospeccao_reddit': 'prospectorReddit',
+  'tick.prospeccao_x': 'prospectorX',
   'gerar.relatorio': 'analista',
   'relatorio.diario': 'estrategista',
   'campanha.nova': 'videasta',

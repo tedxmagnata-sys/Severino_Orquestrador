@@ -318,3 +318,12 @@ setInterval(() => {
     bus.postar({ tipo: 'tick.prospeccao_reddit', origem: 'orquestrador', produto: null, payload: {} });
   } catch {}
 }, PROSPECCAO_REDDIT_INTERVAL);
+
+// Tick de prospecção X/Twitter (Prospector X). Posta tick.prospeccao_x a cada
+// intervalo (default 5400s = 1h30min) para o agente buscar tweets e sugerir replies.
+const PROSPECCAO_X_INTERVAL = parseInt(process.env.ECOSISTEMA_PROSPECCAO_X_INTERVAL || '5400', 10) * 1000;
+setInterval(() => {
+  try {
+    bus.postar({ tipo: 'tick.prospeccao_x', origem: 'orquestrador', produto: null, payload: {} });
+  } catch {}
+}, PROSPECCAO_X_INTERVAL);
