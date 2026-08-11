@@ -309,12 +309,3 @@ setInterval(() => {
     bus.postar({ tipo: 'tick.prospeccao', origem: 'orquestrador', produto: null, payload: {} });
   } catch {}
 }, PROSPECCAO_INTERVAL);
-// Tick de prospecção Reddit (Prospector Reddit). Posta tick.prospeccao_reddit a cada
-// intervalo (default 5400s = 1h30min) para o agente varrer posts novos e comentar
-// com valor. Intervalo configurável via ECOSISTEMA_PROSPECCAO_REDDIT_INTERVAL.
-const PROSPECCAO_REDDIT_INTERVAL = parseInt(process.env.ECOSISTEMA_PROSPECCAO_REDDIT_INTERVAL || '5400', 10) * 1000;
-setInterval(() => {
-  try {
-    bus.postar({ tipo: 'tick.prospeccao_reddit', origem: 'orquestrador', produto: null, payload: {} });
-  } catch {}
-}, PROSPECCAO_REDDIT_INTERVAL);

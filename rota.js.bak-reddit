@@ -13,8 +13,7 @@ const agentes = {
   videasta: require('./agentes/videasta'),
   observador: require('./agentes/observador'),
   captador: require('./agentes/captador'),
-  prospector: require('./agentes/prospector'),
-  prospectorReddit: require('./agentes/prospector_reddit')
+  prospector: require('./agentes/prospector')
 };
 
 const AGENTES = {
@@ -29,7 +28,6 @@ const AGENTES = {
   'tick.followups': 'retentor',
   'tick.captura': 'captador',
   'tick.prospeccao': 'prospector',
-  'tick.prospeccao_reddit': 'prospectorReddit',
   'gerar.relatorio': 'analista',
   'relatorio.diario': 'estrategista',
   'campanha.nova': 'videasta',
