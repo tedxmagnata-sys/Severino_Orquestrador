@@ -97,12 +97,13 @@ async function publicarNoPostiz(integration, texto, media) {
   return { rede: integration.rede, resposta: body.slice(0, 120) };
 }
 
-function legendaFinal(legenda, produtoId) {
+function legendaFinal(legenda, produtoId, linkNaBio) {
   const info = produtos[produtoId] || produtos.btcweather;
   const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
+  const link = linkNaBio ? 'link na bio 👆' : checkout;
   let txt = String(legenda || '')
-    .replace(/\[link\]/gi, checkout)
-    .replace(/\{\{?CHECKOUT\}?\}/gi, checkout)
+    .replace(/\[link\]/gi, link)
+    .replace(/\{\{?CHECKOUT\}?\}/gi, link)
     .trim();
   if (txt.length > 240) txt = txt.slice(0, 237) + '…';
   return txt;
@@ -135,10 +136,10 @@ async function processar(evento, ctx) {
     return { agente: 'observador', acao: `vídeo ${videoId} já publicado`, novosEventos: [] };
   }
 
-  const textoX = legendaFinal((video.roteiro && video.roteiro.legenda) || p.legenda || '', produtoId);
+  const textoX = legendaFinal((video.roteiro && video.roteiro.legenda) || p.legenda || '', produtoId, true);
   const hashtags = (video.roteiro && video.roteiro.hashtags) || p.hashtags || '';
   const hashtagsParte = hashtags ? '\n\n' + hashtags : '';
-  const textoIG = textoX + hashtagsParte;
+  const textoIG = legendaFinal((video.roteiro && video.roteiro.legenda) || p.legenda || '', produtoId, false) + hashtagsParte;
 
   const resultados = previas.slice();
   try {

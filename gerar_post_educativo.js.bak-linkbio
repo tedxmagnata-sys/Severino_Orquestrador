@@ -73,7 +73,7 @@ function montarX(clima, tema) {
     txts.push(`4H ${p4h.clima || '--'} + 1M ${(p['1M'] && p['1M'].clima) || '--'} → ${(p['1M'] && p['1M'].clima === 'SOBREVENDA') ? 'sobrevenda acumulando' : 'transição'}. Ciclo: medo é contexto, RSI confirmação, níveis o palco.`);
   }
 
-  const cta = `\n\n📚 7 dias grátis para aprender na prática → link na bio 👆\n\n#Bitcoin #BTC #Trading #Investimento`;
+  const cta = `\n\n📚 7 dias grátis para aprender na prática: https://btcweatherpanel.com/oferta\n\n#Bitcoin #BTC #Trading #Investimento`;
   return txts.join('\n\n') + cta;
 }
 
