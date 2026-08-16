@@ -16,6 +16,7 @@ async function processar(evento, ctx) {
   const nome = p.nome || 'trader';
   const produto = evento.produto || p.produto || 'btcweather';
   const telegramId = p.telegramId || null;
+  const slug = p.slug || null;
   const info = produtos[produto] || produtos.btcweather;
   const checkoutUrl = (info && info.checkoutUrl) || null;
   const valor = (info && info.plano && info.plano.preco) ? `R$${info.plano.preco}` : '';
@@ -70,7 +71,7 @@ async function processar(evento, ctx) {
     novosEventos: [{
       tipo: 'venda.proposta',
       produto,
-      payload: { leadId, nome, telegramId, produto, aceito: true, compraDireta: !!jaTestou }
+      payload: { leadId, nome, telegramId, produto, aceito: true, compraDireta: !!jaTestou, slug }
     }]
   };
 }

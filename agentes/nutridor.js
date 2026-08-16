@@ -15,6 +15,7 @@ async function processar(evento, ctx) {
   const nome = p.nome || 'trader';
   const produto = evento.produto || p.produto || 'btcweather';
   const telegramId = p.telegramId || null;
+  const slug = p.slug || null;
   const info = produtos[produto] || produtos.btcweather;
 
   const lead = funil.getLead(leadId);
@@ -48,7 +49,7 @@ async function processar(evento, ctx) {
       novosEventos: [{
         tipo: 'lead.quente',
         produto,
-        payload: { leadId, nome, telegramId, produto }
+        payload: { leadId, nome, telegramId, produto, slug }
       }]
     };
   }

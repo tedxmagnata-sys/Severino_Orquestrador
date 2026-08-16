@@ -18,6 +18,7 @@ async function processar(evento, ctx) {
   const telegramId = p.telegramId || p.chatId || null;
   const contexto = p.contexto || 'sem contexto adicional';
   const origem = evento.origem || 'desconhecida';
+  const slug = p.slug || null;
 
   const existente = funil.getLead(leadId);
   const jaCliente = !!(existente && (JA_CLIENTE.includes(existente.status) || existente.trialCode));
@@ -70,7 +71,7 @@ async function processar(evento, ctx) {
   if (!lista.includes(decisao)) lista = [decisao, ...lista];
   else if (lista[0] !== decisao) lista = [decisao, ...lista.filter(pp => pp !== decisao)];
 
-  funil.upsertLead({ leadId, nome, telegramId, produto: decisao, produtos: lista, score, razao, status: 'qualificado', contexto, origem, crossSell: jaCliente });
+  funil.upsertLead({ leadId, nome, telegramId, produto: decisao, produtos: lista, score, razao, status: 'qualificado', contexto, origem, crossSell: jaCliente, slug });
 
   if (score <= 1) {
     return { agente: 'qualificador', acao: `frio (score ${score}) — sem oferta`, novosEventos: [] };
@@ -82,7 +83,7 @@ async function processar(evento, ctx) {
     novosEventos: [{
       tipo: 'lead.qualificado',
       produto: decisao,
-      payload: { leadId, nome, telegramId, score, produto: decisao, produtos: lista, razao }
+      payload: { leadId, nome, telegramId, score, produto: decisao, produtos: lista, razao, slug }
     }]
   };
 }

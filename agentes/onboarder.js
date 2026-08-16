@@ -7,6 +7,7 @@
 const funil = require('../funil');
 const canais = require('../canais');
 const produtos = require('../produtos.json');
+const SECRET = process.env.SECRET_KEY || '';
 
 async function processar(evento, ctx) {
   const p = evento.payload || {};
@@ -14,6 +15,7 @@ async function processar(evento, ctx) {
   const nome = p.nome || 'cliente';
   const produto = evento.produto || p.produto || process.env.ECOSYSTEM_PRODUTO_PADRAO || 'btcweather';
   const telegramId = p.telegramId || null;
+  const slug = p.slug || null;
 
   const info = produtos[produto];
   const ativacao = info && info.ativacao;
@@ -33,10 +35,10 @@ async function processar(evento, ctx) {
   let mensagem = null;
   try {
     if (ativacao.tipo === 'trial') {
-      const resp = await fetch(ativacao.endpoint, { method: 'POST', headers: { 'x-ecosystem': '1' } });
+      const resp = await fetch(ativacao.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-ecosystem': '1', 'x-admin-secret': SECRET }, body: slug ? JSON.stringify({ slug }) : undefined });
       const data = await resp.json();
       if (data && data.ok && data.code) code = data.code;
-      link = ativacao.linkTemplate.replace('{code}', code || '');
+      link = ativacao.linkTemplate.replace('{code}', code || '').replace('{slug}', slug || '');
     } else if (ativacao.tipo === 'link') {
       link = ativacao.link;
     }

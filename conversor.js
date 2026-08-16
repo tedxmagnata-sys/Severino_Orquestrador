@@ -25,7 +25,7 @@ function api(method, endpoint, body) {
   return new Promise((resolve, reject) => {
     const data = body ? JSON.stringify(body) : null;
     const req = http.request({
-      hostname: '127.0.0.1', port: 3334, path: endpoint, method,
+      hostname: '127.0.0.1', port: 3340, path: endpoint, method,
       headers: {
         'Content-Type': 'application/json',
         'X-Admin-Secret': SECRET,

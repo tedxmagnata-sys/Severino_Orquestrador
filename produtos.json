@@ -27,7 +27,7 @@
     ],
     "ativacao": {
       "tipo": "trial",
-      "endpoint": "http://127.0.0.1:3334/api/trial",
+      "endpoint": "http://127.0.0.1:3340/api/trial",
       "linkTemplate": "https://btcweatherpanel.com/btc-weather-panel/?code={code}",
       "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAbra o link, use o código e aproveite 7 dias VIP do BTC Weather Panel. Qualquer dúvida, me chama!"
     },
@@ -89,7 +89,7 @@
     "ativacao": {
       "tipo": "trial",
       "endpoint": "http://127.0.0.1:334X/api/trial",
-      "linkTemplate": "https://app.<slug>.severinobot.com/?code={code}",
+      "linkTemplate": "https://severinobot.com/severino-ia/?code={code}",
       "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAproveite 7 dias VIP. Qualquer dúvida, me chama!"
     }
   },
@@ -124,7 +124,7 @@
     "ativacao": {
       "tipo": "trial",
       "endpoint": "http://127.0.0.1:3341/api/trial",
-      "linkTemplate": "https://app.agendabarber.severinobot.com/?code={code}",
+      "linkTemplate": "https://severinobot.com/agendabarber/u/{slug}?code={code}",
       "mensagem": "🎉 {nome}, seu Severino Barber esta ativo!\n\nSeu codigo: <b>{code}</b>\n👉 {link}\n\nMontei sua pagina e seu roteiro de automacao. Qualquer duvida, me chama!"
     },
     "planos": [
