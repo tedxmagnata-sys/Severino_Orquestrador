@@ -16,6 +16,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const bus = require('./bus');
 const rota = require('./rota');
 const ia = require('./ia');
+const guardiao = require('./guardiao_saldo');
 const produtos = require('./produtos.json');
 
 const MAX_HOPS = 5;
@@ -116,6 +117,23 @@ async function processarEvento(ev) {
     return;
   }
   const ctx = { bus, ia, orcamento: ia.lerOrcamento() };
+
+  // 🛡️ Portão do Guardião de Saldos: antes de gastar crédito (LLM/MuAPI),
+  // confirma que há saldo suficiente. Se crítico, bloqueia o evento e avisa.
+  const gastaMuapi = ev.tipo === 'campanha.nova' || ev.tipo === 'tick.conteudo';
+  const gastaLLM = [
+    'tick.prospeccao', 'tick.prospeccao_reddit', 'tick.prospeccao_x',
+    'gerar.relatorio', 'tick.followups', 'tick.captura', 'tick.renovacao'
+  ].includes(ev.tipo);
+  const evGasta = gastaMuapi || gastaLLM;
+  if (evGasta) {
+    const gate = await guardiao.garantirSaldo(gastaMuapi ? 'muapi' : 'openrouter');
+    if (gate.bloqueado) {
+      bus.atualizarEstado(ev.id, 'bloqueado', { agente: 'guardiao', motivo: 'saldo crítico', acao: 'gasto bloqueado por saldo' });
+      return;
+    }
+  }
+
   const r = await rota.processar(ev, ctx);
   if (r.novosEventos && r.novosEventos.length) {
     for (const novo of r.novosEventos) {
@@ -327,3 +345,21 @@ setInterval(() => {
     bus.postar({ tipo: 'tick.prospeccao_x', origem: 'orquestrador', produto: null, payload: {} });
   } catch {}
 }, PROSPECCAO_X_INTERVAL);
+
+// 🛡️ Tick do Guardião de Saldos: verifica crédito a cada SALDO_TICK_INTERVAL
+// (default 3600s = 1h) e posta tick.saldo. Sempre antes de gastar, o portão
+// dentro de processarEvento já protege cada evento que consome crédito.
+const SALDO_TICK_INTERVAL = parseInt(process.env.ECOSISTEMA_SALDO_TICK_INTERVAL || '3600', 10) * 1000;
+setInterval(() => {
+  try {
+    bus.postar({ tipo: 'tick.saldo', origem: 'orquestrador', produto: null, payload: {} });
+  } catch {}
+}, SALDO_TICK_INTERVAL);
+// Resumo diário do guardião: posta saldo.resumo a cada 24h com o saldo de todas
+// as plataformas. Reaproveita o relógio do relatório diário (24h).
+const SALDO_RESUMO_INTERVAL = parseInt(process.env.ECOSISTEMA_SALDO_RESUMO_INTERVAL || '86400', 10) * 1000;
+setInterval(() => {
+  try {
+    bus.postar({ tipo: 'saldo.resumo', origem: 'orquestrador', produto: null, payload: {} });
+  } catch {}
+}, SALDO_RESUMO_INTERVAL);

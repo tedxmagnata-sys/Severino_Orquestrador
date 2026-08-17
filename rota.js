@@ -15,7 +15,8 @@ const agentes = {
   captador: require('./agentes/captador'),
   prospector: require('./agentes/prospector'),
   prospectorReddit: require('./agentes/prospector_reddit'),
-  prospectorX: require('./agentes/prospector_x')
+  prospectorX: require('./agentes/prospector_x'),
+  guardiao: require('./agentes/guardiao')
 };
 
 const AGENTES = {
@@ -36,7 +37,9 @@ const AGENTES = {
   'relatorio.diario': 'estrategista',
   'campanha.nova': 'videasta',
   'tick.conteudo': 'videasta',
-  'conteudo.pronto': 'observador'
+  'conteudo.pronto': 'observador',
+  'tick.saldo': 'guardiao',
+  'saldo.resumo': 'guardiao'
 };
 
 function agenteDo(tipo) {
