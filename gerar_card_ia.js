@@ -212,6 +212,8 @@ function gerarFundoIA() {
     usouIA = true;
     // composição: fundo IA + overlay de dados
     const overlay = Buffer.from(svgOverlay());
+    const overlayPNG = await sharp(overlay).png().toBuffer();
+    fs.writeFileSync(path.join(DATA_DIR, 'overlay_today.png'), overlayPNG);
     const fundo = await sharp(FUNDO_IA).resize(W, H, { fit: 'cover' }).toBuffer();
     const out = await sharp(fundo).composite([{ input: overlay, top: 0, left: 0 }]).png().toBuffer();
     fs.writeFileSync(OUT_PNG, out);

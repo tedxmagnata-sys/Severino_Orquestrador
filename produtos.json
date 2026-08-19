@@ -1,166 +1,167 @@
 {
-  "btcweather": {
-    "id": "btcweather",
-    "slug": "btcweather-panel",
-    "nome": "BTC Weather Panel",
-    "url": "https://btcweatherpanel.com/btc-weather-panel/",
-    "subdominio": "app.btcweatherpanel.com",
-    "caminho": "/root/btc-weather-panel/",
-    "porta": 3334,
-    "pm2": "severino",
-    "status": "ativo",
-    "plano": {
-      "preco": 47,
-      "moeda": "BRL",
-      "periodo": "mensal",
-      "trialDias": 7
-    },
-    "checkout": "Kiwify",
-    "checkoutUrl": "https://pay.kiwify.com.br/ffphj4e",
-    "canal": "telegram",
-    "persona": "Investidor de cripto que quer melhorar timing de entrada e saída sem depender de análise técnica complexa.",
-    "argumentos": [
-      "Sinais objetivos de tendência para BTC",
-      "7 dias grátis sem cartão",
-      "R$47/mês, cancela quando quiser",
-      "Garantia de satisfação (reembolso sem perguntas)"
-    ],
-    "ativacao": {
-      "tipo": "trial",
-      "endpoint": "http://127.0.0.1:3340/api/trial",
-      "linkTemplate": "https://btcweatherpanel.com/btc-weather-panel/?code={code}",
-      "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAbra o link, use o código e aproveite 7 dias VIP do BTC Weather Panel. Qualquer dúvida, me chama!"
-    },
-    "checkoutAnualUrl": "https://pay.kiwify.com.br/vim8bDb"
+ "btcweather": {
+  "id": "btcweather",
+  "slug": "btcweather-panel",
+  "nome": "BTC Weather Panel",
+  "url": "https://btcweatherpanel.com/btc-weather-panel/",
+  "subdominio": "app.btcweatherpanel.com",
+  "caminho": "/root/btc-weather-panel/",
+  "porta": 3334,
+  "pm2": "severino",
+  "status": "ativo",
+  "plano": {
+   "preco": 47,
+   "moeda": "BRL",
+   "periodo": "mensal",
+   "trialDias": 7
   },
-  "severino-consultor-ia": {
-    "id": "severino-consultor-ia",
-    "slug": "severino-ia",
-    "nome": "SeverinoConsultorIA",
-    "url": "https://btcweatherpanel.com/severino-ia/",
-    "subdominio": "app.severino-ia.severinobot.com",
-    "caminho": "/root/.openclaw/canvas/",
-    "porta": null,
-    "pm2": null,
-    "status": "teste",
-    "plano": {
-      "preco": null,
-      "moeda": "BRL",
-      "periodo": null,
-      "status": "teste"
-    },
-    "checkout": null,
-    "canal": "telegram",
-    "persona": "Empreendedor/CLT que quer respostas de consultoria estratégica 24/7 por um custo acessível.",
-    "argumentos": [
-      "Consultoria IA 24/7",
-      "Em validação (teste gratuito)"
-    ],
-    "ativacao": {
-      "tipo": "link",
-      "link": "https://btcweatherpanel.com/severino-ia/",
-      "mensagem": "🎉 Seu acesso ao SeverinoConsultorIA está liberado, {nome}!\n👉 {link}\n\nO produto está em validação (teste gratuito). Qualquer dúvida, me chama!"
-    }
+  "checkout": "Kiwify",
+  "checkoutUrl": "https://pay.kiwify.com.br/ffphj4e",
+  "canal": "telegram",
+  "persona": "Investidor de cripto que quer melhorar timing de entrada e saída sem depender de análise técnica complexa.",
+  "argumentos": [
+   "Sinais objetivos de tendência para BTC",
+   "7 dias grátis sem cartão",
+   "R$47/mês, cancela quando quiser",
+   "Garantia de satisfação (reembolso sem perguntas)"
+  ],
+  "ativacao": {
+   "tipo": "trial",
+   "endpoint": "http://127.0.0.1:3340/api/trial",
+   "linkTemplate": "https://btcweatherpanel.com/btc-weather-panel/?code={code}",
+   "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAbra o link, use o código e aproveite 7 dias VIP do BTC Weather Panel. Qualquer dúvida, me chama!"
   },
-  "padrao-produto-novo": {
-    "id": "padrao-produto-novo",
-    "slug": "produto-novo",
-    "nome": "Novo Produto",
-    "url": "https://app.<slug>.severinobot.com/",
-    "subdominio": "app.<slug>.severinobot.com",
-    "caminho": "/root/severino/produtos/<slug>/",
-    "porta": 3340,
-    "pm2": "produto-<slug>",
-    "status": "ideia",
-    "plano": {
-      "preco": 0,
-      "moeda": "BRL",
-      "periodo": "mensal",
-      "trialDias": 7
-    },
-    "checkout": "Kiwify",
-    "checkoutUrl": "https://pay.kiwify.com.br/",
-    "canal": "telegram",
-    "persona": "Descreva a persona aqui.",
-    "argumentos": [
-      "Benefício 1",
-      "Benefício 2"
-    ],
-    "ativacao": {
-      "tipo": "trial",
-      "endpoint": "http://127.0.0.1:334X/api/trial",
-      "linkTemplate": "https://severinobot.com/severino-ia/?code={code}",
-      "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAproveite 7 dias VIP. Qualquer dúvida, me chama!"
-    }
+  "checkoutAnualUrl": "https://pay.kiwify.com.br/vim8bDb"
+ },
+ "severino-consultor-ia": {
+  "id": "severino-consultor-ia",
+  "slug": "severino-ia",
+  "nome": "SeverinoConsultorIA",
+  "url": "https://btcweatherpanel.com/severino-ia/",
+  "subdominio": "app.severino-ia.severinobot.com",
+  "caminho": "/root/.openclaw/canvas/",
+  "porta": null,
+  "pm2": null,
+  "status": "teste",
+  "plano": {
+   "preco": null,
+   "moeda": "BRL",
+   "periodo": null,
+   "status": "teste"
   },
-  "agendabarber": {
-    "id": "agendabarber",
-    "slug": "agendabarber",
-    "nome": "Severino Barber",
-    "url": "https://app.agendabarber.severinobot.com/",
-    "caminho": "/root/severino/produtos/agendabarber/",
-    "porta": 3341,
-    "pm2": "produto-agendabarber",
-    "status": "validacao",
-    "moeda": "USD",
-    "cotacaoApi": "https://economia.awesomeapi.com.br/json/last/USD-BRL",
-    "plano": {
-      "preco": 10,
-      "moeda": "USD",
-      "periodo": "mensal",
-      "trialDias": 7
-    },
-    "checkout": "Kiwify",
-    "checkoutUrl": "https://pay.kiwify.com.br/",
-    "canal": "telegram",
-    "persona": "Dono de barbearia (microempreendedor, 1-3 barbeiros) que perde cliente por nao ter presenca digital nem agendamento online; opera via WhatsApp.",
-    "argumentos": [
-      "Conversa com o dono e monta o site com os dados reais da barbearia",
-      "US/mes (~R\\, cotacao do dia) - menos que 1 corte perdido por mes",
-      "7 dias gratis, sem cartao",
-      "Lembretes e follow-ups automaticos (no-show cai ~50%)",
-      "Garantia de satisfacao (reembolso sem perguntas)"
-    ],
-    "ativacao": {
-      "tipo": "trial",
-      "endpoint": "http://127.0.0.1:3341/api/trial",
-      "linkTemplate": "https://severinobot.com/agendabarber/u/{slug}?code={code}",
-      "mensagem": "🎉 {nome}, seu Severino Barber esta ativo!\n\nSeu codigo: <b>{code}</b>\n👉 {link}\n\nMontei sua pagina e seu roteiro de automacao. Qualquer duvida, me chama!"
-    },
-    "planos": [
-      {
-        "nome": "Basico",
-        "preco": 10,
-        "moeda": "USD",
-        "destaque": false,
-        "automatizacoes": []
-      },
-      {
-        "nome": "Profissional",
-        "preco": 20,
-        "moeda": "USD",
-        "destaque": true,
-        "automatizacoes": [
-          "lembrete",
-          "followup",
-          "pos-corte"
-        ]
-      },
-      {
-        "nome": "Dominante",
-        "preco": 40,
-        "moeda": "USD",
-        "destaque": false,
-        "automatizacoes": [
-          "lembrete",
-          "followup",
-          "pos-corte",
-          "horario-vago",
-          "post-instagram",
-          "indicacao",
-          "relatorio"
-        ]
-      }
-    ]
+  "checkout": null,
+  "canal": "telegram",
+  "persona": "Empreendedor/CLT que quer respostas de consultoria estratégica 24/7 por um custo acessível.",
+  "argumentos": [
+   "Consultoria IA 24/7",
+   "Em validação (teste gratuito)"
+  ],
+  "ativacao": {
+   "tipo": "link",
+   "link": "https://btcweatherpanel.com/severino-ia/",
+   "mensagem": "🎉 Seu acesso ao SeverinoConsultorIA está liberado, {nome}!\n👉 {link}\n\nO produto está em validação (teste gratuito). Qualquer dúvida, me chama!"
   }
+ },
+ "padrao-produto-novo": {
+  "id": "padrao-produto-novo",
+  "slug": "produto-novo",
+  "nome": "Novo Produto",
+  "url": "https://app.<slug>.severinobot.com/",
+  "subdominio": "app.<slug>.severinobot.com",
+  "caminho": "/root/severino/produtos/<slug>/",
+  "porta": 3340,
+  "pm2": "produto-<slug>",
+  "status": "ideia",
+  "plano": {
+   "preco": 0,
+   "moeda": "BRL",
+   "periodo": "mensal",
+   "trialDias": 7
+  },
+  "checkout": "Kiwify",
+  "checkoutUrl": "https://pay.kiwify.com.br/",
+  "canal": "telegram",
+  "persona": "Descreva a persona aqui.",
+  "argumentos": [
+   "Benefício 1",
+   "Benefício 2"
+  ],
+  "ativacao": {
+   "tipo": "trial",
+   "endpoint": "http://127.0.0.1:334X/api/trial",
+   "linkTemplate": "https://severinobot.com/severino-ia/?code={code}",
+   "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAproveite 7 dias VIP. Qualquer dúvida, me chama!"
+  }
+ },
+ "agendabarber": {
+  "id": "agendabarber",
+  "slug": "agendabarber",
+  "nome": "CortaFila",
+  "url": "https://agendabarber.severinobot.com/",
+  "caminho": "/root/severino/produtos/agendabarber/",
+  "porta": 3341,
+  "pm2": "produto-agendabarber",
+  "status": "validacao",
+  "moeda": "USD",
+  "cotacaoApi": "https://economia.awesomeapi.com.br/json/last/USD-BRL",
+  "plano": {
+   "preco": 10,
+   "moeda": "USD",
+   "periodo": "mensal",
+   "trialDias": 7
+  },
+  "checkout": "Kiwify",
+  "checkoutUrl": "https://pay.kiwify.com.br/",
+  "canal": "telegram",
+  "persona": "Dono de barbearia (microempreendedor, 1-3 barbeiros) que perde cliente por nao ter presenca digital nem agendamento online; opera via WhatsApp.",
+  "argumentos": [
+   "Conversa com o dono e monta o site com os dados reais da barbearia",
+   "US$10/mes (~R$52, cotacao do dia) - menos que 1 corte perdido por mes",
+   "7 dias gratis, sem cartao",
+   "Lembretes e follow-ups automaticos (no-show cai ~50%)",
+   "Garantia de satisfacao (reembolso sem perguntas)"
+  ],
+  "ativacao": {
+   "tipo": "trial",
+   "endpoint": "http://127.0.0.1:3341/api/trial",
+   "linkTemplate": "https://agendabarber.severinobot.com/u/{slug}?code={code}",
+   "mensagem": "?? {nome}, seu CortaFila esta ativo!\n\nSeu codigo: <b>{code}</b>\n?? {link}\n\nMontei sua pagina e seu roteiro de automacao. Qualquer duvida, me chama!"
+  },
+  "planos": [
+   {
+    "nome": "Basico",
+    "preco": 10,
+    "moeda": "USD",
+    "destaque": false,
+    "automatizacoes": []
+   },
+   {
+    "nome": "Profissional",
+    "preco": 20,
+    "moeda": "USD",
+    "destaque": true,
+    "automatizacoes": [
+     "lembrete",
+     "followup",
+     "pos-corte"
+    ]
+   },
+   {
+    "nome": "Dominante",
+    "preco": 40,
+    "moeda": "USD",
+    "destaque": false,
+    "automatizacoes": [
+     "lembrete",
+     "followup",
+     "pos-corte",
+     "horario-vago",
+     "post-instagram",
+     "indicacao",
+     "relatorio"
+    ]
+   }
+  ],
+  "linkTemplate": "https://agendabarber.severinobot.com/u/{slug}?code={code}"
+ }
 }
