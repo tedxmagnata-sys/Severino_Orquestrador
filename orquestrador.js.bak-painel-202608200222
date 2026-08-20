@@ -111,103 +111,6 @@ function salvarStatus(extra = {}) {
   } catch {}
 }
 
-// ========== PAINEL app.severinobot.com ==========
-const PAINEL_HTML = path.join(__dirname, 'painel', 'index.html');
-const DATA_SEVERINO = path.join(__dirname, '..', 'data');
-
-function catalogoPainel() {
-  return Object.values(produtos)
-    .filter((p) => p.id !== 'padrao-produto-novo')
-    .map((p) => ({
-      id: p.id, nome: p.nome, slug: p.slug, url: p.url, status: p.status,
-      plano: p.plano || null, checkoutUrl: p.checkoutUrl || null,
-      checkoutAnualUrl: p.checkoutAnualUrl || null,
-      argumentos: p.argumentos || []
-    }));
-}
-
-function kpis() {
-  let orc = { dia: null, tokens: 0, chamadas: 0 };
-  try { orc = ia.lerOrcamento(); } catch {}
-
-  let leads = [], compras = [], reembolsos = [];
-  try {
-    const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'funil.json'), 'utf8'));
-    leads = Object.values(d.leads || {});
-    compras = d.compras || [];
-    reembolsos = d.reembolsos || [];
-  } catch {}
-  const porStatus = {};
-  leads.forEach((l) => { porStatus[l.status] = (porStatus[l.status] || 0) + 1; });
-  const pagos = porStatus.pago || 0;
-  const receita = compras.reduce((s, c) => s + (Number(c.value) || 0), 0);
-  const hoje = new Date().toISOString().slice(0, 10);
-  const vendasHoje = compras.filter((c) => (c.ts || '').slice(0, 10) === hoje).length;
-
-  let licencasTotal = 0, licencasAtivas = 0;
-  try {
-    const lic = JSON.parse(fs.readFileSync(path.join(DATA_SEVERINO, 'licenses.json'), 'utf8'));
-    const arr = Object.values(lic || {});
-    const agora = Date.now();
-    licencasTotal = arr.length;
-    licencasAtivas = arr.filter((x) => x && x.expiresAt && new Date(x.expiresAt).getTime() > agora).length;
-  } catch {}
-
-  let telegram = 0;
-  try {
-    const n = JSON.parse(fs.readFileSync(path.join(DATA_SEVERINO, 'notifications.json'), 'utf8'));
-    telegram = Object.keys(n || {}).length;
-  } catch {}
-
-  let st = {};
-  try { st = JSON.parse(fs.readFileSync(STATUS, 'utf8')); } catch {}
-
-  const eventos = bus.ultimosEventos(12);
-  let saldoOpenRouter = null, saldoMuapi = null;
-  for (let i = eventos.length - 1; i >= 0; i--) {
-    const ev = eventos[i];
-    if (ev.tipo === 'tick.saldo' && ev.acao) {
-      const m1 = ev.acao.match(/openrouter:\s*(US\$[\d.]+)/i);
-      const m2 = ev.acao.match(/muapi:\s*(US\$[\d.]+)/i);
-      if (m1) saldoOpenRouter = m1[1];
-      if (m2) saldoMuapi = m2[1];
-      if (saldoOpenRouter || saldoMuapi) break;
-    }
-  }
-
-  const leadsRecentes = leads
-    .slice()
-    .sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''))
-    .slice(0, 12)
-    .map((l) => ({ criadoEm: l.criadoEm, status: l.status, nome: l.nome || null, email: l.email || null }));
-
-  return {
-    ok: true,
-    agora: new Date().toISOString(),
-    vendas: {
-      total: compras.length,
-      receitaTotal: Math.round(receita * 100) / 100,
-      hoje: vendasHoje,
-      reembolsos: reembolsos.length,
-      licencasTotal, licencasAtivas
-    },
-    leads: {
-      total: leads.length, porStatus, pagos,
-      conversao: leads.length ? Math.round((pagos / leads.length) * 100) : 0,
-      telegram
-    },
-    custos: {
-      dia: orc.dia, chamadas: orc.chamadas, tokens: orc.tokens,
-      custoEstimado: ((orc.tokens || 0) / 1000000) * (parseFloat(process.env.LLM_CUSTO_POR_MILHAO || '0.30')),
-      saldoOpenRouter, saldoMuapi
-    },
-    sistema: { pendentes: (bus.contar() || {}).pendentes || 0, ultimaRodada: st.ultimaRodada || null },
-    leadsRecentes,
-    eventosRecentes: eventos.map((e) => ({ ts: e.ts, tipo: e.tipo, agente: e.agente || null, acao: e.acao || '', estado: e.estado })),
-    produtos: catalogoPainel()
-  };
-}
-
 async function processarEvento(ev) {
   if (ev.hops >= MAX_HOPS) {
     bus.atualizarEstado(ev.id, 'falha', { erro: 'max_hops' });
@@ -305,27 +208,8 @@ http
       return res.end(TRANSPARENCIA_HTML);
     }
 
-    // ========== PAINEL app.severinobot.com (público) ==========
-    if (method === 'GET' && (rawUrl === '/' || rawUrl === '/painel' || rawUrl === '/painel.html' || rawUrl === '/index.html')) {
-      try {
-        const html = fs.readFileSync(PAINEL_HTML, 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-        return res.end(html);
-      } catch (e) {
-        return json(res, { error: 'painel nao encontrado' }, 404);
-      }
-    }
-    if (method === 'GET' && rawUrl === '/api/ecosystem/painel/catalogo') {
-      return json(res, { ok: true, produtos: catalogoPainel() });
-    }
-
     if (!autenticado(req)) {
       return json(res, { error: 'Unauthorized' }, 401);
-    }
-
-    // ========== PAINEL app.severinobot.com (admin) ==========
-    if (method === 'GET' && rawUrl === '/api/ecosystem/painel/kpis') {
-      return json(res, kpis());
     }
 
     // GET /health — healthcheck do processo
