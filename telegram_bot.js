@@ -17,7 +17,7 @@ function savePendingReplies(arr) {
 function postarLeadNovo(payload) {
   return new Promise((resolve) => {
     const data = JSON.stringify({ tipo: 'lead.novo', origem: 'telegram', produto: process.env.ECOSYSTEM_PRODUTO_PADRAO || 'btcweather', payload });
-    const opts = { hostname: '127.0.0.1', port: parseInt(process.env.ECOSISTEMA_PORT || '3335', 10), path: '/api/ecosystem/enviar', method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': process.env.SECRET_KEY || '', 'Content-Length': Buffer.byteLength(data) } };
+    const opts = { hostname: '127.0.0.1', port: parseInt(process.env.ECOSISTEMA_PORT || '3335', 10), path: '/api/ecosystem/enviar', method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': process.env.SECRET_KEY || '', 'X-Write-Secret': process.env.WRITE_SECRET || '', 'Content-Length': Buffer.byteLength(data) } };
     const req = http.request(opts, (res) => { res.resume(); resolve(res.statusCode === 200); });
     req.on('error', () => resolve(false));
     req.write(data);

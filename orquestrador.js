@@ -34,6 +34,22 @@ function log(msg) {
   console.log(linha);
 }
 
+// Filtra compras de TESTE/validação (Kiwify envia webhook de teste com
+// transactionId "test-..."; validação usa email @validacao.local; códigos
+// de teste do gateway usam prefixo VIP7- quando não há transação real).
+// O painel de resultados deve refletir apenas receita real.
+function ehCompraReal(c) {
+  if (!c) return false;
+  const tid = String(c.transactionId || c.transaction_id || '').toLowerCase();
+  const email = String(c.customer_email || c.email || '').toLowerCase();
+  const codigo = String(c.code || '').toLowerCase();
+  if (tid.startsWith('test') || tid.startsWith('simulacao') || tid.startsWith('sandbox')) return false;
+  if (/@validacao\.local$/.test(email) || /^fallback@/.test(email)) return false;
+  // Sem transactionId (não mapeado ao gateway) + código de teste VIP exploratório → descarta
+  if (!tid && /^vip7-/.test(codigo)) return false;
+  return true;
+}
+
 let processando = false;
 
 // ========== TRANSPARÊNCIA (agregados, sem PII) ==========
@@ -88,6 +104,7 @@ function transparencia() {
     reembolsos = d.reembolsos || [];
     leads = Object.values(d.leads || {});
   } catch {}
+  compras = compras.filter(ehCompraReal);
   const receita = compras.reduce((s, c) => s + (Number(c.value) || 0), 0);
   const hoje = new Date().toISOString().slice(0, 10);
   const vendasHoje = compras.filter((c) => (c.ts || '').slice(0, 10) === hoje).length;
@@ -137,6 +154,7 @@ function kpis() {
     compras = d.compras || [];
     reembolsos = d.reembolsos || [];
   } catch {}
+  compras = compras.filter(ehCompraReal);
   const porStatus = {};
   leads.forEach((l) => { porStatus[l.status] = (porStatus[l.status] || 0) + 1; });
   const pagos = porStatus.pago || 0;
@@ -206,6 +224,61 @@ function kpis() {
     eventosRecentes: eventos.map((e) => ({ ts: e.ts, tipo: e.tipo, agente: e.agente || null, acao: e.acao || '', estado: e.estado })),
     produtos: catalogoPainel()
   };
+}
+
+// 🧭 Radar Estratégico — agente boot analista de mercado de info-products.
+// Reúne os KPIs reais do ecossistema + contexto de mercado e consulta o LLM
+// (modelo forte) para sugerir as melhores ondas para surfar. Exige admin.
+async function radar() {
+  let st = {};
+  try { st = JSON.parse(fs.readFileSync(STATUS, 'utf8')); } catch {}
+  let orc = { tokens: 0, chamadas: 0 };
+  try { orc = ia.lerOrcamento(); } catch {}
+
+  let leads = [], compras = [];
+  try {
+    const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'funil.json'), 'utf8'));
+    leads = Object.values(d.leads || {});
+    compras = d.compras || [];
+  } catch {}
+  const porStatus = {};
+  leads.forEach((l) => { porStatus[l.status] = (porStatus[l.status] || 0) + 1; });
+  const receita = compras.reduce((s, c) => s + (Number(c.value) || 0), 0);
+  const eventos = bus.ultimosEventos(20);
+
+  const sistema = [
+    'Você é um analista global de mercado de info-products e estrategista de nicho.',
+    'Você entende de funis digitais, micro-SaaS, ebooks, comunidades e criadores, e sabe onde está o dinheiro hoje.',
+    'Você começa pela massa: fluxo de compra, linguagem do público, gatilhos. Surf as ondas, não rema contra.',
+    'Sua missão: ler os dados reais do ecossistema abaixo e recomendar as MELHORES ondas para surfar agora.',
+    'Responda em português, em Markdown, com as seções: "🎯 Ondas quentes pra surfar", "🧪 Hipóteses rápidas (testar em 48h)", "📈 Sinais do nosso próprio funil", "🚨 Riscos e o que eu evitaria".',
+    'Liste entre 3 e 5 ondas quentes, cada uma com: nicho, produto sugerido, prazo, e 1 ação concreta imediata.',
+    'Seja específico e acionável, não genérico.'
+  ].join('\n');
+
+  const contexto = [
+    'DADOS REAIS DO ECOSSISTEMA (agora):',
+    `- Leads no funil: ${leads.length} (${Object.entries(porStatus).map(([k, n]) => `${k}: ${n}`).join(', ')})`,
+    `- Compras/pagamentos: ${compras.length} | receita total: R$ ${Math.round(receita)}`,
+    `- Custo LLM hoje: US$ ${((orc.tokens || 0) / 1000000) * (parseFloat(process.env.LLM_CUSTO_POR_MILHAO || '0.30'))} (${orc.chamadas || 0} chamadas)`,
+    `- Fila de eventos: ${(bus.contar() || {}).pendentes || 0} pendentes | última rodada: ${st.ultimaRodada || 'nunca'}`,
+    `- Produtos do catálogo: ${catalogoPainel().map((p) => `${p.nome} [${p.status}]`).join(', ') || 'nenhum'}`,
+    `- Eventos recentes: ${eventos.slice(0, 8).map((e) => e.tipo).join(', ') || 'nenhum'}`,
+    '',
+    'CONTEXTO DE MERCADO (info-products global):',
+    '- Ondas em alta: IA aplicada a nichos, automação de pequenas empresas, monetização de tráfego, templates de IA, educação prática.',
+    '- Brasil: público pagante crescendo em IA; inglês global tem ticket maior (US$).',
+    '- Regra: produto alinhado à onda + CTA claro + prova social rápida = conversão.'
+  ].join('\n');
+
+  const resp = await ia.perguntar({
+    agente: 'radar-estrategico',
+    sistema,
+    mensagens: [{ role: 'user', content: contexto }],
+    modelo: 'forte',
+    temperatura: 0.6
+  });
+  return { ok: true, geradoEm: new Date().toISOString(), analise: resp };
 }
 
 async function processarEvento(ev) {
@@ -286,6 +359,14 @@ function autenticado(req) {
   return (req.headers['x-admin-secret'] || '') === process.env.SECRET_KEY;
 }
 
+// Ações de ESCRITA exigem um token separado (WRITE_SECRET), que o painel da
+// web NÃO possui. Assim o acesso admin do dashboard é somente leitura;
+// qualquer alteração passa só por aqui (opencode/processos internos do VPS).
+function podeEscrever(req) {
+  const ws = process.env.WRITE_SECRET;
+  return autenticado(req) && !!ws && (req.headers['x-write-secret'] || '') === ws;
+}
+
 function json(res, obj, code = 200) {
   res.writeHead(code, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(obj));
@@ -296,14 +377,8 @@ http
     const rawUrl = req.url || '/';
     const method = req.method || 'GET';
 
-    // Rotas PÚBLICAS (sem secret): transparência agregada, sem PII
-    if (method === 'GET' && rawUrl === '/api/ecosystem/transparencia') {
-      return json(res, transparencia());
-    }
-    if (method === 'GET' && rawUrl.startsWith('/transparencia')) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end(TRANSPARENCIA_HTML);
-    }
+    // Rotas PÚBLICAS (sem secret): catálogo, painel, manifest.
+    // Transparência fica protegida (admin) abaixo do check autenticado.
 
     // ========== PAINEL app.severinobot.com (público) ==========
     if (method === 'GET' && (rawUrl === '/' || rawUrl === '/painel' || rawUrl === '/painel.html' || rawUrl === '/index.html')) {
@@ -315,6 +390,15 @@ http
         return json(res, { error: 'painel nao encontrado' }, 404);
       }
     }
+    if (method === 'GET' && rawUrl === '/manifest.webmanifest') {
+      const mf = path.join(__dirname, 'painel', 'manifest.webmanifest');
+      try {
+        res.writeHead(200, { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store' });
+        return res.end(fs.readFileSync(mf));
+      } catch (e) {
+        return json(res, { error: 'manifest nao encontrado' }, 404);
+      }
+    }
     if (method === 'GET' && rawUrl === '/api/ecosystem/painel/catalogo') {
       return json(res, { ok: true, produtos: catalogoPainel() });
     }
@@ -323,9 +407,28 @@ http
       return json(res, { error: 'Unauthorized' }, 401);
     }
 
+    // ========== TRANSPARÊNCIA (só admin) ==========
+    if (method === 'GET' && rawUrl === '/api/ecosystem/transparencia') {
+      return json(res, transparencia());
+    }
+    if (method === 'GET' && rawUrl.startsWith('/transparencia')) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(TRANSPARENCIA_HTML);
+    }
+
     // ========== PAINEL app.severinobot.com (admin) ==========
     if (method === 'GET' && rawUrl === '/api/ecosystem/painel/kpis') {
       return json(res, kpis());
+    }
+
+    // 🧭 Radar Estratégico (admin): agente analista de mercado de info-products
+    if (method === 'GET' && rawUrl === '/api/ecosystem/painel/radar') {
+      try {
+        const r = await radar();
+        return json(res, r);
+      } catch (e) {
+        return json(res, { ok: false, error: e.message }, 500);
+      }
     }
 
     // GET /health — healthcheck do processo
@@ -358,8 +461,9 @@ http
       return json(res, { ok: true, eventos: bus.ultimosEventos(limite) });
     }
 
-    // POST /api/ecosystem/enviar
+    // POST /api/ecosystem/enviar — escrita: exige X-Write-Secret (opencode/interno)
     if (method === 'POST' && rawUrl === '/api/ecosystem/enviar') {
+      if (!podeEscrever(req)) return json(res, { error: 'Unauthorized' }, 401);
       const body = await parseBody(req);
       if (!body.tipo) return json(res, { error: 'tipo required' }, 400);
       const ev = bus.postar({
@@ -371,10 +475,97 @@ http
       return json(res, { ok: true, evento: ev });
     }
 
-    // POST /api/ecosystem/limpar-pendentes
+    // POST /api/ecosystem/limpar-pendentes — escrita: exige X-Write-Secret
     if (method === 'POST' && rawUrl === '/api/ecosystem/limpar-pendentes') {
+      if (!podeEscrever(req)) return json(res, { error: 'Unauthorized' }, 401);
       fs.writeFileSync(path.join(__dirname, 'queue', 'pendentes.json'), '[]');
       return json(res, { ok: true });
+    }
+
+    // GET /api/ecosystem/painel/saude — análisa saúde do ecossistema + estrategista IA
+    if (method === 'GET' && rawUrl === '/api/ecosystem/painel/saude') {
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'funil.json'), 'utf8'));
+        const leads = Object.values(d.leads || {});
+        const compras = (d.compras || []).filter(ehCompraReal);
+        const reembolsos = d.reembolsos || [];
+
+        // Licenças
+        let licencas = {};
+        try { licencas = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'licenses.json'), 'utf8')); } catch {}
+
+        // KPIs por produto
+        const produtosLista = Object.entries(produtos).filter(([k]) => k !== 'padrao-produto-novo').map(([id, p]) => {
+          const pLeads = leads.filter(l => l.produto === id || l.produto === p.slug);
+          const pCompras = compras.filter(c => c.produto === id || c.produto === p.slug);
+          const pReembolsos = reembolsos.filter(r => r.produto === id || r.produto === p.slug);
+          const pLicencas = Object.values(licencas).filter(l => l.source === id || (l.customerEmail && pLeads.some(pl => pl.email === l.customerEmail)));
+          const trialsAtivos = pLicencas.filter(l => l.activatedAt && !l.vitalicio).length;
+          const trialsVitalicio = pLicencas.filter(l => l.vitalicio).length;
+          const conversao = pLeads.length > 0 ? Math.round((pCompras.length / pLeads.length) * 100) : 0;
+          return {
+            id, nome: p.nome, status: p.status, slug: p.slug,
+            leads: pLeads.length,
+            trials: pLicencas.length,
+            trialsAtivos, trialsVitalicio,
+            vendas: pCompras.length,
+            receita: pCompras.reduce((s, c) => s + (Number(c.value) || 0), 0),
+            reembolsos: pReembolsos.length,
+            conversao
+          };
+        });
+
+        // Gera análise do estrategista com LLM
+        let analise = null;
+        try {
+          const resumo = produtosLista.map(p =>
+            `${p.nome} [${p.status}]: ${p.leads} leads, ${p.trials} trials (${p.trialsAtivos} ativos, ${p.trialsVitalicio} vitalicio), ${p.vendas} vendas (R$ ${p.receita}), ${p.reembolsos} reembolsos, conversao ${p.conversao}%`
+          ).join('\n');
+          const sistema = `Você é o Estrategista Chefe do ecossistema Severino. Analise a saúde de cada produto e sugira ações concretas para melhorar: conversão de leads em vendas, retenção, redução de reembolsos, precificação, canais de aquisição. Seja direto, prático, com recomendações executáveis. Use português.`;
+          const r = await ia.perguntar({ agente: 'estrategista', sistema, mensagens: [{ role: 'user', content: `Dados atuais do ecossistema:\n${resumo}\n\nAnalise a saúde e sugira melhorias.` }], modelo: 'forte' });
+          analise = r.resposta || r.texto || r;
+        } catch (e) { analise = 'Falha ao gerar análise: ' + e.message; }
+
+        return json(res, { ok: true, agora: new Date().toISOString(), produtos: produtosLista, analise });
+      } catch (e) {
+        return json(res, { error: 'Erro ao analisar saúde: ' + e.message }, 500);
+      }
+    }
+
+    // POST /api/ecosystem/painel/autofix — executa correcoes sugeridas pelo estrategista
+    if (method === 'POST' && rawUrl === '/api/ecosystem/painel/autofix') {
+      if (!podeEscrever(req)) return json(res, { error: 'Unauthorized' }, 401);
+      const acoes = [];
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'funil.json'), 'utf8'));
+        const leads = Object.values(d.leads || {});
+
+        // 1. Reativar leads "vip" sem telegramId há mais de 3 dias → posta tick.captura
+        const semContato = leads.filter(l => l.status === 'vip' && !l.telegramId && l.criadoEm && (Date.now() - new Date(l.criadoEm).getTime()) > 3 * 86400000);
+        if (semContato.length > 0) {
+          bus.postar({ tipo: 'tick.captura', origem: 'autofix', produto: null, payload: { forcar: semContato.slice(0, 5).map(l => l.leadId) } });
+          acoes.push(`Reativando captura para ${semContato.length} leads VIP sem Telegram`);
+        }
+
+        // 2. Leads "vip" com trial expirado (>8 dias) sem compra → posta follow-up
+        const expirados = leads.filter(l => l.status === 'vip' && l.trialDias && (Date.now() - new Date(l.criadoEm).getTime()) > (l.trialDias + 1) * 86400000);
+        if (expirados.length > 0) {
+          bus.postar({ tipo: 'tick.followups', origem: 'autofix', produto: null, payload: { forcar: true } });
+          acoes.push(`Acionando follow-up para ${expirados.length} leads com trial expirado`);
+        }
+
+        // 3. Leads "pago" com renovacao proxima (>20 dias desde criacao) → tick.renovacao
+        const renovar = leads.filter(l => l.status === 'pago' && l.criadoEm && (Date.now() - new Date(l.criadoEm).getTime()) > 20 * 86400000);
+        if (renovar.length > 0) {
+          bus.postar({ tipo: 'tick.renovacao', origem: 'autofix', produto: null, payload: {} });
+          acoes.push(`Agendando renovacao para ${renovar.length} leads pagos`);
+        }
+
+        if (acoes.length === 0) acoes.push('Nenhuma correção necessária no momento.');
+      } catch (e) {
+        return json(res, { error: 'Erro no autofix: ' + e.message }, 500);
+      }
+      return json(res, { ok: true, acoes });
     }
 
     return json(res, { error: 'Not Found' }, 404);

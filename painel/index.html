@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Severino Ecossistema IA · Painel</title>
 <style>
   :root{
@@ -38,7 +41,7 @@
   @media(min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
   @media(min-width:980px){.grid{grid-template-columns:repeat(3,1fr)}}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;transition:border-color .15s,transform .15s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;transition:border-color .15s,transform .15s;display:flex;flex-direction:column;justify-content:space-between}
   .card:hover{border-color:var(--accent);transform:translateY(-2px)}
   .card .ico{font-size:26px;margin-bottom:10px}
   .card h3{font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -48,6 +51,7 @@
   .card ul li::before{content:'✓';position:absolute;left:0;color:var(--ok);font-weight:700}
   .price{font-size:15px;font-weight:800;color:var(--accent2);margin-bottom:14px}
   .price small{color:var(--muted);font-weight:400}
+  .card .btn,.card .btn-ghost,.card .btn-tg{margin-top:auto}
 
   .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
   .badge-ok{background:rgba(34,197,94,.15);color:var(--ok)}
@@ -100,6 +104,18 @@
   .topo-admin h2{font-size:18px;flex:1}
   .topo-admin button{width:auto;padding:9px 16px;font-size:13px;margin:0}
   .muted-line{color:var(--muted);font-size:12px;margin-top:8px}
+
+  /* ===== RADAR ESTRATÉGICO ===== */
+  #radar-output{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;max-height:520px;overflow-y:auto}
+  #radar-output.loading{opacity:.6}
+  #radar-output h1,#radar-output h2,#radar-output h3{color:var(--accent2);font-size:14px;margin:14px 0 8px}
+  #radar-output h1:first-child,#radar-output h2:first-child,#radar-output h3:first-child{margin-top:0}
+  #radar-output p{margin:6px 0;font-size:13px;line-height:1.6}
+  #radar-output ul,#radar-output ol{margin:6px 0 6px 20px}
+  #radar-output li{font-size:13px;line-height:1.6;margin:4px 0}
+  #radar-output strong{color:var(--txt)}
+  #radar-output code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:6px;font-size:12px}
+  #radar-error{font-size:13px;color:var(--err);padding:10px 12px}
 </style>
 </head>
 <body>
@@ -133,18 +149,6 @@
         <div class="desc">Todo fruto tem estação. O Bitcoin também. Aprenda a plantar no medo e colher na euforia.</div>
         <a class="btn btn-ghost" href="https://btcweatherpanel.com/ebook" target="_blank" rel="noopener">Ler grátis</a>
       </div>
-      <div class="card">
-        <div class="ico">🤖</div>
-        <h3>O Manual do Severino</h3>
-        <div class="desc">Blueprint completo: como montar um ecossistema de vendas IA 24/7 do zero, por fases.</div>
-        <a class="btn btn-ghost" href="https://severinobot.com/ebook-ecossistema.html" target="_blank" rel="noopener">Ler grátis</a>
-      </div>
-      <div class="card">
-        <div class="ico">🛠️</div>
-        <h3>Guia de Implementação IA</h3>
-        <div class="desc">OpenCode + OpenRouter + VPS Hostinger: passo a passo técnico para replicar o ecossistema.</div>
-        <a class="btn btn-ghost" href="https://severinobot.com/ebook-ecossistema-ia.html" target="_blank" rel="noopener">Ler grátis</a>
-      </div>
     </div>
 
     <div class="sec-title">🛎️ Serviços</div>
@@ -158,13 +162,7 @@
           <li>3 idiomas, treinada com seus PDFs/planilhas</li>
           <li>A partir de R$ 67,89/mês</li>
         </ul>
-        <a class="btn" href="https://severinobot.com/" target="_blank" rel="noopener">Conhecer</a>
-      </div>
-      <div class="card">
-        <div class="ico">📊</div>
-        <h3>Transparência do Ecossistema</h3>
-        <div class="desc">Receita, vendas, custos e leads agregados em tempo real — dados públicos sem PII.</div>
-        <a class="btn btn-ghost" href="transparencia" target="_blank" rel="noopener">Ver painel público</a>
+        <a class="btn" href="https://vendedor.severinobot.com/" target="_blank" rel="noopener">Conhecer</a>
       </div>
       <div class="card">
         <div class="ico">💬</div>
@@ -231,13 +229,46 @@
         <tbody id="tb-produtos"><tr><td colspan="4">carregando…</td></tr></tbody>
       </table></div>
     </div>
+
+    <div class="panel">
+      <h3>🔎 Transparência do Ecossistema <span class="badge badge-ok">admin</span></h3>
+      <div class="desc" style="min-height:auto;margin-bottom:12px">Receita, vendas, custos e leads agregados do ecossistema — visível somente ao administrador.</div>
+      <div class="kpi-grid" id="kpi-transparencia" style="grid-template-columns:repeat(2,1fr)"></div>
+    </div>
+
+    <div class="sec-title">🩺 Saúde do Ecossistema · Estrategista IA</div>
+    <div class="panel" id="saude-panel">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn" id="btn-saude" style="width:auto;margin:0">🔍 Analisar saúde</button>
+        <button class="btn-ghost" id="btn-autofix" style="width:auto;margin:0;border-color:var(--ok);color:var(--ok)">🔧 Corrigir automaticamente</button>
+        <span class="muted-line" id="saude-status" style="margin:0">Clique para o Estrategista analisar dados reais e sugerir melhorias.</span>
+      </div>
+      <!-- KPIs por produto -->
+      <div id="saude-produtos" style="margin-bottom:14px"></div>
+      <!-- Análise do Estrategista -->
+      <div id="saude-analise" style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;max-height:420px;overflow-y:auto">
+        <div class="desc" style="min-height:auto">Clique em "Analisar saúde" para o Estrategista consultar dados e propor ações.</div>
+      </div>
+    </div>
+
+    <div class="sec-title">🧭 Radar Estratégico · Agente de Mercado</div>
+    <div class="panel" id="radar-panel">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn" id="btn-radar" style="width:auto;margin:0">🎯 Gerar análise de ondas</button>
+        <button class="btn-ghost" id="btn-radar-auto" style="width:auto;margin:0">🔁 Auto 30s</button>
+        <span class="muted-line" id="radar-status" style="margin:0">O agente analisa o mercado global de info-products e propõe as melhores ondas para surfar.</span>
+      </div>
+      <div id="radar-output"><div class="desc">Clique em "Gerar análise" para o bot consultar o mercado e cruzar com os dados reais do ecossistema.</div></div>
+    </div>
   </section>
 </main>
 
 <div class="foot">
   <div>Severino Ecossistema IA — máquina de vendas 24/7 · princípios cristãos</div>
   <div style="margin-top:8px">
-    <a href="https://severinobot.com/" target="_blank" rel="noopener">severinobot.com</a>·
+    <a href="https://severinobot.com/" target="_blank" rel="noopener">dashboard.severinobot.com</a>·
+    <a href="https://vendedor.severinobot.com/" target="_blank" rel="noopener">vendedor.severinobot.com</a>·
+    <a href="https://agendabarber.severinobot.com/" target="_blank" rel="noopener">agendabarber.severinobot.com</a>·
     <a href="https://btcweatherpanel.com" target="_blank" rel="noopener">btcweatherpanel.com</a>
   </div>
   <a href="#" class="admin-link" id="link-admin">🔒 Área do Admin</a>
@@ -336,9 +367,125 @@ async function carregarAdmin(){
   $('tb-produtos').innerHTML = ps.map(p =>
     `<tr><td>${p.nome}</td><td><span class="badge ${STATUS_BADGE[p.status]||'badge-info'}">${p.status}</span></td><td>${p.plano&&p.plano.preco?((p.plano.moeda==='USD'?'US$':'R$')+' '+fmtBR(p.plano.preco,2)+'/'+ (p.plano.periodo||'mês')):'—'}</td><td><a href="${p.url}" target="_blank" rel="noopener" style="color:var(--accent2)">${p.slug||p.id}</a></td></tr>`
   ).join('');
+
+  $('kpi-transparencia').innerHTML = [
+    kpiCard('Receita total','R$ '+fmtBR(v.receitaTotal), (v.total||0)+' vendas · '+fmtBR(v.licencasAtivas??0,0)+' licenças ativas'),
+    kpiCard('Vendas hoje', v.hoje||0, 'pagamentos aprovados'),
+    kpiCard('Custo LLM (dia)','US$ '+fmtBR(c.custoEstimado), (c.chamadas||0)+' chamadas'),
+    kpiCard('Leads no funil', l.total ?? 0, Object.entries(l.porStatus||{}).map(([k,n])=>k+': '+n).join(' · ')||'—'),
+  ].join('');
 }
 
+// ---------- saúde do ecossistema / estrategista ----------
+async function carregarSaude(){
+  const analise = $('saude-analise');
+  const status = $('saude-status');
+  analise.innerHTML = '<div class="loading" style="opacity:0.6">Estrategista analisando dados + gerando recomendações...</div>';
+  status.textContent = 'Consultando fontes e gerando análise com IA…';
+  try {
+    const r = await fetch('/api/ecosystem/painel/saude', { headers:{ 'X-Admin-Secret': ADMIN_KEY } });
+    if (r.status === 401) { sessionStorage.removeItem('sev_admin_key'); ADMIN_KEY=''; mostrar('view-login'); return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'erro');
+
+    // KPIs por produto
+    $('saude-produtos').innerHTML = `<div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">${
+      (d.produtos||[]).map(p => {
+        const bg = p.conversao > 10 ? 'var(--ok)' : p.conversao > 0 ? 'var(--warn)' : 'var(--err)';
+        return `<div class="kpi" style="border-color:${bg}">
+          <div class="lab">${p.nome}</div>
+          <div class="num" style="font-size:16px">${p.leads} leads</div>
+          <div class="sub">${p.trials} trials · ${p.vendas} vendas · R$ ${fmtBR(p.receita)}<br>conversão <span style="color:${bg};font-weight:700">${p.conversao}%</span></div>
+        </div>`;
+      }).join('')
+    }</div>`;
+
+    analise.innerHTML = d.analise ? mdToHtml(d.analise) : '<p class="desc">Estrategista não retornou análise.</p>';
+    status.textContent = 'Análise gerada em ' + new Date(d.agora).toLocaleString('pt-BR');
+  } catch(e) {
+    analise.innerHTML = `<div style="color:var(--err);padding:10px 12px">Falha: ${escHtml(e.message)}</div>`;
+    status.textContent = 'Erro ao consultar. Tente novamente.';
+  }
+}
+
+async function executarAutofix(){
+  const analise = $('saude-analise');
+  const status = $('saude-status');
+  analise.innerHTML = '<div class="loading" style="opacity:0.6">Executando correções automáticas...</div>';
+  status.textContent = 'Aplicando correções no ecossistema…';
+  try {
+    const r = await fetch('/api/ecosystem/painel/autofix', {
+      method: 'POST',
+      headers:{ 'X-Admin-Secret': ADMIN_KEY, 'Content-Type': 'application/json' }
+    });
+    if (r.status === 401) { sessionStorage.removeItem('sev_admin_key'); ADMIN_KEY=''; mostrar('view-login'); return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'erro');
+    const acoes = (d.acoes||[]).map(a => `<li>${escHtml(a)}</li>`).join('');
+    analise.innerHTML = `<div style="color:var(--ok)"><h3>🔧 Correções aplicadas</h3><ul>${acoes}</ul></div>`;
+    status.textContent = 'Autofix concluído. ' + new Date().toLocaleString('pt-BR');
+    carregarAdmin(); // recarrega KPIs
+  } catch(e) {
+    analise.innerHTML = `<div style="color:var(--err);padding:10px 12px">Falha no autofix: ${escHtml(e.message)}</div>`;
+    status.textContent = 'Erro. Tente novamente.';
+  }
+}
+$('btn-saude').addEventListener('click', carregarSaude);
+$('btn-autofix').addEventListener('click', executarAutofix);
+
 function tentarAdmin(){ mostrar('view-admin'); carregarAdmin(); }
+
+// ---------- radar estratégico ----------
+// Conversor markdown→HTML leve (sem dependência externa, escapa HTML antes)
+const escHtml = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function mdToHtml(md){
+  if(!md) return '<p class="desc">sem resposta</p>';
+  const lines = escHtml(md).split(/\r?\n/);
+  let html = '', inList = false, inCode = false;
+  const closeList = () => { if(inList){ html += '</ul>'; inList=false; } };
+  for(const raw of lines){
+    if(raw.trim().startsWith('```')){ closeList(); html += inCode?'</code></pre>':'<pre><code>'; inCode=!inCode; continue; }
+    if(inCode){ html += raw+'\n'; continue; }
+    const t = raw.replace(/^#{1,4}\s+/,'');
+    const isH = /^#{1,4}\s+/.test(raw);
+    if(isH){ closeList(); const lvl = raw.match(/^#+/)[0].length; html += `<h${Math.min(lvl,4)}>${t}</h${Math.min(lvl,4)}>`; continue; }
+    if(/^[-*]\s+/.test(raw)){ if(!inList){ html += '<ul>'; inList=true; } html += `<li>${raw.replace(/^[-*]\s+/,'')}</li>`; continue; }
+    if(/^\d+[\.\)]\s+/.test(raw)){ if(!inList){ html += '<ul>'; inList=true; } html += `<li>${raw.replace(/^\d+[\.\)]\s+/,'')}</li>`; continue; }
+    closeList();
+    if(raw.trim()===''){ continue; }
+    let line = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/`(.+?)`/g, '<code>$1</code>');
+    html += `<p>${line}</p>`;
+  }
+  closeList();
+  return html;
+}
+
+let radarTimer = null;
+async function carregarRadar(){
+  const out = $('radar-output');
+  out.classList.add('loading');
+  $('radar-status').textContent = 'Consultando mercado + cruzando com dados reais…';
+  try {
+    const r = await fetch('/api/ecosystem/painel/radar', { headers:{ 'X-Admin-Secret': ADMIN_KEY } });
+    if (r.status === 401) { sessionStorage.removeItem('sev_admin_key'); ADMIN_KEY=''; mostrar('view-login'); return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || d.message || 'erro');
+    out.innerHTML = mdToHtml(d.analise);
+    $('radar-status').textContent = 'Análise gerada em ' + new Date(d.geradoEm).toLocaleString('pt-BR');
+  } catch(e){
+    out.innerHTML = `<div id="radar-error">Falha ao gerar análise: ${escHtml(e.message)}</div>`;
+    $('radar-status').textContent = 'Tente novamente em instantes.';
+  } finally {
+    out.classList.remove('loading');
+  }
+}
+$('btn-radar').addEventListener('click', carregarRadar);
+$('btn-radar-auto').addEventListener('click', function(){
+  if (radarTimer) { clearInterval(radarTimer); radarTimer = null; $('btn-radar-auto').textContent='🔁 Auto 30s'; return; }
+  carregarRadar();
+  radarTimer = setInterval(carregarRadar, 30000);
+  $('btn-radar-auto').textContent='⏹ Parar auto';
+});
 
 $('btn-login').addEventListener('click', async () => {
   const code = $('admin-code').value.trim();

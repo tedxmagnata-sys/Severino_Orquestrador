@@ -45,6 +45,27 @@ function modelos() {
   };
 }
 
+// Gemini (Google AI Studio) usado como FALLBACK quando o OpenRouter falha.
+// A chave GEMINI_API_KEY já existe no .env do ecossistema.
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+async function perguntarGemini({ sistema, mensagens, temperatura }) {
+  const gk = process.env.GEMINI_API_KEY;
+  if (!gk) throw new Error('GEMINI_API_KEY ausente — sem fallback');
+  const geminiModel = process.env.LLM_MODEL_GEMINI || 'gemini-3.6-flash';
+  const parts = [{ text: sistema }, ...mensagens.map((m) => ({ text: `${m.role}: ${m.content}` }))];
+  const resp = await fetch(`${GEMINI_BASE}/${geminiModel}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': gk },
+    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: temperatura } })
+  });
+  if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  const data = await resp.json();
+  const conteudo = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+  if (!conteudo) throw new Error('Gemini: resposta vazia');
+  return { ok: true, texto: conteudo, modelo: geminiModel, tokens: estimarTokens(conteudo), agente: 'gemini-fallback' };
+}
+
 /**
  * Pergunta ao LLM. Lança erro se faltar chave ou estourar orçamento.
  * @param {object} opts
@@ -54,8 +75,9 @@ function modelos() {
  * @param {string} [opts.modelo] - 'barato' | 'forte' ou id completo
  * @param {number} [opts.temperatura]
  * @param {boolean} [opts.ignorarOrcamento] - true para chamadas críticas
+ * @param {boolean} [opts.semFallback] - true para não tentar Gemini se OpenRouter falhar
  */
-async function perguntar({ agente = 'desconhecido', sistema = '', mensagens = [], modelo = 'barato', temperatura = 0.7, ignorarOrcamento = false }) {
+async function perguntar({ agente = 'desconhecido', sistema = '', mensagens = [], modelo = 'barato', temperatura = 0.7, ignorarOrcamento = false, semFallback = false }) {
   const key = process.env.LLM_API_KEY;
   if (!key) throw new Error('LLM_API_KEY ausente no .env');
 
@@ -104,6 +126,18 @@ async function perguntar({ agente = 'desconhecido', sistema = '', mensagens = []
     } catch (e) {
       clearTimeout(t);
       ultimoErro = e;
+    }
+  }
+  // Fallback Gemini quando o OpenRouter falhou (chave esgotada/erro).
+  if (!semFallback && !ultimoErro?.message?.startsWith('Orçamento')) {
+    try {
+      const g = await perguntarGemini({ sistema, mensagens, temperatura });
+      state.tokens += g.tokens;
+      state.chamadas = (state.chamadas || 0) + 1;
+      salvarOrcamento(state);
+      return g;
+    } catch (eg) {
+      throw new Error(`OpenRouter: ${ultimoErro?.message || 'falhou'} | Gemini: ${eg.message}`);
     }
   }
   throw ultimoErro || new Error('Falha no LLM');
