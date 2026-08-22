@@ -205,6 +205,9 @@
     <div class="sec-title">⚙️ Sistema &amp; Custos</div>
     <div class="kpi-grid" id="kpi-sistema"></div>
 
+    <div class="sec-title">🌦️ BTC Weather Panel · Usuários</div>
+    <div class="kpi-grid" id="kpi-btcweather"></div>
+
     <div class="two-col">
       <div class="panel">
         <h3>🧲 Leads recentes (funil)</h3>
@@ -351,6 +354,14 @@ async function carregarAdmin(){
     kpiCard('Saldo OpenRouter', c.saldoOpenRouter || '—', ''),
     kpiCard('Saldo MuAPI', c.saldoMuapi || '—', ''),
     kpiCard('Fila pendente', s.pendentes ?? 0, 'últ. rodada '+fmtData(s.ultimaRodada)),
+  ].join('');
+
+  const b = d.btcweather||{};
+  $('kpi-btcweather').innerHTML = [
+    kpiCard('Leads BTC Weather', b.leads ?? 0, 'cadastros no funil'),
+    kpiCard('Reais (sem teste)', b.reais ?? 0, 'exclui backfill/teste'),
+    kpiCard('Cadastros hoje', b.hoje ?? 0, 'últimas 24h'),
+    kpiCard('Trials vitalício', b.trialsVitalicio ?? 0, 'VIP grátis gerados'),
   ].join('');
 
   const leads = (d.leadsRecentes||[]);

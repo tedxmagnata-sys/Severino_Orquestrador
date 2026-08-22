@@ -171,6 +171,18 @@ function kpis() {
     licencasAtivas = arr.filter((x) => x && x.expiresAt && new Date(x.expiresAt).getTime() > agora).length;
   } catch {}
 
+  // Usuários REAIS do BTC Weather Panel = leads do funil com produto=btcweather.
+  // (as 71 licenças em licenses.json são códigos VIP legados do severinobot, não do painel)
+  const TESTE = /@(test|validacao|email\.com|teste\.com|test\.com)|^test|final@test|ok@test|vitrine@/i;
+  const btcLeads = leads.filter((l) => l.produto === 'btcweather');
+  const btcReais = btcLeads.filter((l) => !(l.email || '').match(TESTE) && !l.backfill);
+  const btcHoje = btcLeads.filter((l) => (l.criadoEm || '').slice(0, 10) === hoje).length;
+  let btcTrialsVital = 0;
+  try {
+    const lic = JSON.parse(fs.readFileSync(path.join(DATA_SEVERINO, 'licenses.json'), 'utf8'));
+    btcTrialsVital = Object.values(lic || {}).filter((x) => x && x.vitalicio).length;
+  } catch {}
+
   let telegram = 0;
   try {
     const n = JSON.parse(fs.readFileSync(path.join(DATA_SEVERINO, 'notifications.json'), 'utf8'));
@@ -222,7 +234,14 @@ function kpis() {
     sistema: { pendentes: (bus.contar() || {}).pendentes || 0, ultimaRodada: st.ultimaRodada || null },
     leadsRecentes,
     eventosRecentes: eventos.map((e) => ({ ts: e.ts, tipo: e.tipo, agente: e.agente || null, acao: e.acao || '', estado: e.estado })),
-    produtos: catalogoPainel()
+    produtos: catalogoPainel(),
+    btcweather: {
+      leads: btcLeads.length,
+      reais: btcReais.length,
+      hoje: btcHoje,
+      trialsVitalicio: btcTrialsVital,
+      nota: 'Conta só leads com produto=btcweather. Licenças legadas do severinobot NÃO entram aqui.'
+    }
   };
 }
 

@@ -19,12 +19,6 @@ async function processar(evento, ctx) {
   const contexto = p.contexto || 'sem contexto adicional';
   const origem = evento.origem || 'desconhecida';
   const slug = p.slug || null;
-  // F1: leads captados pelo prospector-barber ja tem site+trial prontos e sao
-  // entregues manualmente via wa.me. NAO gastar LLM nem re-ativar trial duplicado.
-  if (origem === 'prospector-barber') {
-    funil.upsertLead({ leadId, nome, telegramId, produto: 'agendabarber', score: 4, razao: 'captado pelo prospector (site+trial prontos)', status: 'qualificado', contexto, origem, slug });
-    return { agente: 'qualificador', acao: 'prospector-barber: lead registrado, sem cadeia LLM', novosEventos: [] };
-  }
 
   const existente = funil.getLead(leadId);
   const jaCliente = !!(existente && (JA_CLIENTE.includes(existente.status) || existente.trialCode));
