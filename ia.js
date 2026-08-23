@@ -1,17 +1,32 @@
-/**
- * 🤖 Serviço de IA único do ecossistema (OpenRouter).
- * Todas as chamadas de LLM dos agentes passam por aqui, com:
- *  - modelo barato por padrão, forte quando solicitado
- *  - retry (2x) + timeout
- *  - orçamento diário de tokens (Guardião de Custos)
- */
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const BASE = 'https://openrouter.ai/api/v1/chat/completions';
-const TEMPO_MAX = 45000;
-const BUDGET_FILE = path.join(__dirname, '..', 'data', 'llm_state.json');
+const DIR = __dirname;
+const ENV_FILE = path.join(DIR, '..', '.env');
+const BUDGET_FILE = path.join(DIR, 'data', 'llm_state.json');
+
+const envCache = {};
+function loadEnv() {
+  if (Object.keys(envCache).length) return envCache;
+  try {
+    const raw = fs.readFileSync(ENV_FILE, 'utf8');
+    for (const linha of raw.split(/\r?\n/)) {
+      const m = linha.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (m && !linha.trim().startsWith('#')) {
+        envCache[m[1]] = m[2].replace(/^["']|["']$/g, '').trim();
+      }
+    }
+  } catch {}
+  return envCache;
+}
+
+function env(k, def) {
+  const v = process.env[k] ?? loadEnv()[k];
+  return v === undefined || v === '' ? def : v;
+}
+
+const BASE = env('LLM_BASE_URL', 'https://openrouter.ai/api/v1/chat/completions');
+const TEMPO_MAX = 120000;
 
 function hoje() {
   return new Date().toISOString().slice(0, 10);
@@ -28,10 +43,8 @@ function lerOrcamento() {
 }
 
 function salvarOrcamento(s) {
-  try {
-    fs.mkdirSync(path.dirname(BUDGET_FILE), { recursive: true });
-  } catch {}
-  fs.writeFileSync(BUDGET_FILE, JSON.stringify(s, null, 2));
+  try { fs.mkdirSync(path.dirname(BUDGET_FILE), { recursive: true }); } catch {}
+  try { fs.writeFileSync(BUDGET_FILE, JSON.stringify(s, null, 2)); } catch {}
 }
 
 function estimarTokens(texto) {
@@ -40,107 +53,77 @@ function estimarTokens(texto) {
 
 function modelos() {
   return {
-    barato: process.env.LLM_MODEL_BARATO || 'deepseek/deepseek-chat',
-    forte: process.env.LLM_MODEL_FORTE || 'openai/gpt-4o-mini'
+    barato: env('LLM_MODEL_BARATO', 'deepseek/deepseek-v3.2'),
+    forte: env('LLM_MODEL_FORTE', 'deepseek/deepseek-v4-flash')
   };
 }
 
-// Gemini (Google AI Studio) usado como FALLBACK quando o OpenRouter falha.
-// A chave GEMINI_API_KEY já existe no .env do ecossistema.
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-async function perguntarGemini({ sistema, mensagens, temperatura }) {
-  const gk = process.env.GEMINI_API_KEY;
-  if (!gk) throw new Error('GEMINI_API_KEY ausente — sem fallback');
-  const geminiModel = process.env.LLM_MODEL_GEMINI || 'gemini-3.6-flash';
-  const parts = [{ text: sistema }, ...mensagens.map((m) => ({ text: `${m.role}: ${m.content}` }))];
-  const resp = await fetch(`${GEMINI_BASE}/${geminiModel}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': gk },
-    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: temperatura } })
-  });
-  if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
-  const data = await resp.json();
-  const conteudo = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
-  if (!conteudo) throw new Error('Gemini: resposta vazia');
-  return { ok: true, texto: conteudo, modelo: geminiModel, tokens: estimarTokens(conteudo), agente: 'gemini-fallback' };
+function cadeia(modelo) {
+  const m = modelos();
+  const usaRouter = /openrouter\.ai/.test(BASE);
+  if (modelo === 'forte') return [m.forte];
+  if (modelo === 'barato') {
+    if (!usaRouter) return [m.barato];
+    return /(:free|openrouter\/free)$/.test(m.barato) ? [m.barato, m.forte] : [m.barato];
+  }
+  return [modelo];
 }
 
-/**
- * Pergunta ao LLM. Lança erro se faltar chave ou estourar orçamento.
- * @param {object} opts
- * @param {string} opts.agente - nome do agente que chama (para log)
- * @param {string} opts.sistema - prompt de sistema
- * @param {Array} opts.mensagens - [{role:'user'|'assistant'|'system', content}]
- * @param {string} [opts.modelo] - 'barato' | 'forte' ou id completo
- * @param {number} [opts.temperatura]
- * @param {boolean} [opts.ignorarOrcamento] - true para chamadas críticas
- * @param {boolean} [opts.semFallback] - true para não tentar Gemini se OpenRouter falhar
- */
-async function perguntar({ agente = 'desconhecido', sistema = '', mensagens = [], modelo = 'barato', temperatura = 0.7, ignorarOrcamento = false, semFallback = false }) {
-  const key = process.env.LLM_API_KEY;
-  if (!key) throw new Error('LLM_API_KEY ausente no .env');
+async function perguntar({ sistema = '', mensagens = [], modelo = 'barato', temperatura = 0.7, maxTokens, agente = 'ecossistema', ignorarOrcamento = false } = {}) {
+  const key = env('LLM_API_KEY', '');
+  if (!key) throw new Error('LLM_API_KEY ausente — configure no .env (raiz do projeto)');
 
   const state = lerOrcamento();
   const estReq = estimarTokens(sistema) + mensagens.reduce((a, m) => a + estimarTokens(m.content || ''), 0);
-  const limite = parseInt(process.env.LLM_BUDGET_TOKENS_DIA || '100000', 10);
+  const limite = parseInt(env('LLM_BUDGET_TOKENS_DIA', '200000'), 10);
   if (!ignorarOrcamento && state.tokens + estReq > limite) {
-    throw new Error(`Orçamento de tokens do dia estourado (${state.tokens} + ~${estReq} > ${limite})`);
+    throw new Error(`Orçamento de tokens do dia estourado (${state.tokens} de ${limite})`);
   }
 
-  const model = modelo === 'barato' || modelo === 'forte' ? modelos()[modelo] : modelo;
-  const body = {
-    model,
-    messages: [{ role: 'system', content: sistema }, ...mensagens],
-    temperature: temperatura
-  };
-
+  const chain = cadeia(modelo);
   let ultimoErro = null;
-  for (let tentativa = 0; tentativa < 2; tentativa++) {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), TEMPO_MAX);
-    try {
-      const resp = await fetch(BASE, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${key}`,
-          'HTTP-Referer': 'https://btcweatherpanel.com',
-          'X-Title': 'Ecosistema Severino'
-        },
-        body: JSON.stringify(body),
-        signal: ctrl.signal
-      });
-      clearTimeout(t);
-      if (!resp.ok) {
-        ultimoErro = new Error(`OpenRouter HTTP ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
-        continue;
+
+  for (const model of chain) {
+    for (let tentativa = 0; tentativa < 2; tentativa++) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), TEMPO_MAX);
+      try {
+        const body = { model, messages: [] };
+        if (sistema) body.messages.push({ role: 'system', content: sistema });
+        body.messages.push(...mensagens);
+        if (maxTokens) body.max_tokens = maxTokens;
+        body.temperature = temperatura;
+
+        const resp = await fetch(BASE, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${key}`,
+            'HTTP-Referer': env('LLM_REFERER', 'https://severino.app'),
+            'X-Title': 'Severino Ecossistema'
+          },
+          body: JSON.stringify(body),
+          signal: ctrl.signal
+        });
+        clearTimeout(t);
+        if (!resp.ok) {
+          ultimoErro = new Error(`LLM HTTP ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+          break;
+        }
+        const data = await resp.json();
+        const conteudo = data.choices?.[0]?.message?.content || '';
+        const tokens = data.usage?.total_tokens || estReq + estimarTokens(conteudo);
+        state.tokens += tokens;
+        state.chamadas = (state.chamadas || 0) + 1;
+        salvarOrcamento(state);
+        return { texto: conteudo, modelo: model, tokens, agente };
+      } catch (e) {
+        clearTimeout(t);
+        ultimoErro = e;
       }
-      const data = await resp.json();
-      const conteudo = data.choices?.[0]?.message?.content || '';
-      const tokens = data.usage?.total_tokens || estReq + estimarTokens(conteudo);
-      state.tokens += tokens;
-      state.chamadas = (state.chamadas || 0) + 1;
-      salvarOrcamento(state);
-      return { ok: true, texto: conteudo, modelo: model, tokens, agente };
-    } catch (e) {
-      clearTimeout(t);
-      ultimoErro = e;
-    }
-  }
-  // Fallback Gemini quando o OpenRouter falhou (chave esgotada/erro).
-  if (!semFallback && !ultimoErro?.message?.startsWith('Orçamento')) {
-    try {
-      const g = await perguntarGemini({ sistema, mensagens, temperatura });
-      state.tokens += g.tokens;
-      state.chamadas = (state.chamadas || 0) + 1;
-      salvarOrcamento(state);
-      return g;
-    } catch (eg) {
-      throw new Error(`OpenRouter: ${ultimoErro?.message || 'falhou'} | Gemini: ${eg.message}`);
     }
   }
   throw ultimoErro || new Error('Falha no LLM');
 }
 
-module.exports = { perguntar, modelos, estimarTokens, lerOrcamento, salvarOrcamento };
+module.exports = { perguntar, modelos, estimarTokens, lerOrcamento, env };

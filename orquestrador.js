@@ -11,11 +11,13 @@
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const bus = require('./bus');
 const rota = require('./rota');
 const ia = require('./ia');
+const canais = require('./canais');
 const guardiao = require('./guardiao_saldo');
 const produtos = require('./produtos.json');
 
@@ -23,6 +25,16 @@ const MAX_HOPS = 5;
 const LOG = path.join(__dirname, 'queue', 'orquestrador.log');
 const STATUS = path.join(__dirname, 'queue', 'status.json');
 const API_PORT = parseInt(process.env.ECOSISTEMA_PORT || '3335', 10);
+const WEBHOOK_SECRET_PATH = path.join(__dirname, 'queue', 'webhook_secret.txt');
+let WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN || '';
+if (!WEBHOOK_SECRET) {
+  try { WEBHOOK_SECRET = fs.readFileSync(WEBHOOK_SECRET_PATH, 'utf8').trim(); } catch {}
+}
+if (!WEBHOOK_SECRET) {
+  WEBHOOK_SECRET = crypto.randomBytes(16).toString('hex');
+  try { fs.writeFileSync(WEBHOOK_SECRET_PATH, WEBHOOK_SECRET); } catch {}
+}
+const PAUSED_PATH = path.join(__dirname, 'queue', 'pausados.json');
 
 const INICIO = new Date().toISOString();
 
@@ -346,9 +358,11 @@ async function ciclo() {
       try {
         await processarEvento(ev);
         log(`ok ${ev.tipo} -> ${rota.agenteDo(ev.tipo)} (${ev.id})`);
+        try { bus.emitir({ agente: 'orquestrador', tipo: 'evento.processado', payload: { id: ev.id, tipo: ev.tipo, origem: ev.origem, resultado: 'ok' } }); } catch {}
       } catch (e) {
         log(`ERRO ${ev.id} (${ev.tipo}): ${e.message}`);
         bus.atualizarEstado(ev.id, 'falha', { erro: e.message });
+        try { bus.emitir({ agente: 'orquestrador', tipo: 'evento.erro', payload: { id: ev.id, tipo: ev.tipo, erro: e.message } }); } catch {}
       } finally {
         bus.removerPendente(ev.id);
       }
@@ -376,6 +390,96 @@ function parseBody(req) {
 
 function autenticado(req) {
   return (req.headers['x-admin-secret'] || '') === process.env.SECRET_KEY;
+}
+
+// ═══════════════════════════════════════════════
+// 📞 Telegram — helpers de comando
+// ═══════════════════════════════════════════════
+
+function lerPausados() {
+  try { return JSON.parse(fs.readFileSync(PAUSED_PATH, 'utf8') || '{}').pausados || []; }
+  catch { return []; }
+}
+
+function salvarPausados(lista) {
+  fs.writeFileSync(PAUSED_PATH, JSON.stringify({ pausados: [...new Set(lista)] }, null, 2));
+}
+
+async function processarComandoTelegram(msg) {
+  const chatId = msg.chat?.id || msg.from?.id;
+  if (!chatId) return;
+  const admChat = process.env.TELEGRAM_CHAT_ID;
+  if (String(chatId) !== String(admChat)) {
+    await canais.enviarTelegram(chatId, '⛔ Não autorizado. Apenas o criador pode usar comandos.');
+    return;
+  }
+  const text = (msg.text || '').trim();
+  const parts = text.split(/\s+/);
+  const cmd = parts[0].toLowerCase();
+
+  if (cmd === '/status') {
+    const k = kpis();
+    const fila = bus.contar();
+    const ultimos = bus.ultimosEventos(8);
+    const agentesPausados = lerPausados();
+    const resp = [
+      '📊 *Status do Ecossistema*',
+      `⏰ ${new Date().toLocaleString('pt-BR')}`,
+      '',
+      `💰 Receita total: R$ ${k.vendas.receitaTotal}`,
+      `📦 Vendas: ${k.vendas.total} (hoje: ${k.vendas.hoje})`,
+      `👥 Leads: ${k.leads.total} | Conversão: ${k.leads.conversao}%`,
+      `📬 Telegram: ${k.leads.telegram} contatos`,
+      `⚙️ Fila: ${fila.pendentes} pendentes | ${fila.totalLinhas} eventos`,
+      `🎯 LLM: ${fila.porTipo?.['gerar.relatorio'] || 0} relatórios | ${fila.porTipo?.['tick.conteudo'] || 0} conteúdos`,
+      `💵 Custo LLM hoje: US$ ${k.custos.custoEstimado?.toFixed?.(4) || '0'}`,
+      agentesPausados.length ? `\n⏸️ Pausados: ${agentesPausados.join(', ')}` : '\n✅ Todos agentes ativos',
+      '',
+      `📡 Últimos eventos: ${ultimos.map(e => e.tipo).join(' · ') || 'nenhum'}`
+    ].join('\n');
+    await canais.enviarTelegram(chatId, resp);
+    return;
+  }
+
+  if (cmd === '/pausar') {
+    const agente = parts.slice(1).join(' ');
+    if (!agente) { await canais.enviarTelegram(chatId, '❌ Use: /pausar <agente>'); return; }
+    const pausados = lerPausados();
+    if (pausados.includes(agente)) { await canais.enviarTelegram(chatId, `⏸️ ${agente} já está pausado.`); return; }
+    salvarPausados([...pausados, agente]);
+    bus.emitir({ agente: 'orquestrador', tipo: 'comando.pausar', payload: { agente } });
+    await canais.enviarTelegram(chatId, `⏸️ *${agente}* pausado. Próximos ticks serão ignorados.`);
+    return;
+  }
+
+  if (cmd === '/retomar') {
+    const agente = parts.slice(1).join(' ');
+    if (!agente) { await canais.enviarTelegram(chatId, '❌ Use: /retomar <agente>'); return; }
+    const pausados = lerPausados().filter(a => a !== agente);
+    salvarPausados(pausados);
+    bus.emitir({ agente: 'orquestrador', tipo: 'comando.retomar', payload: { agente } });
+    await canais.enviarTelegram(chatId, `▶️ *${agente}* retomado.`);
+    return;
+  }
+
+  if (cmd === '/aprovar') {
+    const id = parts[1];
+    if (!id) { await canais.enviarTelegram(chatId, '❌ Use: /aprovar <id>'); return; }
+    const aprovPath = path.join(__dirname, 'queue', 'aprovacoes.json');
+    let aprov = {};
+    try { aprov = JSON.parse(fs.readFileSync(aprovPath, 'utf8')); } catch {}
+    aprov[id] = { aprovadoEm: new Date().toISOString(), por: 'criador' };
+    fs.writeFileSync(aprovPath, JSON.stringify(aprov, null, 2));
+    bus.emitir({ agente: 'orquestrador', tipo: 'comando.aprovar', payload: { id } });
+    await canais.enviarTelegram(chatId, `✅ Aprovação registrada para \`${id}\`.`);
+    return;
+  }
+
+  await canais.enviarTelegram(chatId, `❓ Comando desconhecido: ${cmd}\nDisponíveis: /status, /pausar <agente>, /retomar <agente>, /aprovar <id>`);
+}
+
+async function responderTelegram(chatId, texto) {
+  return canais.enviarTelegram(chatId, texto);
 }
 
 // Ações de ESCRITA exigem um token separado (WRITE_SECRET), que o painel da
@@ -420,6 +524,17 @@ http
     }
     if (method === 'GET' && rawUrl === '/api/ecosystem/painel/catalogo') {
       return json(res, { ok: true, produtos: catalogoPainel() });
+    }
+
+    // 📞 Telegram Webhook (POST) — rota pública, validada por secret_token
+    if (method === 'POST' && rawUrl === '/api/ecosystem/telegram') {
+      const tokenHeader = req.headers['x-telegram-bot-api-secret-token'] || '';
+      if (tokenHeader !== WEBHOOK_SECRET) {
+        return json(res, { error: 'Invalid secret token' }, 403);
+      }
+      const body = await parseBody(req);
+      if (body?.message) await processarComandoTelegram(body.message);
+      return json(res, { ok: true });
     }
 
     if (!autenticado(req)) {
@@ -564,6 +679,7 @@ http
         if (semContato.length > 0) {
           bus.postar({ tipo: 'tick.captura', origem: 'autofix', produto: null, payload: { forcar: semContato.slice(0, 5).map(l => l.leadId) } });
           acoes.push(`Reativando captura para ${semContato.length} leads VIP sem Telegram`);
+          try { bus.emitir({ agente: 'autofix', tipo: 'captura.reativada', payload: { qtd: semContato.length } }); } catch {}
         }
 
         // 2. Leads "vip" com trial expirado (>8 dias) sem compra → posta follow-up
@@ -571,6 +687,7 @@ http
         if (expirados.length > 0) {
           bus.postar({ tipo: 'tick.followups', origem: 'autofix', produto: null, payload: { forcar: true } });
           acoes.push(`Acionando follow-up para ${expirados.length} leads com trial expirado`);
+          try { bus.emitir({ agente: 'autofix', tipo: 'followup.acionado', payload: { qtd: expirados.length } }); } catch {}
         }
 
         // 3. Leads "pago" com renovacao proxima (>20 dias desde criacao) → tick.renovacao
@@ -578,6 +695,7 @@ http
         if (renovar.length > 0) {
           bus.postar({ tipo: 'tick.renovacao', origem: 'autofix', produto: null, payload: {} });
           acoes.push(`Agendando renovacao para ${renovar.length} leads pagos`);
+          try { bus.emitir({ agente: 'autofix', tipo: 'renovacao.agendada', payload: { qtd: renovar.length } }); } catch {}
         }
 
         if (acoes.length === 0) acoes.push('Nenhuma correção necessária no momento.');
@@ -585,6 +703,25 @@ http
         return json(res, { error: 'Erro no autofix: ' + e.message }, 500);
       }
       return json(res, { ok: true, acoes });
+    }
+
+    // ═══════════════════════════════════════════
+    // ⛓️ Auditoria
+    // ═══════════════════════════════════════════
+    if (method === 'GET' && rawUrl === '/api/ecosystem/auditoria/integridade') {
+      const r = bus.verificarIntegridade();
+      return json(res, r);
+    }
+    if (method === 'GET' && rawUrl.startsWith('/api/ecosystem/auditoria')) {
+      const u = new URL(rawUrl, 'http://localhost');
+      const opts = {
+        agente: u.searchParams.get('agente') || undefined,
+        tipo: u.searchParams.get('tipo') || undefined,
+        desde: u.searchParams.get('desde') || undefined,
+        limite: parseInt(u.searchParams.get('limite') || '100', 10)
+      };
+      const eventos = bus.consultarAuditoria(opts);
+      return json(res, { ok: true, total: eventos.length, eventos });
     }
 
     return json(res, { error: 'Not Found' }, 404);
@@ -597,6 +734,41 @@ console.log('🛰️ Orquestrador do Ecossistema iniciado — aguardando eventos
 salvarStatus({ pendentes: 0 });
 setInterval(ciclo, 1000);
 ciclo();
+
+// ═══════════════════════════════════════════════
+// 📞 Ativa webhook Telegram (gated)
+// ═══════════════════════════════════════════════
+const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL;
+if (webhookUrl) {
+  const token = process.env.TELEGRAM_TOKEN;
+  if (token) {
+    const fullUrl = webhookUrl + '/api/ecosystem/telegram';
+    const https = require('https');
+    const opts = {
+      hostname: 'api.telegram.org',
+      port: 443,
+      path: `/bot${token}/setWebhook?url=${encodeURIComponent(fullUrl)}&secret_token=${encodeURIComponent(WEBHOOK_SECRET)}`,
+      method: 'GET'
+    };
+    const req = https.request(opts, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { const r = JSON.parse(data); log(`📞 setWebhook: ${r.ok ? 'OK' : 'FALHA'} — ${r.description || ''}`); }
+        catch { log(`📞 setWebhook: resposta ${res.statusCode}`); }
+      });
+    });
+    req.on('error', (e) => log(`📞 setWebhook ERRO: ${e.message}`));
+    req.end();
+  }
+} else {
+  log(`📞 Webhook Telegram desativado (TELEGRAM_WEBHOOK_URL vazio). Comandos só via rota /api/ecosystem/telegram.`);
+}
+
+// ═══════════════════════════════════════════════
+// 🪪 Emite evento de auditoria inicial
+// ═══════════════════════════════════════════════
+try { bus.emitir({ agente: 'orquestrador', tipo: 'inicio', payload: { versao: 1 } }); } catch {}
 
 // Tick periódico de follow-ups (retentor) e renovação (cobrador).
 // Só posta se houver leads relevantes no funil, pra não encher a fila à toa.
