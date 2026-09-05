@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Severino Vendedor IA — Seu vendedor 24/7</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background:#0b1020; color:#e8edf7; line-height:1.6; }
+  .wrap { max-width:880px; margin:0 auto; padding:0 22px; }
+
+  /* HERO */
+  .hero { padding:64px 22px 40px; text-align:center; background:linear-gradient(180deg,#101a33,#0b1020); }
+  .badge { display:inline-block; background:rgba(61,187,90,0.15); color:#3dbb5a; border:1px solid rgba(61,187,90,0.4); border-radius:999px; padding:5px 14px; font-size:0.72rem; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; }
+  .hero h1 { font-size:2.2rem; margin:18px 0 10px; line-height:1.15; }
+  .hero h1 span { color:#3dbb5a; }
+  .hero p { color:#9fb0cc; font-size:1.05rem; max-width:560px; margin:0 auto 26px; }
+  .cta { display:inline-block; background:#3dbb5a; color:#06210f; font-weight:800; font-size:1.05rem; padding:16px 38px; border-radius:14px; text-decoration:none; box-shadow:0 10px 30px rgba(61,187,90,0.25); }
+  .cta small { display:block; font-weight:600; font-size:0.7rem; margin-top:6px; opacity:0.75; }
+  .gar { margin-top:14px; font-size:0.8rem; color:#7d90b0; }
+
+  /* SEÇÕES */
+  section { padding:44px 22px; }
+  .secao-tit { font-size:1.4rem; margin-bottom:18px; text-align:center; }
+  .grid-3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+  .card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; }
+  .card .ic { font-size:1.6rem; }
+  .card h3 { font-size:0.95rem; margin:8px 0 6px; }
+  .card p { font-size:0.82rem; color:#9fb0cc; }
+
+  .plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+  .plan { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:24px; text-align:center; }
+  .plan.destaque { border:2px solid #3dbb5a; background:rgba(61,187,90,0.08); }
+  .plan .nome { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.8px; color:#9fb0cc; }
+  .plan .preco { font-size:2rem; font-weight:800; margin:10px 0 4px; }
+  .plan .preco small { font-size:0.85rem; font-weight:600; color:#9fb0cc; }
+  .plan ul { list-style:none; margin:14px 0; text-align:left; font-size:0.82rem; color:#c3cee0; }
+  .plan li { padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .plan li::before { content:"✓ "; color:#3dbb5a; font-weight:800; }
+  .plan .link { display:block; margin-top:10px; background:#3dbb5a; color:#06210f; font-weight:800; padding:12px; border-radius:10px; text-decoration:none; font-size:0.9rem; }
+
+  .faq details { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px; margin-bottom:10px; }
+  .faq summary { cursor:pointer; font-weight:700; font-size:0.9rem; }
+  .faq p { font-size:0.85rem; color:#9fb0cc; margin-top:8px; }
+
+  .vt { text-align:center; font-size:0.82rem; color:#7d90b0; padding:30px 22px 40px; }
+</style>
+</head>
+<body>
+
+<div class="hero wrap" style="max-width:900px;">
+  <span class="badge">⚡ Vendedor IA 24/7 · 3 idiomas</span>
+  <h1>Seu vendedor, trabalhando de graça<br>enquanto você dorme. <span>Até nas segundas.</span></h1>
+  <p>O <strong>Severino Vendedor IA</strong> é treinado com o seu negócio e responde clientes na hora, com preço certo e educação — sem fila, sem demora, sem perder venda.</p>
+  <a class="cta" href="{{CHECKOUT}}" onclick="if(this.href.includes('CHECKOUT')){alert('Configuração em andamento: adicione o link do checkout no .env (KIWIFY_CHECKOUT_URL).');return false;}">
+    Quero meu vendedor 24/7
+    <small>Ativação automática · garantia de 7 dias</small>
+  </a>
+  <div class="gar">🛡️ Não gostou em até 7 dias? Devolvemos seu dinheiro, sem perguntas.</div>
+</div>
+
+<section class="wrap">
+  <h2 class="secao-tit">O que ele faz por você</h2>
+  <div class="grid-3">
+    <div class="card"><div class="ic">⚡</div><h3>Responde em segundos</h3><p>Cliente não espera e não desiste: resposta na hora, de madrugada, feriado, 24/7.</p></div>
+    <div class="card"><div class="ic">🧠</div><h3>Treinado com seu negócio</h3><p>Ele aprende seus produtos, preços, regras e tom de voz. Nunca inventa valor.</p></div>
+    <div class="card"><div class="ic">💬</div><h3>Faz o follow-up</h3><p>Quem não respondeu ganha lembrete inteligente em 1h, 24h e 72h — sem spam.</p></div>
+    <div class="card"><div class="ic">🌎</div><h3>Atende em 3 idiomas</h3><p>Português, Inglês e Espanhol automáticos. Atende até o cliente estrangeiro.</p></div>
+    <div class="card"><div class="ic">🎯</div><h3>Qualifica antes de vender</h3><p>Faz as perguntas certas e indica o produto exato que o cliente precisa.</p></div>
+    <div class="card"><div class="ic">📈</div><h3>Te avisa do pedido</h3><p>Quando o cliente quer comprar, você é avisado na hora com o contato dele.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2 class="secao-tit">Como funciona</h2>
+  <div class="grid-3">
+    <div class="card"><div class="ic">1️⃣</div><h3>Cadastre</h3><p>Nome, produtos e regras do seu negócio. 5 minutos.</p></div>
+    <div class="card"><div class="ic">2️⃣</div><h3>Treine</h3><p>Cole seu conhecimento e as regras de venda. Um clique.</p></div>
+    <div class="card"><div class="ic">3️⃣</div><h3>Venda</h3><p>Compartilhe o link e o Severino atende seus clientes sozinho.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2 class="secao-tit">Planos simples</h2>
+  <div class="plans">
+    <div class="plan">
+      <div class="nome">1º vendedor</div>
+      <div class="preco">R$ 67,89<small>/mês</small></div>
+      <ul>
+        <li>1 vendedor IA (WhatsApp/web)</li>
+        <li>Treinado com seus arquivos</li>
+        <li>Funil + follow-up automático</li>
+        <li>3 idiomas</li>
+        <li>Aviso de pedido na hora</li>
+        <li>Garantia de 7 dias</li>
+      </ul>
+      <a class="link" href="{{CHECKOUT}}" onclick="if(this.href.includes('CHECKOUT')){alert('Configuração em andamento.');return false;}">Começar agora</a>
+    </div>
+    <div class="plan destaque">
+      <div class="nome">Vendedores extras</div>
+      <div class="preco">R$ 33,95<small>/mês cada</small></div>
+      <ul>
+        <li>50% de desconto</li>
+        <li>Mesmo cérebro treinado</li>
+        <li>Cada vendedor = 1 canal</li>
+        <li>Ex.: 2 vendedores = R$ 101,84</li>
+        <li>Ex.: 3 vendedores = R$ 135,79</li>
+        <li>Ex.: 5 vendedores = R$ 203,69</li>
+      </ul>
+      <a class="link" href="{{CHECKOUT}}" onclick="if(this.href.includes('CHECKOUT')){alert('Configuração em andamento.');return false;}">Eu quero escalar</a>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:0.78rem;color:#7d90b0;margin-top:16px;">Pagamento via Pix, cartão, USDT ou Bitcoin · Mensal · Semestral (−15%) · Anual (−25%)</p>
+</section>
+
+<section class="wrap faq">
+  <h2 class="secao-tit">Perguntas frequentes</h2>
+  <details><summary>Ele inventa preço ou prazo?</summary><p>Não. Ele só fala o que você cadastrou. Se não souber, ele diz que vai confirmar e retorna — honestidade sempre.</p></details>
+  <details><summary>Preciso de site ou WhatsApp Business?</summary><p>Não. Você ganha um link de atendimento que pode compartilhar no WhatsApp, Instagram e redes. Sem setup.</p></details>
+  <details><summary>E se eu não gostar?</summary><p>Reembolso automático em até 7 dias, sem perguntas. O risco é todo nosso.</p></details>
+  <details><summary>Funciona no meu ramo?</summary><p>Sim. Barbearia, pet shop, loja, restaurante, serviço, distribuidora... Ele é treinado com as suas regras.</p></details>
+</section>
+
+<div class="vt">Severino Vendedor IA · Atendimento com excelência e honestidade, 24/7.</div>
+
+</body>
+</html>

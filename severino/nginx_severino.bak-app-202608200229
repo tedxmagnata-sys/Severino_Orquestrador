@@ -1,0 +1,195 @@
+# =====================================================================
+# SEVERINOBOT.COM — Ecossistema Severino (independente do BTC)
+# severinobot.com / www / raiz + /ecosistema + /api/ecosystem + /agendabarber + /leadbook
+# =====================================================================
+server {
+    if ($host = www.severinobot.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = severinobot.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name severinobot.com www.severinobot.com 187.127.42.146;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name severinobot.com www.severinobot.com;
+    ssl_certificate /etc/letsencrypt/live/severinobot.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/severinobot.com/privkey.pem; # managed by Certbot
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    client_max_body_size 50M;
+
+    # Orquestrador do Ecossistema (porta 3335) — painel + API
+    location /ecosistema/ {
+        proxy_pass http://127.0.0.1:3335/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # API do ecossistema (independente do btcweather)
+    location /api/ecosystem/ {
+        proxy_pass http://127.0.0.1:3335;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # AgendaBarber (Severino Barber) — porta 3341
+    location /agendabarber/ {
+        proxy_pass http://127.0.0.1:3341/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # >>> LEADBOOK >>>
+    location /leadbook/ {
+        proxy_pass http://127.0.0.1:3336;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3334;
+        proxy_no_cache 1;
+        proxy_cache_bypass 1;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# =====================================================================
+# BTCWEATHERPANEL.COM — BTC Weather Panel (independente do severinobot)
+# btcweatherpanel.com / www / app → porta 3340 (processo btcweather)
+# =====================================================================
+server {
+    if ($host = app.btcweatherpanel.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = www.btcweatherpanel.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = btcweatherpanel.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name btcweatherpanel.com www.btcweatherpanel.com app.btcweatherpanel.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name btcweatherpanel.com www.btcweatherpanel.com app.btcweatherpanel.com;
+    ssl_certificate /etc/letsencrypt/live/severinobot.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/severinobot.com/privkey.pem; # managed by Certbot
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:3340;
+        proxy_no_cache 1;
+        proxy_cache_bypass 1;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# =====================================================================
+# POSTIZ (Postiz self-hosted — divulgação X/IG)
+# =====================================================================
+server {
+    if ($host = postiz.btcweatherpanel.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = postiz.severino-btc.duckdns.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name postiz.btcweatherpanel.com postiz.severino-btc.duckdns.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name postiz.btcweatherpanel.com postiz.severino-btc.duckdns.org;
+    ssl_certificate /etc/letsencrypt/live/severinobot.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/severinobot.com/privkey.pem; # managed by Certbot
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:4010;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# =====================================================================
+# app.severinobot.com - orquestrador do ecossistema (porta 3335)
+# Painel (catalogo publico + admin) + APIs /api/ecosystem/*
+# =====================================================================
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.severinobot.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3335;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

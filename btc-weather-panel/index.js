@@ -1,0 +1,2641 @@
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- I18N ENGINE (PT-BR / EN) ---
+    const SUPPORTED_LANGS = ['pt', 'en'];
+    let currentLang = 'pt';
+    try { currentLang = localStorage.getItem('btc_weather_lang') || 'pt'; } catch (e) {}
+    if (!SUPPORTED_LANGS.includes(currentLang)) currentLang = 'pt';
+
+    // t(key, fallback, vars) -> translated string in currentLang, fallback if missing
+    const t = (key, fallback, vars) => {
+        let out;
+        if (currentLang === 'pt') {
+            out = fallback || '';
+        } else {
+            const entry = (typeof I18N_DICT !== 'undefined' && I18N_DICT[key]) ? I18N_DICT[key] : null;
+            out = entry ? entry.en : (fallback || '');
+        }
+        if (vars) {
+            Object.keys(vars).forEach(k => {
+                out = out.split('{' + k + '}').join(vars[k]);
+            });
+        }
+        return out;
+    };
+
+    const langToggleBtn = document.getElementById('lang-toggle');
+    const langDropdown = document.getElementById('lang-dropdown');
+    const langCurrentLabel = document.getElementById('lang-current-label');
+
+    // Keeps the original PT content so switching back to PT restores it
+    const i18nOriginals = new Map();
+
+    function applyStaticI18n() {
+        document.documentElement.lang = currentLang === 'en' ? 'en' : 'pt-BR';
+        if (langCurrentLabel) langCurrentLabel.textContent = currentLang.toUpperCase();
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            opt.classList.toggle('active', opt.getAttribute('data-lang') === currentLang);
+        });
+        // [data-i18n] -> textContent
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (!i18nOriginals.has(el)) i18nOriginals.set(el, el.textContent);
+            const original = i18nOriginals.get(el);
+            if (currentLang === 'pt') {
+                if (el.textContent !== original) el.textContent = original;
+                return;
+            }
+            const translation = t(key);
+            if (translation && translation !== el.textContent) {
+                el.textContent = translation;
+            }
+        });
+        // [data-i18n-html] -> innerHTML (re-render lucide icons after)
+        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+            const key = el.getAttribute('data-i18n-html');
+            if (!i18nOriginals.has(el)) i18nOriginals.set(el, el.innerHTML);
+            const original = i18nOriginals.get(el);
+            if (currentLang === 'pt') {
+                if (el.innerHTML !== original) el.innerHTML = original;
+                return;
+            }
+            const translation = t(key);
+            if (translation) {
+                el.innerHTML = translation;
+            }
+        });
+        // [data-i18n-placeholder] -> placeholder
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (!i18nOriginals.has(el)) i18nOriginals.set(el, el.getAttribute('placeholder') || '');
+            const original = i18nOriginals.get(el);
+            if (currentLang === 'pt') {
+                el.setAttribute('placeholder', original);
+                return;
+            }
+            const translation = t(key);
+            if (translation) el.setAttribute('placeholder', translation);
+        });
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function setLanguage(lang, save) {
+        if (!SUPPORTED_LANGS.includes(lang)) lang = 'pt';
+        currentLang = lang;
+        if (save) {
+            try { localStorage.setItem('btc_weather_lang', lang); } catch (e) {}
+        }
+        applyStaticI18n();
+        // Re-render dynamic content with the new language
+        if (typeof updateCycleProgress === 'function') updateCycleProgress();
+        if (typeof updateHalvingCountdown === 'function') updateHalvingCountdown();
+        if (typeof renderForecastCards === 'function') renderForecastCards();
+        if (typeof updateVipSignalsUI === 'function') updateVipSignalsUI();
+        if (typeof updateThermometerUI === 'function') updateThermometerUI();
+        if (typeof applyTierState === 'function') applyTierState();
+        // Re-apply current weather theme text (hero desc / location / conviction)
+        const activeTf = typeof activeTimeframe !== 'undefined' ? activeTimeframe : '1D';
+        const th = (typeof weatherThemes !== 'undefined' && weatherThemes[activeTf]) ? weatherThemes[activeTf] : null;
+        if (th && typeof changeWeatherTheme === 'function') changeWeatherTheme(activeTf, th);
+    }
+
+    // Language switcher UI
+    if (langToggleBtn && langDropdown) {
+        langToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = langDropdown.classList.contains('hidden');
+            langDropdown.classList.toggle('hidden', !isOpen);
+            langToggleBtn.classList.toggle('open', isOpen);
+            langToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+        langDropdown.addEventListener('click', (e) => {
+            const opt = e.target.closest('.lang-option');
+            if (!opt) return;
+            const lang = opt.getAttribute('data-lang');
+            setLanguage(lang, true);
+            langDropdown.classList.add('hidden');
+            langToggleBtn.classList.remove('open');
+            langToggleBtn.setAttribute('aria-expanded', 'false');
+        });
+        document.addEventListener('click', (e) => {
+            if (!langSwitcherContains(e.target)) {
+                langDropdown.classList.add('hidden');
+                langToggleBtn.classList.remove('open');
+                langToggleBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+    function langSwitcherContains(target) {
+        const sw = document.getElementById('lang-switcher');
+        return sw ? sw.contains(target) : false;
+    }
+
+    // Apply initial language once DOM is ready
+    applyStaticI18n();
+
+    // --- ELEMENT REFERENCES ---
+    const btcPriceEl = document.getElementById('btc-price');
+    const btcChangeEl = document.getElementById('btc-change');
+    const heroCard = document.getElementById('hero-card');
+    
+    // Modals
+    const referralModal = document.getElementById('referral-modal');
+    const paywallModal = document.getElementById('paywall-modal');
+    
+    // Buttons to open modals
+    const btnReferral = document.getElementById('btn-referral');
+    const btnLogin = document.getElementById('btn-login');
+    const btnUnlockStations = document.getElementById('btn-unlock-stations');
+    const btnUnlockSignals = document.getElementById('btn-unlock-signals');
+    const btnClaimStrategy = document.getElementById('btn-claim-strategy');
+    
+    // Lockable elements
+    const lockedItems = document.querySelectorAll('.locked');
+    
+    // Referral link copy
+    const btnCopyLink = document.getElementById('btn-copy-link');
+    const shareLinkInput = document.getElementById('share-link');
+    const copySuccess = document.getElementById('copy-success');
+
+    // Close buttons
+    const closeBtns = document.querySelectorAll('.modal-close, .modal-overlay');
+
+    // Fullscreen / TV Mode elements
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const btnExitFullscreen = document.getElementById('btn-exit-fullscreen');
+
+    // J1 Tab Buttons and Contents
+    const j1TabBtns = document.querySelectorAll('.j1-tab-btn');
+    const j1TabContents = document.querySelectorAll('.j1-tab-content');
+
+    // Tools mini-tabs (Ferramentas BTC)
+    const miniTabBtns = document.querySelectorAll('.mini-tab-btn');
+    const miniTabContents = document.querySelectorAll('.mini-tab-content');
+    miniTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-mini-tab');
+            miniTabBtns.forEach(b => {
+                const isActive = b === btn;
+                b.classList.toggle('active', isActive);
+                b.style.color = isActive ? 'var(--color-sunny)' : 'var(--text-secondary)';
+                b.style.borderBottom = isActive ? '2px solid var(--color-sunny)' : '2px solid transparent';
+            });
+            miniTabContents.forEach(content => {
+                content.style.display = (content.id === target) ? 'block' : 'none';
+            });
+        });
+    });
+
+    // Countdown elements
+    const subPriceCountdownEl = document.getElementById('sub-price-countdown');
+    const halvingCountdownEl = document.getElementById('halving-countdown');
+    const halvingProbPctEl = document.getElementById('halving-prob-pct');
+
+    // Calculator Elements
+    const calcAmountInput = document.getElementById('calc-amount');
+    const calcFromSelect = document.getElementById('calc-from');
+    const calcToSelect = document.getElementById('calc-to');
+    const calcResultSpan = document.getElementById('calc-result');
+
+    // --- DEV MODE (force VIP via ?dev=1) ---
+    const isDevMode = location.search.includes('dev=1'); // ativado apenas com ?dev=1
+
+    // --- STATE VARIABLES ---
+    let btcPriceUsd = 63480.00;
+    let btcPriceBrl = 344696.00;
+    let btcPriceEur = 58340.00;
+    let btcChangePercent = 2.48;
+    let baseHalvingProb = 92.4842;
+    let activeTimeframe = '1D';
+    let lastWeatherStatus = null;
+    let audioCtx = null;
+    let macroSentimentScore = 0.0;
+    let forecastReady = false;
+
+    // Teaser de não-assinantes (invites rotativos + captura de lead)
+    let inviteState = null;
+    let inviteTimer = null;
+    let claimingTrial = false;
+
+    const isWeekend = [0, 6].includes(new Date().getDay());
+    const liquidityText = isWeekend ? 'Baixa liquidez típica do final de semana.' : 'Liquidez intradiária ativa de dias úteis.';
+
+    // --- 1. DYNAMIC WEATHER THEME SWITCHER (BTC View) ---
+    const weatherThemes = {
+        '1D': {
+            themeClass: 'theme-sunny',
+            statusText: 'Ensolarado',
+            icon: '☀️',
+            iconName: 'sun',
+            scoreText: '84% Alta',
+            scoreClass: 'score-high',
+            descText: 'Tendência de alta forte no curto/médio prazo. Algoritmo posicionado em LONG. Suportes sólidos segurando a cotação.'
+        },
+        '1W': {
+            themeClass: 'theme-cloudy',
+            statusText: 'Parcialmente Nublado',
+            icon: '🌤️',
+            iconName: 'cloud-sun',
+            scoreText: '58% Neutro',
+            scoreClass: 'score-medium',
+            descText: 'Acumulação em range estreito no gráfico semanal. Baixa volatilidade. Aguardando expansão de volume.'
+        },
+        '1M': {
+            themeClass: 'theme-stormy',
+            statusText: 'Tempestade Macro',
+            icon: '⛈️',
+            iconName: 'cloud-lightning',
+            scoreText: '71% Baixa',
+            scoreClass: 'score-low',
+            descText: 'Ajuste de ciclo macro. Pressão de venda no topo mensal. Alinhado com fundos históricos de acumulação.'
+        },
+        '15M': {
+            themeClass: 'theme-stormy',
+            statusText: 'Scalping BTC (Chuva Ácida)',
+            icon: '🌧️',
+            iconName: 'cloud-rain',
+            scoreText: '78% Baixa',
+            scoreClass: 'score-low',
+            descText: 'Tendência de queda rápida no curtíssimo prazo. Algoritmo posicionado em SHORT. Suportes secundários rompidos.'
+        },
+        '1H': {
+            themeClass: 'theme-cloudy',
+            statusText: 'Day Trade BTC (Nublado com Ventos)',
+            icon: '💨',
+            iconName: 'wind',
+            scoreText: '52% Neutro',
+            scoreClass: 'score-medium',
+            descText: `Lateralização em range de 1 hora. ${liquidityText} Evite trades alavancados.`
+        },
+        '4H': {
+            themeClass: 'theme-sunny',
+            statusText: 'Swing 4H (Ensolarado)',
+            icon: '☀️',
+            iconName: 'sun',
+            scoreText: '81% Alta',
+            scoreClass: 'score-high',
+            descText: 'Canal de alta de 4 horas ativado. Rompimento de pivô confirmado com volume comprador crescente.'
+        },
+        '3D': {
+            themeClass: 'theme-sunny',
+            statusText: 'Macro 3D (Super Ensolarado)',
+            icon: '🔥',
+            iconName: 'flame',
+            scoreText: '95% Alta Extrema',
+            scoreClass: 'score-high',
+            descText: 'Alinhamento dos planetas macroeconômicos. Suporte institucional massivo. Início da fase de euforia parabólica.'
+        }
+    };
+
+    function playSoundAlert(type) {
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            
+            if (type === 'bullish') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'bearish') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.setValueAtTime(493.88, now + 0.1); // B4
+                osc.frequency.setValueAtTime(392.00, now + 0.2); // G4
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(659.25, now); // E5
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+        } catch (e) {
+            console.warn("AudioContext playback blocked/failed: ", e);
+        }
+    }
+
+    function changeWeatherTheme(tf, data) {
+        const isTimeframeActive = (activeTimeframe === tf);
+        const statusChanged = lastWeatherStatus && lastWeatherStatus !== data.statusText;
+        
+        activeTimeframe = tf;
+        const oldStatus = lastWeatherStatus;
+        lastWeatherStatus = data.statusText;
+
+        // Reset all themes
+        heroCard.classList.remove('theme-sunny', 'theme-cloudy', 'theme-stormy');
+        heroCard.classList.add(data.themeClass);
+        
+        // Update hero values
+        const statusEl = heroCard.querySelector('.location');
+        statusEl.innerHTML = `<i data-lucide="map-pin"></i> BITCOIN / USD — ${currentLang === 'en' ? 'WEATHER' : 'CLIMA'}: <span class="climatic-status">${data.statusText.toUpperCase()}</span> <i data-lucide="${data.iconName || 'sun'}"></i>`;
+        
+        const convictionEl = heroCard.querySelector('.footer-stat:nth-child(2) .value');
+        convictionEl.className = `value ${data.scoreClass}`;
+        convictionEl.textContent = data.scoreText;
+
+        // If there's a custom description for the timeframe, show it in the consolidation box!
+        const descEl = document.getElementById('term-signal-desc');
+        if (descEl && data.descText) {
+            descEl.textContent = data.descText;
+        }
+
+        // Show brief analysis on the hero card description block
+        const heroDescEl = document.getElementById('hero-weather-desc');
+        if (heroDescEl && data.descText) {
+          const lic = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+          const tier = isDevMode ? 'vip' : (lic && lic.tier ? lic.tier : 'free');
+          if (tier === 'vip') {
+            heroDescEl.textContent = data.descText;
+          } else {
+            heroDescEl.textContent = '';
+          }
+        }
+
+        // Alert trader dynamically if status changes on the current active timeframe
+        if (statusChanged && isTimeframeActive) {
+            triggerWebNotification(`Clima BTC Alterado (${tf})`, `De ${oldStatus || 'Desconhecido'} para ${data.statusText}`);
+            if (data.themeClass === 'theme-sunny') {
+                playSoundAlert('bullish');
+            } else if (data.themeClass === 'theme-stormy') {
+                playSoundAlert('bearish');
+            } else {
+                playSoundAlert('neutral');
+            }
+        }
+
+        // Render lucide icons
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+
+    const forecastGridContainer = document.getElementById('forecast-grid-container');
+    if (forecastGridContainer) {
+        forecastGridContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('.forecast-card');
+            if (!card) return;
+            // Cards cobertos (não-pagantes) não devem revelar análise no hero
+            if (card.classList.contains('invite-covered')) return;
+
+            const tf = card.getAttribute('data-timeframe');
+            const data = weatherThemes[tf];
+            if (!data) return;
+
+            changeWeatherTheme(tf, data);
+            playSoundAlert('neutral');
+
+            // Highlight active card
+            const cards = forecastGridContainer.querySelectorAll('.forecast-card');
+            cards.forEach(c => {
+                c.style.transform = '';
+                c.style.borderColor = '';
+            });
+            card.style.transform = 'translateY(-4px) scale(1.01)';
+            card.style.borderColor = 'var(--color-premium)';
+
+            // Reset active premium item highlight
+            const premiumItems = document.querySelectorAll('.premium-item');
+            premiumItems.forEach(i => i.style.borderColor = '');
+
+            // Highlight matching premium item in the sidebar if exists
+            const premiumItem = document.querySelector(`.premium-item[data-lock-target="${tf}"]`);
+            if (premiumItem) {
+                premiumItem.style.borderColor = 'var(--color-premium)';
+            }
+        });
+    }
+
+    // Initialize default theme (Sunny 1D)
+    heroCard.classList.add('theme-sunny');
+
+
+    // --- 2. J1 TAB CONTROLLER (Toggle + Auto-close 30s) ---
+    let j1TabTimer = null;
+    j1TabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+            const isCurrentlyActive = btn.classList.contains('active');
+            
+            // Close all
+            j1TabBtns.forEach(b => b.classList.remove('active'));
+            j1TabContents.forEach(c => c.classList.remove('active'));
+            
+            // Clear timer
+            if (j1TabTimer) {
+                clearTimeout(j1TabTimer);
+                j1TabTimer = null;
+            }
+            
+            // If was active, just close (toggle off)
+            if (isCurrentlyActive) return;
+            
+            // Open clicked tab
+            btn.classList.add('active');
+            j1TabContents.forEach(content => {
+                if (content.id === targetTab) {
+                    content.classList.add('active');
+                }
+            });
+            
+            // Recalculate calculator conversion immediately if entering calculator tab
+            if (targetTab === 'tab-calculator') {
+                performConversion();
+            }
+            // Fetch/Update termometro if entering thermometer tab
+            if (targetTab === 'tab-thermometer') {
+                fetchFearAndGreed();
+            }
+            
+            // Auto-close after 30 seconds
+            j1TabTimer = setTimeout(() => {
+                j1TabBtns.forEach(b => b.classList.remove('active'));
+                j1TabContents.forEach(c => c.classList.remove('active'));
+                j1TabTimer = null;
+            }, 30000);
+        });
+    });
+
+
+    // --- 3. DYNAMIC HALVING COUNTDOWN & DIFFICULTY PROBABILITY ---
+    // Target date for next Bitcoin Halving: ~April 17, 2028
+    const targetHalvingDate = new Date('2028-04-17T00:00:00').getTime();
+
+    function updateHalvingCountdown() {
+        const now = new Date().getTime();
+        const difference = targetHalvingDate - now;
+
+        if (difference < 0) {
+            const expiredText = currentLang === 'en' ? 'The Halving Has Happened!' : 'O Halving Aconteceu!';
+            if (halvingCountdownEl) halvingCountdownEl.textContent = expiredText;
+            if (subPriceCountdownEl) subPriceCountdownEl.textContent = expiredText;
+            return;
+        }
+
+        // Calculations for time units
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        // Update discrete countdown below price cotação
+        if (subPriceCountdownEl) {
+            subPriceCountdownEl.innerHTML = `⏳ ${currentLang === 'en' ? 'Halving:' : 'Halving:'} <b>${days}d ${hours}h ${minutes}m ${seconds}s</b>`;
+        }
+
+        // Update main J1 tab countdown
+        if (halvingCountdownEl) {
+            halvingCountdownEl.innerHTML = `${currentLang === 'en' ? 'Remaining:' : 'Faltam:'} <b>${days}d ${hours}h ${minutes}m ${seconds}s</b>`;
+        }
+
+        // Fluctuate the probability slightly around 92.48% (simulates difficulty/speed adjustments)
+        const fluctuation = (Math.random() - 0.5) * 0.0008;
+        baseHalvingProb += fluctuation;
+        if (baseHalvingProb < 92.1) baseHalvingProb = 92.1;
+        if (baseHalvingProb > 92.9) baseHalvingProb = 92.9;
+
+        if (halvingProbPctEl) {
+            halvingProbPctEl.textContent = `${baseHalvingProb.toFixed(4)}%`;
+        }
+    }
+
+    // Initialize and run interval
+    updateHalvingCountdown();
+    setInterval(updateHalvingCountdown, 1000);
+
+    // Cycle progress: % of 4-year halving cycle elapsed (last halving 2024-04-19 -> next 2028-04-17)
+    const cycleLastHalving = new Date('2024-04-19T00:00:00').getTime();
+    const cycleBarEl = document.getElementById('cycle-progress-bar');
+    const cycleLabelEl = document.getElementById('cycle-progress-label');
+    function updateCycleProgress() {
+        if (!cycleBarEl || !cycleLabelEl) return;
+        const now = new Date().getTime();
+        const total = targetHalvingDate - cycleLastHalving;
+        const elapsed = now - cycleLastHalving;
+        let pct = total > 0 ? (elapsed / total) * 100 : 0;
+        pct = Math.min(100, Math.max(0, pct));
+        cycleBarEl.style.width = pct.toFixed(1) + '%';
+        cycleLabelEl.textContent = pct.toFixed(1).replace('.', ',') + '%' + (currentLang === 'en' ? ' Completed' : ' Concluído');
+    }
+    updateCycleProgress();
+    setInterval(updateCycleProgress, 60000);
+
+
+    // --- 4. REAL-TIME CRYPTO CALCULATOR CONVERTER ---
+    function performConversion() {
+        if (!calcAmountInput || !calcFromSelect || !calcToSelect || !calcResultSpan) return;
+
+        const amount = parseFloat(calcAmountInput.value);
+        if (isNaN(amount) || amount < 0) {
+            calcResultSpan.textContent = '0.00';
+            return;
+        }
+
+        const fromCurrency = calcFromSelect.value;
+        const toCurrency = calcToSelect.value;
+
+        // Conversion Rates in USD (updated dynamically with CoinGecko prices)
+        const ratesInUsd = {
+            'BTC': btcPriceUsd,
+            'SATS': btcPriceUsd / 100000000,
+            'USDC': 1.0,
+            'BRL': btcPriceUsd / btcPriceBrl,
+            'EUR': btcPriceUsd / btcPriceEur
+        };
+
+        // Convert From Currency amount to USD
+        const amountInUsd = amount * ratesInUsd[fromCurrency];
+
+        // Convert USD amount to Target Currency
+        const convertedValue = amountInUsd / ratesInUsd[toCurrency];
+
+        // Format result based on target currency
+        let formattedResult = '';
+        if (toCurrency === 'BTC') {
+            formattedResult = convertedValue.toFixed(6);
+        } else if (toCurrency === 'SATS') {
+            formattedResult = Math.round(convertedValue).toLocaleString('en-US');
+        } else if (toCurrency === 'USDC' || toCurrency === 'BRL' || toCurrency === 'EUR') {
+            formattedResult = convertedValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        calcResultSpan.textContent = formattedResult;
+    }
+
+    if (calcAmountInput) {
+        calcAmountInput.addEventListener('input', performConversion);
+        calcFromSelect.addEventListener('change', performConversion);
+        calcToSelect.addEventListener('change', performConversion);
+    }
+
+
+    // --- 5. TV MODE (FULLSCREEN ONLY BTC PRICE & FORECASTS) & AUTO-ZOOM ---
+function adjustZoom() {
+        const container = document.querySelector('.container');
+        if (!container) return;
+        
+        if (window.innerWidth > 900) {
+            document.body.classList.add('auto-fit-mode');
+            const isTVMode = document.body.classList.contains('fullscreen-mode');
+            const designWidth = isTVMode ? 1080 : 1280;
+            const designHeight = isTVMode ? 700 : 820;
+            
+            const scaleX = window.innerWidth / designWidth;
+            const scaleY = window.innerHeight / designHeight;
+            const scale = Math.min(scaleX, scaleY);
+            
+            container.style.transform = 'scale(' + scale + ')';
+            container.style.transformOrigin = 'center center';
+        } else {
+            document.body.classList.remove('auto-fit-mode');
+            container.style.transform = '';
+            container.style.transformOrigin = '';
+        }
+    }
+
+    function enterTVMode() {
+        document.body.classList.add('fullscreen-mode');
+        btnExitFullscreen.classList.remove('hidden');
+        adjustZoom();
+    }
+
+    function exitTVMode() {
+        document.body.classList.remove('fullscreen-mode');
+        btnExitFullscreen.classList.add('hidden');
+        adjustZoom();
+    }
+
+    btnFullscreen.addEventListener('click', enterTVMode);
+    btnExitFullscreen.addEventListener('click', exitTVMode);
+
+    // Zoom listeners
+    window.addEventListener('resize', adjustZoom);
+    window.addEventListener('load', adjustZoom);
+    adjustZoom();
+
+
+    // --- 6. REAL COINGECKO API FETCH & MICRO-TICKER ---
+    async function fetchBtcPrice() {
+        try {
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl,usd,eur&include_24hr_change=true');
+            if (!response.ok) throw new Error('API request failed');
+            const data = await response.json();
+            if (data && data.bitcoin) {
+                btcPriceUsd = data.bitcoin.usd;
+                btcPriceBrl = data.bitcoin.brl;
+                btcPriceEur = data.bitcoin.eur;
+                btcChangePercent = data.bitcoin.usd_24h_change;
+                
+                updatePriceUI();
+                performConversion();
+            }
+        } catch (error) {
+            console.error('Erro ao buscar cotação da CoinGecko, usando Binance/Fallback:', error);
+            if (weatherThemes['1D'] && weatherThemes['1D'].currentPrice) {
+                btcPriceUsd = weatherThemes['1D'].currentPrice;
+            }
+            btcPriceBrl = btcPriceUsd * 5.43;
+            btcPriceEur = btcPriceUsd * 0.92;
+            
+            updatePriceUI();
+            performConversion();
+        }
+    }
+
+    function updatePriceUI() {
+        if (!btcPriceEl || !btcChangeEl) return;
+        const formattedPrice = btcPriceUsd.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        btcPriceEl.textContent = formattedPrice;
+
+        const sign = btcChangePercent >= 0 ? '▲' : '▼';
+        const changeClass = btcChangePercent >= 0 ? 'change-up' : 'change-down';
+        
+        btcChangeEl.className = `temp-change ${changeClass}`;
+        btcChangeEl.innerHTML = `
+            <span class="change-icon">${sign}</span>
+            <span class="change-value">${btcChangePercent.toFixed(2)}% (24h)</span>
+        `;
+
+        checkCustomPriceAlerts(btcPriceUsd);
+    }
+
+    // --- 6b. FEAR & GREED INDEX & TERMÔMETRO SYSTEM ---
+    let lastFngValue = 50;
+    let lastFngClass = 'Neutral';
+
+    async function fetchFearAndGreed() {
+        try {
+            const response = await fetch('https://api.alternative.me/fng/');
+            if (!response.ok) throw new Error('FNG request failed');
+            const data = await response.json();
+            if (data && data.data && data.data[0]) {
+                lastFngValue = parseInt(data.data[0].value);
+                lastFngClass = data.data[0].value_classification;
+                updateThermometerUI();
+            }
+        } catch (error) {
+            console.error('Erro ao buscar Fear & Greed Index:', error);
+            updateThermometerUI();
+        }
+    }
+
+    // --- CUSTOM PRICE ALERTS STATE & MANAGEMENT ---
+    let customAlerts = [];
+    const MAX_CUSTOM_ALERTS = 5;
+
+    function loadCustomAlerts() {
+        const saved = localStorage.getItem('btc_weather_custom_alerts');
+        if (saved) {
+            try {
+                customAlerts = JSON.parse(saved);
+            } catch (e) {
+                console.error("Error parsing custom alerts:", e);
+                customAlerts = [];
+            }
+        }
+        renderCustomAlerts();
+    }
+
+    function saveCustomAlerts() {
+        localStorage.setItem('btc_weather_custom_alerts', JSON.stringify(customAlerts));
+    }
+
+    function renderCustomAlerts() {
+        const listContainer = document.getElementById('alerts-list-container');
+        const badgeCount = document.getElementById('alert-badge-count');
+        const countLabel = document.getElementById('alerts-count-label');
+        if (!listContainer) return;
+
+        const activeAlerts = customAlerts.filter(a => !a.triggered);
+        const activeCount = activeAlerts.length;
+
+        if (badgeCount) {
+            if (activeCount > 0) {
+                badgeCount.textContent = activeCount;
+                badgeCount.classList.remove('hidden');
+            } else {
+                badgeCount.classList.add('hidden');
+            }
+        }
+
+        if (countLabel) {
+            countLabel.textContent = `${activeCount}/${MAX_CUSTOM_ALERTS} ativos`;
+        }
+
+        if (customAlerts.length === 0) {
+            listContainer.innerHTML = `
+                <div style="text-align: center; color: var(--text-secondary); font-size: 0.75rem; padding: 1rem 0;">
+                    Nenhum alerta configurado no momento.
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        customAlerts.forEach(alert => {
+            const isAbove = alert.condition === 'above';
+            const condIcon = isAbove ? '🟢 ≥' : '🔴 ≤';
+            const statusBadge = alert.triggered 
+                ? '<span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">Disparado</span>' 
+                : '<span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(0, 230, 118, 0.15); color: #00e676;">Ativo</span>';
+
+            const emailText = alert.email ? `<span style="font-size: 0.62rem; color: var(--color-sunny); font-family: monospace;">📧 ${alert.email}</span>` : '';
+
+            html += `
+                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.6rem 0.8rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fff;">
+                            <span>${condIcon} $${alert.price.toLocaleString('en-US')}</span>
+                            ${statusBadge}
+                        </div>
+                        ${emailText}
+                        <span style="font-size: 0.62rem; color: var(--text-secondary);">Criado: ${new Date(alert.createdAt).toLocaleDateString('pt-BR')} ${new Date(alert.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <button class="btn btn-secondary btn-delete-alert" data-id="${alert.id}" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; border-color: rgba(255,51,102,0.3); color: #ff3366; background: rgba(255,51,102,0.05);">
+                        🗑️
+                    </button>
+                </div>
+            `;
+        });
+
+        listContainer.innerHTML = html;
+
+        // Bind delete events
+        listContainer.querySelectorAll('.btn-delete-alert').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                customAlerts = customAlerts.filter(a => a.id !== id);
+                saveCustomAlerts();
+                renderCustomAlerts();
+            });
+        });
+    }
+
+    function checkCustomPriceAlerts(currentBtcPrice) {
+        if (!customAlerts || customAlerts.length === 0) return;
+
+        let changed = false;
+        customAlerts.forEach(alert => {
+            if (alert.triggered) return;
+
+            const isAbove = alert.condition === 'above';
+            const priceMet = isAbove ? currentBtcPrice >= alert.price : currentBtcPrice <= alert.price;
+
+            if (priceMet) {
+                alert.triggered = true;
+                changed = true;
+
+                const directionText = isAbove ? 'subiu e atingiu' : 'caiu para';
+                const emoji = isAbove ? '🚀 🟢' : '🚨 🔴';
+                const soundType = isAbove ? 'bullish' : 'bearish';
+
+                const msgTitle = `${emoji} Alerta de Preço BTC!`;
+                const msgBody = `O Bitcoin ${directionText} $${alert.price.toLocaleString('en-US')}! (Cotação atual: $${Math.round(currentBtcPrice).toLocaleString('en-US')})`;
+
+                triggerWebNotification(msgTitle, msgBody);
+                playSoundAlert(soundType);
+
+                // Dispatch Webhook (Telegram + Email)
+                fetch('/api/webhook/clima', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        secret: adminConfig.vipKey || '',
+                        clima: 'ALERTA_PRECO',
+                        mensagem: `🎯 <b>ALERTA DE PREÇO DO BITCOIN ATINGIDO!</b>\n───────────────────\n💰 Preço Alvo: $${alert.price.toLocaleString('en-US')}\n📈 Cotação Atual: $${Math.round(currentBtcPrice).toLocaleString('en-US')}\n📝 Condição: ${isAbove ? '≥ (Maior ou igual)' : '≤ (Menor ou igual)'}\n⏰ Horário: ${new Date().toLocaleString('pt-BR')}\n───────────────────\n<i>btc-weather-panel</i>`,
+                        chat_id: adminConfig.tgChatId || '1088548125',
+                        email: alert.email || ''
+                    })
+                }).catch(err => console.error('Erro ao enviar webhook de alerta de preço:', err));
+            }
+        });
+
+        if (changed) {
+            saveCustomAlerts();
+            renderCustomAlerts();
+        }
+    }
+
+    function updateThermometerUI() {
+        // 1. Fear & Greed (real fetched)
+        const fngScore = lastFngValue;
+        let fngSignal = 'NEUTRO';
+        let fngScoreNum = 0; // -2 to +2
+        if (fngScore <= 25) { fngSignal = 'COMPRA FORTE'; fngScoreNum = 2; }
+        else if (fngScore < 45) { fngSignal = 'COMPRA'; fngScoreNum = 1; }
+        else if (fngScore < 55) { fngSignal = 'NEUTRO'; fngScoreNum = 0; }
+        else if (fngScore < 75) { fngSignal = 'VENDA'; fngScoreNum = -1; }
+        else { fngSignal = 'VENDA FORTE'; fngScoreNum = -2; }
+        
+        // 2. MVRV Ratio (simulated based on price with small sine variance)
+        const mvrvFactor = 0.835 + (Math.sin(Date.now() / 150000) * 0.012);
+        const realizedPrice = btcPriceUsd * mvrvFactor;
+        const mvrvRatio = btcPriceUsd / realizedPrice;
+        let mvrvSignal = 'NEUTRO';
+        let mvrvScoreNum = 0;
+        if (mvrvRatio < 1.0) { mvrvSignal = 'COMPRA FORTE'; mvrvScoreNum = 2; }
+        else if (mvrvRatio < 1.25) { mvrvSignal = 'COMPRA'; mvrvScoreNum = 1; }
+        else if (mvrvRatio < 2.0) { mvrvSignal = 'NEUTRO'; mvrvScoreNum = 0; }
+        else if (mvrvRatio < 3.0) { mvrvSignal = 'VENDA'; mvrvScoreNum = -1; }
+        else { mvrvSignal = 'VENDA FORTE'; mvrvScoreNum = -2; }
+
+        // 3. 200W MA
+        const ma200Value = 63695 + (Math.sin(Date.now() / 300000) * 8);
+        let ma200Signal = 'NEUTRO';
+        let ma200ScoreNum = 0;
+        if (btcPriceUsd < ma200Value) { ma200Signal = 'COMPRA FORTE'; ma200ScoreNum = 2; }
+        else if (btcPriceUsd < ma200Value * 1.2) { ma200Signal = 'COMPRA'; ma200ScoreNum = 1; }
+        else if (btcPriceUsd < ma200Value * 2.0) { ma200Signal = 'NEUTRO'; ma200ScoreNum = 0; }
+        else if (btcPriceUsd < ma200Value * 3.0) { ma200Signal = 'VENDA'; ma200ScoreNum = -1; }
+        else { ma200Signal = 'VENDA FORTE'; ma200ScoreNum = -2; }
+
+        // 4. RSI Mensal
+        const rsiValue = Math.min(95, Math.max(10, 48 + (btcChangePercent * 2.2)));
+        let rsiSignal = 'NEUTRO';
+        let rsiScoreNum = 0;
+        if (rsiValue < 30) { rsiSignal = 'COMPRA FORTE'; rsiScoreNum = 2; }
+        else if (rsiValue < 50) { rsiSignal = 'COMPRA'; rsiScoreNum = 1; }
+        else if (rsiValue < 70) { rsiSignal = 'NEUTRO'; rsiScoreNum = 0; }
+        else if (rsiValue < 80) { rsiSignal = 'VENDA'; rsiScoreNum = -1; }
+        else { rsiSignal = 'VENDA FORTE'; rsiScoreNum = -2; }
+
+        // 5. Preço Realizado
+        let realizedSignal = mvrvSignal;
+        let realizedScoreNum = mvrvScoreNum;
+
+        // 6. % Supply em Lucro
+        const supplyInProfit = Math.min(99.9, Math.max(20.0, 52.0 + (mvrvRatio - 1.0) * 110));
+        let supplySignal = 'NEUTRO';
+        let supplyScoreNum = 0;
+        if (supplyInProfit < 45) { supplySignal = 'COMPRA FORTE'; supplyScoreNum = 2; }
+        else if (supplyInProfit < 65) { supplySignal = 'COMPRA'; supplyScoreNum = 1; }
+        else if (supplyInProfit < 85) { supplySignal = 'NEUTRO'; supplyScoreNum = 0; }
+        else if (supplyInProfit < 95) { supplySignal = 'VENDA'; supplyScoreNum = -1; }
+        else { supplySignal = 'VENDA FORTE'; supplyScoreNum = -2; }
+
+        // UPDATE INDICATOR CARDS UI
+        updateCardUI('term-val-fng', 'term-badge-fng', fngScore.toString(), fngSignal);
+        updateCardUI('term-val-mvrv', 'term-badge-mvrv', mvrvRatio.toFixed(3), mvrvSignal);
+        updateCardUI('term-val-ma200', 'term-badge-ma200', '$' + Math.round(ma200Value).toLocaleString('en-US'), ma200Signal);
+        updateCardUI('term-val-rsi', 'term-badge-rsi', rsiValue.toFixed(1), rsiSignal);
+        updateCardUI('term-val-realized', 'term-badge-realized', '$' + Math.round(realizedPrice).toLocaleString('en-US'), realizedSignal);
+        updateCardUI('term-val-supply', 'term-badge-supply', supplyInProfit.toFixed(2) + '%', supplySignal);
+
+        // CONSOLIDATED SIGNAL CALCULATION
+        const totalScore = fngScoreNum + mvrvScoreNum + ma200ScoreNum + rsiScoreNum + realizedScoreNum + supplyScoreNum;
+        const avgScore = totalScore / 6;
+        macroSentimentScore = avgScore;
+
+        const boxEl = document.getElementById('term-consolidated-box');
+        const signalTextEl = document.getElementById('term-signal-text');
+        const scoreValEl = document.getElementById('term-score-val');
+        const descEl = document.getElementById('term-signal-desc');
+
+        if (boxEl && signalTextEl && scoreValEl && descEl) {
+            scoreValEl.textContent = (avgScore >= 0 ? '+' : '') + avgScore.toFixed(2);
+            boxEl.className = 'term-consolidated-box';
+            
+            if (avgScore >= 1.2) {
+                signalTextEl.textContent = t('thermo_cons_strong_buy', 'COMPRA FORTE 🚀');
+                boxEl.classList.add('signal-strong-buy');
+                descEl.textContent = t('thermo_desc_strong_buy', 'Clima de tempestade fiat de alta. Excelente oportunidade de acúmulo.');
+            } else if (avgScore >= 0.4) {
+                signalTextEl.textContent = t('thermo_cons_buy', 'COMPRA 🟢');
+                boxEl.classList.add('signal-buy');
+                descEl.textContent = t('thermo_desc_buy', 'Ventos favoráveis de acúmulo. Viés de alta predominante.');
+            } else if (avgScore > -0.4) {
+                signalTextEl.textContent = t('thermo_cons_neutral', 'NEUTRO 😐');
+                boxEl.classList.add('signal-neutral');
+                descEl.textContent = t('thermo_desc_neutral', 'Clima nublado de indefinição lateral. Ponto de equilíbrio de mercado.');
+            } else if (avgScore > -1.2) {
+                signalTextEl.textContent = t('thermo_cons_sell', 'VENDA 🟠');
+                boxEl.classList.add('signal-sell');
+                descEl.textContent = t('thermo_desc_sell', 'Clima quente de sobrecompra local. Cautela com novos aportes.');
+            } else {
+                signalTextEl.textContent = t('thermo_cons_strong_sell', 'VENDA FORTE 🚨');
+                boxEl.classList.add('signal-strong-sell');
+                descEl.textContent = t('thermo_desc_strong_sell', 'Clima de deserto árido. Indicadores em euforia extrema de topo.');
+            }
+
+            if (activeTimeframe) {
+                const currentData = weatherThemes[activeTimeframe];
+                if (currentData && currentData.descText) {
+                    descEl.textContent = currentData.descText;
+                }
+            }
+        }
+
+        // UPDATE ACTION BANNER (DECISÃO EM 1 SEGUNDO)
+        const actionBanner = document.getElementById('action-banner');
+        const actionText = document.getElementById('action-banner-text');
+        
+        if (actionBanner && actionText) {
+            let signalClass = 'signal-neutral';
+            let signalLabel = currentLang === 'en' ? 'NEUTRAL (HOLD)' : 'NEUTRO (HOLD)';
+            let actionPhrase = currentLang === 'en' ? 'Sideways: Avoid leverage, wait for support confirmation.' : 'Lateralização: Evite alavancagem, aguarde definição de suporte.';
+
+            if (avgScore >= 1.2) {
+                signalClass = 'signal-strong-buy';
+                signalLabel = t('banner_strong_buy', 'COMPRA FORTE (STRONG BUY)');
+                actionPhrase = t('banner_ph_strong_buy', '⚡ Oportunidade Cíclica Máxima: Acúmulo Agressivo Recomendado (LONG).');
+            } else if (avgScore >= 0.4) {
+                signalClass = 'signal-buy';
+                signalLabel = t('banner_buy', 'COMPRA (BUY)');
+                actionPhrase = t('banner_ph_buy', '🟢 Viés de Alta: Aportes Regulares via DCA Ativados.');
+            } else if (avgScore > -0.4) {
+                signalClass = 'signal-neutral';
+                signalLabel = t('banner_neutral_hold', 'NEUTRO (HOLD)');
+                actionPhrase = t('banner_ph_neutral', '😐 Lateralização: Evite alavancagem, aguarde definição.');
+            } else if (avgScore > -1.2) {
+                signalClass = 'signal-sell';
+                signalLabel = t('banner_sell', 'VENDA (REDUCE/SELL)');
+                actionPhrase = t('banner_ph_sell', '🟠 Resistência Próxima: Cautela em compras locais, realize lucros parciais.');
+            } else {
+                signalClass = 'signal-strong-sell';
+                signalLabel = t('banner_strong_sell', 'VENDA FORTE (STRONG SELL)');
+                actionPhrase = t('banner_ph_strong_sell', '🚨 Perigo de Topo Cíclico: Distribuição Institucional e Risco de Capitulação.');
+            }
+
+            actionBanner.className = `action-banner ${signalClass}`;
+            actionText.innerHTML = `<b>${t('banner_decision', 'Decisão em 1s:')}</b> <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800;">${signalLabel}</span> — ${actionPhrase}`;
+            
+            const currentSignalStr = `${signalLabel}: ${actionPhrase}`;
+            if (window.lastActionSignal && window.lastActionSignal !== currentSignalStr) {
+                triggerWebNotification(`Clima BTC Alterado: ${signalLabel}`, actionPhrase);
+                triggerWeatherWebhook(signalLabel, actionPhrase);
+                if (signalClass === 'signal-strong-buy' || signalClass === 'signal-buy') {
+                    playSoundAlert('bullish');
+                } else if (signalClass === 'signal-strong-sell' || signalClass === 'signal-sell') {
+                    playSoundAlert('bearish');
+                } else {
+                    playSoundAlert('neutral');
+                }
+            }
+            window.lastActionSignal = currentSignalStr;
+      updateCountdownDisplay();
+      function updateCountdownDisplay() {
+        const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+        const el = document.getElementById('license-countdown');
+        if (!el || !license || !license.daysLeft) return;
+        const tier = license.tier === 'vip' ? 'VIP' : 'Básico';
+        el.textContent = tier + ' expira em ' + license.daysLeft + ' dias';
+        el.style.display = 'block';
+      }
+function migrateOldVipUsers() {
+  const oldVip = localStorage.getItem('btc_weather_vip');
+  if (oldVip === 'true') {
+    localStorage.removeItem('btc_weather_vip');
+    if (!localStorage.getItem('btc_weather_license')) {
+      localStorage.setItem('btc_weather_license', JSON.stringify({ tier: 'free', daysLeft: 0, source: 'migrated' }));
+    }
+  }
+}
+async function validateLicense() {
+  try {
+    const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+    const code = license && license.code ? license.code : '';
+    const url = code ? `/api/license/validate?code=${encodeURIComponent(code)}` : '/api/license/validate';
+    const res = await fetch(url);
+    const data = await res.json();
+    window.btcLicenseState = data;
+    if (data && data.tier) {
+      localStorage.setItem('btc_weather_license', JSON.stringify({
+        code: code,
+        tier: data.tier,
+        daysLeft: data.daysLeft,
+        expiresAt: data.expiresAt
+      }));
+    }
+    applyTierState();
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+        }
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+
+    // --- 6c. TECHNICAL INDICATORS CALCULATION & BINANCE INTEGRATION ---
+    function calculateEMA(prices, period) {
+        if (prices.length < period) return null;
+        const k = 2 / (period + 1);
+        let ema = prices[0];
+        for (let i = 1; i < prices.length; i++) {
+            ema = prices[i] * k + ema * (1 - k);
+        }
+        return ema;
+    }
+
+    function calculateRSI(prices, period = 14) {
+        if (prices.length <= period) return 50;
+        let gains = 0;
+        let losses = 0;
+        for (let i = 1; i <= period; i++) {
+            const diff = prices[i] - prices[i - 1];
+            if (diff > 0) gains += diff;
+            else losses -= diff;
+        }
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+        for (let i = period + 1; i < prices.length; i++) {
+            const diff = prices[i] - prices[i - 1];
+            avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
+            avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
+        }
+        if (avgLoss === 0) return 100;
+        const rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    }
+
+    async function calculateTechnicalIndicators(interval) {
+        try {
+            const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`);
+            if (!response.ok) throw new Error(`Failed to fetch klines for ${interval}`);
+            const data = await response.json();
+            const closes = data.map(c => parseFloat(c[4]));
+            const rsi = calculateRSI(closes, 14);
+            const ema9 = calculateEMA(closes, 9);
+            const ema21 = calculateEMA(closes, 21);
+            return {
+                closes,
+                rsi,
+                ema9,
+                ema21,
+                currentPrice: closes[closes.length - 1]
+            };
+        } catch (e) {
+            console.error(`Error calculating indicators for ${interval}:`, e);
+            return null;
+        }
+    }
+
+    function triggerWebNotification(title, body) {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "granted") {
+            try {
+                new Notification(title, { body });
+            } catch (e) {
+                console.warn("Notification trigger failed:", e);
+            }
+        }
+    }
+
+    async function triggerWeatherWebhook(clima, actionPhrase) {
+        try {
+            const savedConfig = localStorage.getItem('btc_weather_admin_config');
+            let secret = '';
+            let chat_id = '';
+            let whatsapp_group = '';
+            let enabled = true;
+            if (savedConfig) {
+                try {
+                    const parsed = JSON.parse(savedConfig);
+                    if (parsed.vipKey) secret = parsed.vipKey;
+                    if (parsed.tgChatId) chat_id = parsed.tgChatId;
+                    if (parsed.waGroupId) whatsapp_group = parsed.waGroupId;
+                    if (parsed.alertsEnabled !== undefined) enabled = parsed.alertsEnabled;
+                } catch(e){}
+            }
+
+            if (!enabled) {
+                console.log('Push notifications are disabled in admin settings.');
+                return;
+            }
+
+            const formattedMessage = `🛰️ <b>GALAXY MARKET INTELLIGENCE SENSOR</b>\n───────────────────\n🔥 <b>Novo Clima:</b> ${clima}\n📝 <b>Ação:</b> ${actionPhrase}\n💰 <b>Preço Atual:</b> $${Math.round(btcPriceUsd).toLocaleString('en-US')}\n───────────────────\n<i>btc-weather-panel</i>`;
+
+            const payload = {
+                secret: secret,
+                clima: clima,
+                mensagem: formattedMessage
+            };
+
+            if (chat_id) payload.chat_id = chat_id;
+            if (whatsapp_group) payload.whatsapp_group = whatsapp_group;
+
+            const response = await fetch('/api/webhook/clima', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            console.log('Webhook response:', result);
+        } catch (err) {
+            console.error('Error triggering webhook:', err);
+        }
+    }
+
+    async function updateWeatherThemesFromBinance() {
+        try {
+        const timeframes = ['15M', '1H', '4H', '1D', '3D', '1W', '1M'];
+        const intervalMap = {
+            '15M': '15m',
+            '1H': '1h',
+            '4H': '4h',
+            '1D': '1d',
+            '3D': '3d',
+            '1W': '1w',
+            '1M': '1M'
+        };
+        const labelMap = {
+            '15M': t('tf_label_15m', 'Scalping BTC'),
+            '1H': t('tf_label_1h', 'Day Trade BTC'),
+            '4H': t('tf_label_4h', 'Swing 4H'),
+            '1D': t('tf_label_1d', 'Diário'),
+            '3D': t('tf_label_3d', 'Macro 3D'),
+            '1W': t('tf_label_1w', 'Semanal'),
+            '1M': t('tf_label_1m', 'Mensal')
+        };
+
+        let updatedAny = false;
+        const allResults = await Promise.all(timeframes.map(tf => calculateTechnicalIndicators(intervalMap[tf])));
+        for (let i = 0; i < timeframes.length; i++) {
+            const tf = timeframes[i];
+            const indicators = allResults[i];
+            if (!indicators) continue;
+
+            const { closes, rsi, ema9, ema21, currentPrice } = indicators;
+            let emaCrossover = true;
+            if (ema9 !== null && ema21 !== null) {
+                emaCrossover = ema9 > ema21;
+            }
+
+            // Slope checking (detects if EMAs are tilting upwards)
+            let ema9SlopingUp = false;
+            let ema21SlopingUp = false;
+            if (closes && closes.length > 2) {
+                const prevCloses = closes.slice(0, -1);
+                const prevEma9 = calculateEMA(prevCloses, 9);
+                const prevEma21 = calculateEMA(prevCloses, 21);
+                ema9SlopingUp = prevEma9 !== null && ema9 > prevEma9;
+                ema21SlopingUp = prevEma21 !== null && ema21 > prevEma21;
+            }
+
+            let trendScore = 50;
+            trendScore += (rsi - 50) * 1.0; // Slightly higher weight to RSI
+            trendScore += emaCrossover ? 15 : -15; // Crossovers give 15 points
+
+            // Apply slope premium/discount
+            if (ema9SlopingUp && ema21SlopingUp) {
+                trendScore += 10;
+            } else if (!ema9SlopingUp && !ema21SlopingUp) {
+                trendScore -= 10;
+            }
+
+            // Apply macro sentiment bias (macroSentimentScore typically spans -2 to +2.
+            // A negative macroSentimentScore is bullish/undervalued macro state, so we add positive bias.
+            // A positive macroSentimentScore is bearish/overvalued macro state, so we subtract bias.)
+            trendScore += (-macroSentimentScore * 5);
+
+            let scoreVal = Math.min(99, Math.max(1, Math.round(trendScore)));
+
+            let themeClass = 'theme-cloudy';
+            let statusText = t('weather_partly_cloudy', 'Parcialmente Nublado');
+            let iconName = 'cloud-sun';
+            let icon = '🌤️';
+            let scoreClass = 'score-medium';
+            let scoreText = `${scoreVal}% ${t('score_neutral', 'Neutro')}`;
+            let descText = '';
+            let direction = 'side';
+
+            const isWeekend = [0, 6].includes(new Date().getDay());
+            const liquidityText = isWeekend ? t('liq_weekend', 'Baixa liquidez de final de semana.') : t('liq_weekday', 'Liquidez intradiária normal.');
+
+            // Optimized thresholds: >= 55 for Sunny/Bullish, <= 45 for Stormy/Bearish
+            if (scoreVal >= 55) {
+                themeClass = 'theme-sunny';
+                if (scoreVal >= 75) {
+                    statusText = t('weather_super_sunny', 'Super Ensolarado (Alta Extrema)');
+                    icon = '🔥';
+                    iconName = 'flame';
+                } else {
+                    statusText = t('weather_sunny', 'Ensolarado');
+                    icon = '☀️';
+                    iconName = 'sun';
+                }
+                scoreClass = 'score-high';
+                scoreText = `${scoreVal}% ${t('score_high', 'Alta')}`;
+                direction = 'up';
+                descText = t('desc_up', `Tendência de alta no gráfico de ${tf}. RSI em ${rsi.toFixed(1)} confirma força compradora dominante. Preço acima da EMA 21. Setup posicionado em LONG.`, { tf, rsi: rsi.toFixed(1) });
+            } else if (scoreVal <= 45) {
+                themeClass = 'theme-stormy';
+                if (scoreVal <= 25) {
+                    statusText = t('weather_severe_storm', 'Tempestade Severa (Baixa Extrema)');
+                    icon = '⛈️';
+                    iconName = 'cloud-lightning';
+                } else {
+                    statusText = t('weather_acid_rain', 'Chuva Ácida');
+                    icon = '🌧️';
+                    iconName = 'cloud-rain';
+                }
+                scoreClass = 'score-low';
+                scoreText = `${scoreVal}% ${t('score_low', 'Baixa')}`;
+                direction = 'down';
+                descText = t('desc_down', `Tendência de baixa no gráfico de ${tf}. RSI em ${rsi.toFixed(1)} indica pressão vendedora. Preço abaixo da EMA 21. Setup posicionado em SHORT.`, { tf, rsi: rsi.toFixed(1) });
+            } else {
+                themeClass = 'theme-cloudy';
+                statusText = t('weather_partly_cloudy', 'Parcialmente Nublado');
+                icon = '🌤️';
+                iconName = 'cloud-sun';
+                scoreClass = 'score-medium';
+                scoreText = `${scoreVal}% ${t('score_neutral', 'Neutro')}`;
+                direction = 'side';
+                descText = t('desc_sideways', `Lateralização no gráfico de ${tf}. RSI neutro em ${rsi.toFixed(1)} com médias móveis cruzando sem direção clara. ${liquidityText} Aguarde rompimento.`, { tf, rsi: rsi.toFixed(1), liquidity: liquidityText });
+            }
+
+            weatherThemes[tf] = {
+                themeClass,
+                statusText: `${labelMap[tf]} (${statusText})`,
+                icon,
+                iconName,
+                scoreText,
+                scoreClass,
+                descText,
+                direction,
+                currentPrice
+            };
+
+            if (activeTimeframe === tf) {
+                changeWeatherTheme(tf, weatherThemes[tf]);
+            }
+            updatedAny = true;
+        }
+
+        forecastReady = true;
+        renderForecastCards();
+        updateVipSignalsUI();
+        } catch (e) {
+            console.error('updateWeatherThemesFromBinance error:', e);
+            forecastReady = true;
+            renderForecastCards();
+        }
+    }
+
+    function updateCardUI(valId, badgeId, value, signal) {
+        const valEl = document.getElementById(valId);
+        const badgeEl = document.getElementById(badgeId);
+        if (!valEl || !badgeEl) return;
+
+        valEl.textContent = value;
+        const signalLabel = badgeSignalLabel(signal);
+        badgeEl.textContent = signalLabel;
+        
+        badgeEl.className = 'term-badge';
+        if (signal === 'COMPRA FORTE') badgeEl.classList.add('badge-strong-buy');
+        else if (signal === 'COMPRA') badgeEl.classList.add('badge-buy');
+        else if (signal === 'NEUTRO') badgeEl.classList.add('badge-neutral');
+        else if (signal === 'VENDA') badgeEl.classList.add('badge-sell');
+        else if (signal === 'VENDA FORTE') badgeEl.classList.add('badge-strong-sell');
+    }
+
+    function badgeSignalLabel(signal) {
+        if (currentLang === 'pt') return signal;
+        if (signal === 'COMPRA FORTE') return 'STRONG BUY';
+        if (signal === 'COMPRA') return 'BUY';
+        if (signal === 'VENDA FORTE') return 'STRONG SELL';
+        if (signal === 'VENDA') return 'SELL';
+        return 'NEUTRAL';
+    }
+
+    // Initial fetch and scheduled update (every 10 seconds)
+    fetchBtcPrice();
+    setInterval(fetchBtcPrice, 10000);
+
+    // Fetch Binance technical indicators
+    updateWeatherThemesFromBinance();
+    setInterval(updateWeatherThemesFromBinance, 15000);
+    
+    // Also fetch FNG on load
+    fetchFearAndGreed();
+
+    // migrateOldVipUsers - handles legacy VIP upgrade
+    function migrateOldVipUsers() {
+      const oldVip = localStorage.getItem('btc_weather_vip');
+      if (oldVip === 'true') {
+        localStorage.removeItem('btc_weather_vip');
+        if (!localStorage.getItem('btc_weather_license')) {
+          localStorage.setItem('btc_weather_license', JSON.stringify({ tier: 'free', daysLeft: 0, source: 'migrated' }));
+        }
+      }
+    }
+
+    async function validateLicense() {
+      try {
+        const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+        const code = license && license.code ? license.code : '';
+        const url = code ? `/api/license/validate?code=${encodeURIComponent(code)}` : '/api/license/validate';
+        const res = await fetch(url);
+        const data = await res.json();
+        window.btcLicenseState = data;
+        if (data && data.tier) {
+          localStorage.setItem('btc_weather_license', JSON.stringify({
+            code: code,
+            tier: data.tier,
+            daysLeft: data.daysLeft,
+            expiresAt: data.expiresAt
+          }));
+        }
+        applyTierState();
+        return data;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    migrateOldVipUsers();
+    validateLicense();
+    iniciarCarrosselEco();
+    setInterval(validateLicense, 6 * 60 * 60 * 1000);
+    window.btcLicenseState = null;
+
+    // Micro-tick simulation (runs every 2.5s to keep UI feeling alive)
+    setInterval(() => {
+        const delta = (Math.random() - 0.48) * 4.0; // Small random fluctuation
+        const oldUsd = btcPriceUsd;
+        btcPriceUsd += delta;
+        
+        // Adjust BRL and EUR rates proportionally to the micro-change
+        const usdToBrlRate = btcPriceBrl / oldUsd;
+        const usdToEurRate = btcPriceEur / oldUsd;
+        btcPriceBrl = btcPriceUsd * usdToBrlRate;
+        btcPriceEur = btcPriceUsd * usdToEurRate;
+        
+        updatePriceUI();
+        performConversion();
+        updateThermometerUI();
+    }, 2500);
+
+
+    // --- 7. MONETIZATION AND CHANNELS LOGIC ---
+
+    // Admin Settings State (with sensible defaults)
+    let adminConfig = {
+        whatsapp: '5511999998888',
+        linkVip: 'https://pay.kiwify.com.br/ffphj4e',
+        linkElite: 'https://pay.kiwify.com.br/vim8bDb',
+        vipKey: '',
+        tgChatId: '1088548125',
+        waGroupId: '',
+        alertsEnabled: true,
+        googleClientId: ''
+    };
+    // Check URL parameters for activation code/invite
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCode = urlParams.get('code') || urlParams.get('invite') || urlParams.get('key') || '';
+    const cleanCode = urlCode.trim().toUpperCase();
+
+    const isVipInitially = (() => { try { return !!localStorage.getItem('btc_weather_license'); } catch(e) { return null; } })();
+
+    if (isVipInitially) {
+        fetchAdminMetrics();
+    }
+
+    // Validação server-side: todo ?code= é conferido no servidor
+    // (código admin = ADMIN_CODE do .env, sem chave hardcoded no front)
+    if (urlCode && !isVipInitially) {
+        (async () => {
+            try {
+                const res = await fetch('/api/license/validate?code=' + encodeURIComponent(cleanCode));
+                const data = await res.json();
+                if (data && data.valid) {
+                    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+                    if (data.admin) {
+                        localStorage.setItem('btc_weather_license', JSON.stringify({ tier: 'vip', daysLeft: 999, source: 'admin' }));
+                        fetchAdminMetrics();
+                    } else {
+                        localStorage.setItem('btc_weather_license', JSON.stringify({ tier: data.tier, daysLeft: data.daysLeft, expiresAt: data.expiresAt, code: cleanCode }));
+                    }
+                    applyTierState();
+                } else if (cleanCode === 'DEMO' || cleanCode === 'VIP') {
+                    setTimeout(() => {
+                        const inviteModal = document.getElementById('invite-signup-modal');
+                        if (inviteModal) openModal(inviteModal);
+                    }, 300);
+                }
+            } catch (e) {}
+        })();
+    }
+
+
+
+    function syncConfigToInputs() {
+        const whatsappInput = document.getElementById('admin-whatsapp-input');
+        const linkVipInput = document.getElementById('admin-link-vip-input');
+        const linkEliteInput = document.getElementById('admin-link-elite-input');
+        const vipKeyInput = document.getElementById('admin-vip-key-input');
+        const tgChatInput = document.getElementById('admin-tg-chat-input');
+        const waGroupInput = document.getElementById('admin-wa-group-input');
+        const alertsEnabledCheckbox = document.getElementById('admin-alerts-enabled-checkbox');
+        
+        if (whatsappInput) whatsappInput.value = adminConfig.whatsapp;
+        if (linkVipInput) linkVipInput.value = adminConfig.linkVip;
+        if (linkEliteInput) linkEliteInput.value = adminConfig.linkElite;
+        if (vipKeyInput) vipKeyInput.value = adminConfig.vipKey;
+        if (tgChatInput) tgChatInput.value = adminConfig.tgChatId || '';
+        if (waGroupInput) waGroupInput.value = adminConfig.waGroupId || '';
+        if (alertsEnabledCheckbox) alertsEnabledCheckbox.checked = adminConfig.alertsEnabled !== false;
+        const googleClientInput = document.getElementById('admin-google-client-input');
+        if (googleClientInput) googleClientInput.value = adminConfig.googleClientId || '';
+    }
+
+    async function loadAdminConfig() {
+        const saved = localStorage.getItem('btc_weather_admin_config');
+        if (saved) {
+            try {
+                adminConfig = { ...adminConfig, ...JSON.parse(saved) };
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        syncConfigToInputs();
+
+        // Fetch latest settings from server
+        try {
+            const secretQuery = adminConfig.vipKey ? `?secret=${encodeURIComponent(adminConfig.vipKey)}` : '';
+            const response = await fetch(`/api/weather/config${secretQuery}`);
+            if (response.ok) {
+                const serverConfig = await response.json();
+                
+                // Update with server settings
+                if (serverConfig.whatsapp) adminConfig.whatsapp = serverConfig.whatsapp;
+                if (serverConfig.linkVip) adminConfig.linkVip = serverConfig.linkVip;
+                if (serverConfig.linkElite) adminConfig.linkElite = serverConfig.linkElite;
+                if (serverConfig.alertsEnabled !== undefined) adminConfig.alertsEnabled = serverConfig.alertsEnabled;
+                
+                // Admin settings (returned only if secret matched)
+                if (serverConfig.vipKey) adminConfig.vipKey = serverConfig.vipKey;
+                if (serverConfig.tgChatId) adminConfig.tgChatId = serverConfig.tgChatId;
+                if (serverConfig.waGroupId) adminConfig.waGroupId = serverConfig.waGroupId;
+                if (serverConfig.googleClientId) adminConfig.googleClientId = serverConfig.googleClientId;
+                
+                // Save updated config
+                localStorage.setItem('btc_weather_admin_config', JSON.stringify(adminConfig));
+                
+                syncConfigToInputs();
+
+                
+                syncConfigToInputs();
+            
+            }
+        } catch (err) {
+            console.warn("Could not sync admin config with server:", err);
+        }
+    }
+
+    function updateVipOfferBar() {
+        const offerBar = document.getElementById('vip-offer-bar');
+        if (!offerBar) return;
+        const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+        const isVip = (license && license.tier) === 'vip';
+        offerBar.style.display = isVip ? 'none' : 'block';
+    }
+
+    const btnVipOffer = document.getElementById('btn-vip-offer');
+    if (btnVipOffer) {
+        btnVipOffer.addEventListener('click', () => claimFreeTrial(btnVipOffer));
+    }
+
+    updateVipOfferBar();
+    applyTierState();
+
+    // New user offer: 7 days free VIP
+    const hasLicense = (() => { try { return !!localStorage.getItem('btc_weather_license'); } catch(e) { return false; } })();
+    if (!hasLicense) {
+      setTimeout(() => {
+        const offerModal = document.getElementById('vip-offer-modal');
+        if (offerModal) {
+          offerModal.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        }
+      }, 1500);
+    }
+
+    // (handler central do botão de 7 dias grátis fica no bloco do fluxo de compra)
+
+
+    // fetchAdminMetrics
+    function fetchAdminMetrics() {
+      fetch('/api/admin/metrics')
+        .then(r => r.json())
+        .then(data => {
+          const activeNowEl = document.getElementById('metric-active-now');
+          const todayVisitsEl = document.getElementById('metric-today-visits');
+          const activeAlertsEl = document.getElementById('metric-active-alerts');
+          const deviceRatioEl = document.getElementById('metric-device-ratio');
+          if (activeNowEl) activeNowEl.textContent = data.activeNow || 0;
+          if (todayVisitsEl) todayVisitsEl.textContent = data.todayVisits || 0;
+          if (activeAlertsEl) activeAlertsEl.textContent = data.activeAlertsCount || 0;
+          if (deviceRatioEl) deviceRatioEl.textContent = `${data.desktopPct || 0}% D / ${data.mobilePct || 0}% M`;
+        })
+        .catch(console.error);
+    }
+
+    // renderForecastCards
+    function renderForecastCards() {
+      const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+      const tier = isDevMode ? 'vip' : (license && license.tier ? license.tier : 'free');
+      const isVip = tier === 'vip';
+      const grid = document.getElementById('forecast-grid-container');
+      if (grid) {
+        grid.classList.add('vip-grid');
+        if (forecastReady) grid.classList.add('analysis-ready');
+      }
+      const cards = document.querySelectorAll('.forecast-card');
+      cards.forEach(card => {
+        const tf = card.getAttribute('data-timeframe');
+        {
+          card.style.display = '';
+          if (!forecastReady) return;
+          // Não-pagantes: não expor a análise real nos cards (fica tudo coberto/blur)
+          if (!isVip) {
+            const stEl = card.querySelector('.weather-status');
+            if (stEl) stEl.textContent = '';
+            return;
+          }
+          // Atualiza conteudo do card com dados dinâmicos da Binance
+          var th = typeof weatherThemes !== 'undefined' && weatherThemes[tf] ? weatherThemes[tf] : null;
+          if (th) {
+            var iconWrap = card.querySelector('.weather-icon');
+            var statusEl = card.querySelector('.weather-status');
+            var descEl = card.querySelector('.weather-desc');
+            if (iconWrap) iconWrap.innerHTML = '<i data-lucide="' + (th.iconName || 'cloud') + '" width="28" height="28"></i>';
+            if (statusEl) statusEl.textContent = th.statusText || '';
+            if (descEl) descEl.style.display = 'none';
+            // Atualiza classe de tema
+            card.classList.remove('card-bullish', 'card-bearish', 'card-neutral');
+            if (th.direction === 'up') {
+              card.classList.add('card-bullish');
+            } else if (th.direction === 'down') {
+              card.classList.add('card-bearish');
+            } else {
+              card.classList.add('card-neutral');
+            }
+          }
+        }
+      });
+      // Recria icones Lucide apos atualizar atributos
+      if (window.lucide) window.lucide.createIcons();
+      // Atualiza a barra Severino Trader (Plantar/Colher)
+      renderSeverinoTrader();
+    }
+
+    // ===================== SEVERINO TRADER (Plantar / Colher) =====================
+    // Lê o clima (weatherThemes) e indica o melhor card para PLANTAR (comprar barato
+    // em tempestade/oversold) e para COLHER (realizar lucro em sol/overbought).
+    // Fase 1: somente análise visual + configuração. Execução automática entra em breve.
+    const ST_TF_LABEL = { '15M': '15M', '1H': '1H', '4H': '4H', '1D': (currentLang === 'en' ? 'Daily' : 'Diário'), '3D': (currentLang === 'en' ? '3 Days' : '3 Dias'), '1W': (currentLang === 'en' ? 'Weekly' : 'Semanal'), '1M': (currentLang === 'en' ? 'Monthly' : 'Mensal') };
+
+    function stGetConfig() {
+      try { return JSON.parse(localStorage.getItem('severino_trader_config')) || {}; } catch (e) { return {}; }
+    }
+    function stSaveConfig(cfg) {
+      try { localStorage.setItem('severino_trader_config', JSON.stringify(cfg)); } catch (e) {}
+    }
+    function stGetAuto(key) {
+      try { return localStorage.getItem(key) === '1'; } catch (e) { return false; }
+    }
+    function stSetAuto(key, val) {
+      try { localStorage.setItem(key, val ? '1' : '0'); } catch (e) {}
+    }
+
+    // ===== RESULTADO (paper/simulado) — Fase 1 =====
+    function stGetPaper(){ try { return JSON.parse(localStorage.getItem('st_paper')) || { invested:0, qty:0, realized:0, entries:[] }; } catch(e){ return { invested:0, qty:0, realized:0, entries:[] }; } }
+    function stSavePaper(p){ try { localStorage.setItem('st_paper', JSON.stringify(p)); } catch(e){} }
+    function stPaperPlant(){
+      const price = (typeof btcPriceUsd !== 'undefined') ? Number(btcPriceUsd) : 0; if (!price) return;
+      const cfg = stGetConfig(); let usd = Number(cfg.entryValue) || 10; if (usd < 5) usd = 5;
+      const p = stGetPaper(); p.invested += usd; p.qty += usd / price; p.entries.push({ price, usd, ts: Date.now() }); stSavePaper(p);
+    }
+    function stPaperHarvest(){
+      const price = (typeof btcPriceUsd !== 'undefined') ? Number(btcPriceUsd) : 0; if (!price) return;
+      const p = stGetPaper(); if (!p.qty || p.qty <= 0) return;
+      const proceeds = p.qty * price; const pnl = proceeds - p.invested; p.realized += pnl; p.invested = 0; p.qty = 0; p.entries = []; stSavePaper(p);
+    }
+    function renderStResult(){
+      const badge = document.getElementById('st-result-badge'); const pnlEl = document.getElementById('st-result-pnl'); if (!badge || !pnlEl) return;
+      const p = stGetPaper(); const price = (typeof btcPriceUsd !== 'undefined') ? Number(btcPriceUsd) : 0;
+      const open = p.invested || 0; let unrl = 0;
+      if (open > 0 && price > 0) unrl = (p.qty * price) - open;
+      const total = (p.realized || 0) + unrl;
+      badge.textContent = '$' + open.toFixed(2);
+      pnlEl.textContent = (total >= 0 ? '+' : '') + '$' + Math.abs(total).toFixed(2);
+      pnlEl.style.color = total >= 0 ? '#00e676' : '#ff3d71';
+      badge.className = 'st-badge ' + (total >= 0 ? 'st-on' : 'st-off');
+      const btn = document.getElementById('st-btn-result');
+      if (btn) btn.title = 'Aberto: $' + open.toFixed(2) + ' | Realizado: $' + (p.realized || 0).toFixed(2) + ' | P&L: ' + (total >= 0 ? '+' : '-') + '$' + Math.abs(total).toFixed(2) + ' (simulado)';
+    }
+
+    // ===== STATUS SERVIDOR (saldo OKX + regime + posição real) =====
+    async function stFetchStatus(){
+      try { const r = await fetch('/api/st/status'); if(!r.ok) return null; return await r.json(); } catch(e){ return null; }
+    }
+    async function renderStStatus(){
+      const j = await stFetchStatus();
+      const balBadge = document.getElementById('st-balance-badge');
+      const regimeEl = document.getElementById('st-regime');
+      const depositEl = document.getElementById('st-deposit');
+      if(!j || !j.ok){
+        if(balBadge){ balBadge.textContent = '—'; balBadge.className='st-badge st-off'; }
+        if(regimeEl) regimeEl.textContent = '🧭 Regime: —';
+        return;
+      }
+      if(balBadge){
+        if(j.configured && j.balance!=null){ balBadge.textContent = '$'+Number(j.balance).toFixed(2); balBadge.className='st-badge st-on'; }
+        else { balBadge.textContent = j.configured ? '—' : 'config'; balBadge.className='st-badge st-off'; }
+        const bb = document.getElementById('st-btn-balance'); if(bb) bb.title = 'Saldo USDT na OKX ['+(j.mode||'demo').toUpperCase()+']'+(j.configured?'':' — configure a chave no ⚙️');
+      }
+      if(regimeEl){
+        const RL = { accumulation:'🟢 Acumulação', bull:'🔵 Bull Run', distribution:'🔴 Distribuição', bear:'⚫ Bear', unknown:'⚪ —' };
+        regimeEl.textContent = '🧭 ' + (RL[j.regime]||j.regime) + ' (' + (j.regimeScore!=null?j.regimeScore:'—') + ')';
+      }
+      // sinal AI -> badge
+      if(j.signal){
+        const sb = document.getElementById('st-signal-badge');
+        if(sb){
+          sb.textContent = j.signalLabel || '🟡 MANTER';
+          sb.style.color = j.signalColor || '#ffd166';
+          sb.classList.toggle('st-on', j.signal!=='maintain');
+          sb.classList.toggle('st-off', j.signal==='maintain');
+          const btn = document.getElementById('st-btn-signal');
+          if(btn) btn.title = (j.signalLabel||'')+(j.decision?': '+j.decision.reason:'')+(j.fib?' · Fib '+j.fib.currentLevel+'% '+j.fib.zone:'');
+        }
+      }
+      if(depositEl){ depositEl.classList.toggle('hidden', !j.needsDeposit); }
+      // posição real -> Resultado chip
+      if(j.position){
+        const badge = document.getElementById('st-result-badge'); const pnlEl = document.getElementById('st-result-pnl');
+        if(badge && pnlEl){
+          badge.textContent = '$'+Number(j.position.invested||0).toFixed(2);
+          const pnl = Number(j.position.pnl||0);
+          pnlEl.textContent = (pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2);
+          pnlEl.style.color = pnl>=0 ? '#00e676' : '#ff3d71';
+          badge.className = 'st-badge ' + (pnl>=0?'st-on':'st-off');
+          const btn = document.getElementById('st-btn-result');
+          if(btn) btn.title = 'Entradas '+j.position.entries+'/'+j.totalEntries+' · investido $'+Number(j.position.invested).toFixed(2)+' · média $'+j.position.avgPrice+' · P&L '+(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2)+' ('+j.position.pnlPct+'%)';
+        }
+      }
+      // modo auto -> reflete nos botões
+      const pA = document.getElementById('st-plant-auto'); const hA = document.getElementById('st-harvest-auto');
+      const pB = document.getElementById('st-btn-plant'); const hB = document.getElementById('st-btn-harvest');
+      if(pA){ pA.textContent = j.autoPlant?'ON':'OFF'; if(pB) pB.classList.toggle('st-armed', !!j.autoPlant); }
+      if(hA){ hA.textContent = j.autoHarvest?'ON':'OFF'; if(hB) hB.classList.toggle('st-armed', !!j.autoHarvest); }
+    }
+
+    function renderSeverinoTrader() {
+      const bar = document.getElementById('severino-trader-bar');
+      if (!bar) return;
+      const ALL_TFS = ['15M', '1H', '4H', '1D', '3D', '1W', '1M'];
+      // Só avalia os cards que o usuario habilitou no modal de config (cfg.cards).
+      // Se ainda não configurou, considera todos (funciona out-of-the-box).
+      const cfg = stGetConfig();
+      const tfs = (cfg.cards && cfg.cards.length) ? cfg.cards : ALL_TFS;
+      let bestPlant = null;   // menor score entre os em queda (tempestade) = melhor p/ plantar
+      let bestHarvest = null; // maior score entre os em alta (sol) = melhor p/ colher
+      tfs.forEach(tf => {
+        const th = (typeof weatherThemes !== 'undefined') ? weatherThemes[tf] : null;
+        if (!th || !th.scoreText) return;
+        let sc = parseFloat(th.scoreText);
+        if (isNaN(sc)) sc = 50;
+        const item = { tf, sc, status: th.statusText || tf };
+        if (th.direction === 'down') { if (!bestPlant || sc < bestPlant.sc) bestPlant = item; }
+        if (th.direction === 'up')   { if (!bestHarvest || sc > bestHarvest.sc) bestHarvest = item; }
+      });
+
+      // --- BOTÃO PLANTAR ---
+      const plantBadge = document.getElementById('st-plant-badge');
+      const plantInfo = document.getElementById('st-plant-info');
+      const plantBtnEl = document.getElementById('st-btn-plant');
+      if (plantBadge && plantInfo) {
+        if (bestPlant) {
+          plantBadge.textContent = '🌱 ' + t('st_plant', 'PLANTAR');
+          plantBadge.className = 'st-badge st-on';
+          plantInfo.textContent = (ST_TF_LABEL[bestPlant.tf] || bestPlant.tf);
+          if (plantBtnEl) plantBtnEl.title = bestPlant.status;
+        } else {
+          plantBadge.textContent = '⏸️ ' + t('st_wait', 'ESPERAR');
+          plantBadge.className = 'st-badge st-off';
+          plantInfo.textContent = '';
+          if (plantBtnEl) plantBtnEl.title = t('st_no_plant', 'Sem condição de plantio agora');
+        }
+      }
+      // --- BOTÃO COLHER ---
+      const harvestBadge = document.getElementById('st-harvest-badge');
+      const harvestInfo = document.getElementById('st-harvest-info');
+      const harvestBtnEl = document.getElementById('st-btn-harvest');
+      if (harvestBadge && harvestInfo) {
+        if (bestHarvest) {
+          harvestBadge.textContent = '🌾 ' + t('st_harvest', 'COLHER');
+          harvestBadge.className = 'st-badge st-gold';
+          harvestInfo.textContent = (ST_TF_LABEL[bestHarvest.tf] || bestHarvest.tf);
+          if (harvestBtnEl) harvestBtnEl.title = bestHarvest.status;
+        } else {
+          harvestBadge.textContent = '⏸️ ' + t('st_wait', 'ESPERAR');
+          harvestBadge.className = 'st-badge st-off';
+          harvestInfo.textContent = '';
+          if (harvestBtnEl) harvestBtnEl.title = t('st_no_harvest', 'Sem condição de colheita agora');
+        }
+      }
+      // --- BADGE CONFIG (muda a borda do botão ⚙️ quando OKX salva) ---
+      const cfgBtn = document.getElementById('st-btn-config');
+      if (cfgBtn) {
+        const cfg = stGetConfig();
+        const hasKey = !!(cfg && cfg.okxKey);
+        cfgBtn.style.borderColor = hasKey ? 'rgba(0,230,118,0.5)' : '';
+        cfgBtn.title = hasKey ? t('st_connected', 'OKX salva') : t('st_config_badge', 'Configurar') + ' Severino Trader (OKX)';
+      }
+      // --- SALDO OKX + REGIME + POSIÇÃO (servidor) ---
+      renderStStatus();
+    }
+
+    function initSeverinoTrader() {
+      const configBtn = document.getElementById('st-btn-config');
+      const plantBtn = document.getElementById('st-btn-plant');
+      const harvestBtn = document.getElementById('st-btn-harvest');
+      const modal = document.getElementById('severino-trader-modal');
+      const saveBtn = document.getElementById('st-save-config');
+      const saveOk = document.getElementById('st-save-ok');
+
+      if (configBtn && modal) {
+        configBtn.addEventListener('click', () => {
+          stLoadConfigIntoModal();
+          showModal(modal);
+        });
+      }
+      // Toggle AUTO -> persiste no servidor (modo automático real)
+      async function stSetAutoMode(field, on){
+        try { await fetch('/api/st/automode', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ [field]: on }) }); } catch(e){}
+      }
+      if (plantBtn) {
+        plantBtn.addEventListener('click', async () => {
+          const on = !stGetAuto('st_auto_plant');
+          stSetAuto('st_auto_plant', on);
+          await stSetAutoMode('autoPlant', on);
+          stNotifySoon(on ? '🤖 Auto PLANTAR ligado. O agente executa e avisa no Telegram.' : '⏸️ Auto PLANTAR desligado.');
+          renderSeverinoTrader();
+        });
+      }
+      if (harvestBtn) {
+        harvestBtn.addEventListener('click', async () => {
+          const on = !stGetAuto('st_auto_harvest');
+          stSetAuto('st_auto_harvest', on);
+          await stSetAutoMode('autoHarvest', on);
+          stNotifySoon(on ? '🤖 Auto COLHER ligado. O agente executa e avisa no Telegram.' : '⏸️ Auto COLHER desligado.');
+          renderSeverinoTrader();
+        });
+      }
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          const cards = [];
+          document.querySelectorAll('#st-cards-checks input[type="checkbox"]').forEach(cb => {
+            if (cb.checked) cards.push(cb.getAttribute('data-tf'));
+          });
+          const cfg = {
+            okxKey: (document.getElementById('st-okx-key') || {}).value || '',
+            okxSecret: (document.getElementById('st-okx-secret') || {}).value || '',
+            okxPass: (document.getElementById('st-okx-pass') || {}).value || '',
+            strategy: (document.getElementById('st-strategy') || {}).value || 'dca',
+            mode: 'spot',
+            execMode: (document.getElementById('st-exec-mode') || {}).value || 'real',
+            entryValue: Number((document.getElementById('st-entry-value') || {}).value) || 5,
+            totalEntries: Number((document.getElementById('st-total-entries') || {}).value) || 10,
+            entrySpacing: Math.max(0.1, Number((document.getElementById('st-entry-spacing') || {}).value) || 0.5),
+            harvestMode: (document.getElementById('st-harvest-mode') || {}).value || 'profit',
+            autoPlant: !!(document.getElementById('st-auto-plant') || {}).checked,
+            autoHarvest: !!(document.getElementById('st-auto-harvest') || {}).checked,
+            cards: cards
+          };
+          if (cfg.entryValue < 5) cfg.entryValue = 5;
+          stSaveConfig(cfg);
+          stSetAuto('st_auto_plant', cfg.autoPlant);
+          stSetAuto('st_auto_harvest', cfg.autoHarvest);
+          stSetAutoMode('autoPlant', cfg.autoPlant);
+          stSetAutoMode('autoHarvest', cfg.autoHarvest);
+          if (saveOk) { saveOk.classList.remove('hidden'); setTimeout(() => saveOk.classList.add('hidden'), 2500); }
+          renderSeverinoTrader();
+        });
+      }
+      // --- VALIDAR CHAVE OKX (dashboard + Telegram) ---
+      const validateBtn = document.getElementById('st-validate-key');
+      const validateRes = document.getElementById('st-validate-result');
+      if (validateBtn) {
+        validateBtn.addEventListener('click', async () => {
+          const payload = {
+            okxKey: (document.getElementById('st-okx-key') || {}).value || '',
+            okxSecret: (document.getElementById('st-okx-secret') || {}).value || '',
+            okxPass: (document.getElementById('st-okx-pass') || {}).value || '',
+            execMode: (document.getElementById('st-exec-mode') || {}).value || 'real',
+            entryValue: Number((document.getElementById('st-entry-value') || {}).value) || 5,
+            totalEntries: Number((document.getElementById('st-total-entries') || {}).value) || 10,
+            strategy: (document.getElementById('st-strategy') || {}).value || 'dca',
+            autoPlant: !!(document.getElementById('st-auto-plant') || {}).checked,
+            autoHarvest: !!(document.getElementById('st-auto-harvest') || {}).checked
+          };
+          if (!payload.okxKey || !payload.okxSecret || !payload.okxPass) {
+            if (validateRes) { validateRes.classList.remove('hidden'); validateRes.style.color = '#ff5252'; validateRes.textContent = '⚠️ Preencha API Key, Secret e Passphrase.'; }
+            return;
+          }
+          validateBtn.disabled = true;
+          if (validateRes) { validateRes.classList.remove('hidden'); validateRes.style.color = 'var(--text-secondary)'; validateRes.textContent = '⏳ Validando na OKX...'; }
+          try {
+            const r = await fetch('/api/st/okxconfig', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const j = await r.json();
+            if (j.ok) {
+              if (validateRes) { validateRes.style.color = '#00e676'; validateRes.textContent = '✅ ' + (j.message || 'Chave válida!') + (j.balance !== undefined ? ' Saldo: $' + j.balance : ''); }
+              renderSeverinoTrader();
+            } else {
+              if (validateRes) { validateRes.style.color = '#ff5252'; validateRes.textContent = '❌ ' + (j.error || 'Falha na validação.'); }
+            }
+          } catch (e) {
+            if (validateRes) { validateRes.style.color = '#ff5252'; validateRes.textContent = '❌ Erro de rede: ' + e.message; }
+          }
+          validateBtn.disabled = false;
+        });
+      }
+      renderSeverinoTrader();
+    }
+
+    function stLoadConfigIntoModal() {
+      const cfg = stGetConfig();
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+      set('st-okx-key', cfg.okxKey || '');
+      set('st-okx-secret', cfg.okxSecret || '');
+      set('st-okx-pass', cfg.okxPass || '');
+      set('st-strategy', cfg.strategy || 'dca');
+      set('st-exec-mode', cfg.execMode || 'real');
+      set('st-entry-value', cfg.entryValue || 10);
+      set('st-total-entries', cfg.totalEntries || 10);
+      set('st-entry-spacing', cfg.entrySpacing || 0.5);
+      set('st-harvest-mode', cfg.harvestMode || 'profit');
+      const ap = document.getElementById('st-auto-plant'); if (ap) ap.checked = stGetAuto('st_auto_plant');
+      const ah = document.getElementById('st-auto-harvest'); if (ah) ah.checked = stGetAuto('st_auto_harvest');
+      const cards = cfg.cards || ['4H', '1D', '3D'];
+      document.querySelectorAll('#st-cards-checks input[type="checkbox"]').forEach(cb => {
+        cb.checked = cards.indexOf(cb.getAttribute('data-tf')) !== -1;
+      });
+    }
+
+    function stNotifySoon(msg) {
+      let note = document.getElementById('st-soon-note');
+      if (!note) {
+        note = document.createElement('div');
+        note.id = 'st-soon-note';
+        note.style.cssText = 'position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(41,121,255,0.95);color:#fff;padding:0.6rem 1rem;border-radius:10px;font-size:0.75rem;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:90vw;text-align:center;';
+        document.body.appendChild(note);
+      }
+      note.textContent = msg || ('🤖 ' + t('st_soon', 'Configuração aplicada.'));
+      note.style.display = 'block';
+      clearTimeout(window.__stSoonT);
+      window.__stSoonT = setTimeout(() => { note.style.display = 'none'; }, 3200);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSeverinoTrader);
+    } else {
+      initSeverinoTrader();
+    }
+    // Atualiza saldo/regime/posição do servidor a cada 60s
+    setInterval(renderStStatus, 60000);
+
+    // applyTierState - aplica o estado do tier (VIP/Basic/Free) na UI
+    function applyTierState() {
+      const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+      const tier = isDevMode ? 'vip' : (license && license.tier ? license.tier : 'free');
+      const isVip = tier === 'vip';
+      const isBasic = tier === 'basic';
+      
+      // Update header button
+      const btnLogin = document.getElementById('btn-login');
+      if (btnLogin) {
+        if (isVip) {
+          btnLogin.innerHTML = currentLang === 'en' ? '💎 VIP ACTIVE' : '💎 VIP ATIVO';
+          btnLogin.className = 'btn btn-secondary';
+          btnLogin.style.borderColor = '#00e676';
+          btnLogin.style.color = '#00e676';
+          btnLogin.style.boxShadow = '0 0 10px rgba(0, 230, 118, 0.15)';
+        } else if (isBasic) {
+          btnLogin.innerHTML = '📊 BÁSICO';
+          btnLogin.className = 'btn btn-secondary';
+          btnLogin.style.borderColor = '#ff9800';
+          btnLogin.style.color = '#ff9800';
+          btnLogin.style.boxShadow = '0 0 10px rgba(255, 152, 0, 0.15)';
+        } else {
+          btnLogin.innerHTML = currentLang === 'en' ? '💎 VIP Login Area' : '💎 Área VIP Login';
+          btnLogin.className = 'btn btn-primary';
+          btnLogin.style.borderColor = '';
+          btnLogin.style.color = '';
+          btnLogin.style.boxShadow = '';
+        }
+      }
+
+      // Update unlock button visibility
+      const btnUnlockStations = document.getElementById('btn-unlock-stations');
+      if (btnUnlockStations) {
+        if (isVip) {
+          btnUnlockStations.classList.add('hidden');
+        } else {
+          btnUnlockStations.classList.remove('hidden');
+        }
+      }
+
+      // Update premium stations - DESBLOQUEIA TODAS AS FERRAMENTAS PARA VIP
+      const premiumItems = document.querySelectorAll('.premium-item');
+      premiumItems.forEach(item => {
+        const lockIcon = item.querySelector('.lock-icon');
+        const statusText = item.querySelector('.item-status');
+        if (isVip) {
+          item.classList.remove('locked');
+          item.style.opacity = '1';
+          item.style.pointerEvents = 'auto';
+          if (lockIcon) lockIcon.textContent = '🔓';
+          if (statusText) statusText.textContent = 'Disponível';
+        } else if (isBasic) {
+          item.classList.add('locked');
+          item.style.opacity = '0.5';
+          item.style.pointerEvents = 'none';
+          if (lockIcon) lockIcon.textContent = '🔒';
+          if (statusText) statusText.textContent = 'Básico';
+        } else {
+          item.classList.add('locked');
+          item.style.opacity = '0.5';
+          item.style.pointerEvents = 'none';
+          if (lockIcon) lockIcon.textContent = '🔒';
+          if (statusText) statusText.textContent = 'Bloqueado';
+        }
+      });
+
+      // Update VIP Signals
+      updateVipSignalsUI();
+
+      // Update period forecast cards - MOSTRA TODOS OS CARDS PARA VIP
+      renderForecastCards();
+
+      // Teaser para nao-assinantes (invites rotativos + card de captura de lead)
+      updateFreeTeaser();
+
+      // Update countdown display
+      updateCountdownDisplay();
+    }
+
+    // updateVipSignalsUI - atualiza UI dos sinais VIP
+    function updateVipSignalsUI() {
+      const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+      const tier = isDevMode ? 'vip' : (license && license.tier ? license.tier : 'free');
+      const isVip = tier === 'vip';
+
+      // Update VIP Signals box
+      const signalBox = document.querySelector('.signal-box');
+      if (signalBox) {
+        const blurOverlay = signalBox.querySelector('.blur-overlay');
+        const blurContent = signalBox.querySelector('.blur-content');
+        if (isVip) {
+          if (blurOverlay) blurOverlay.style.display = 'none';
+          if (blurContent) {
+            blurContent.style.filter = 'none';
+            blurContent.style.pointerEvents = 'auto';
+            blurContent.style.userSelect = 'auto';
+            blurContent.style.opacity = '1';
+            // Analise focada em LONG/SHORT/NEUTRO para 15M/1H/4H
+            var stTfs = ['15M', '1H', '4H'];
+            var stSignals = [];
+            var longCount = 0, shortCount = 0, neutralCount = 0;
+            var stPrice = typeof btcPriceUsd !== 'undefined' ? Number(btcPriceUsd) : 0;
+            var stFmtUsd = function(v, dec) { return '$' + v.toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec}); };
+            var stPriceFmt = stFmtUsd(stPrice, 2);
+            var stChange = typeof btcChangePercent !== 'undefined' ? (btcChangePercent >= 0 ? '+' : '') + btcChangePercent.toFixed(2) + '%' : '---';
+            var stChangeClass = typeof btcChangePercent !== 'undefined' && btcChangePercent >= 0 ? 'up' : 'down';
+            var stNow = new Date();
+            var stTimeStr = stNow.toLocaleTimeString(currentLang === 'en' ? 'en-US' : 'pt-BR', {hour:'2-digit', minute:'2-digit'});
+            var stDateStr = stNow.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'pt-BR');
+
+            for (var si = 0; si < stTfs.length; si++) {
+              var tf = stTfs[si];
+              var th = typeof weatherThemes !== 'undefined' ? weatherThemes[tf] : null;
+              if (!th) continue;
+              var sc = th.scoreText || '';
+              var scNum = parseFloat(sc) || 50;
+              var isLong = th.direction === 'up';
+              var isShort = th.direction === 'down';
+              var isStrong = th.direction === 'up' ? scNum >= 75 : (th.direction === 'down' ? scNum <= 25 : false);
+              if (isLong) { longCount++; }
+              else if (isShort) { shortCount++; }
+              else { neutralCount++; }
+              stSignals.push({ tf: tf, theme: th, score: scNum, long: isLong, short: isShort, strong: isStrong });
+            }
+
+            var stBias = t('sig_neutral', 'NEUTRO');
+            var stBiasColor = '#ffb020';
+            var stAction = t('sig_wait', 'Aguardar');
+            var stEntry = t('sig_mixed', 'Sinais mistos entre 15M, 1H e 4H. Aguardar alinhamento de 2+ periodos');
+            var stExit = t('sig_avoid', 'Evitar abrir posicao. Risco de whipsaw');
+            var stDir = 0;
+            if (longCount > shortCount && longCount >= 2) {
+              stBias = 'LONG';
+              stBiasColor = '#00e676';
+              stAction = t('sig_buy_dip', 'Comprar na correção');
+              stEntry = t('sig_entry_up', '15M/1H em alta - entrar em pullback para EMA. Conf pelo 4H');
+              stExit = t('sig_exit_up', 'TP nos topos do 4H. Stop abaixo do suporte do 15M');
+              stDir = 1;
+            } else if (shortCount > longCount && shortCount >= 2) {
+              stBias = 'SHORT';
+              stBiasColor = '#ff3d71';
+              stAction = t('sig_sell_relief', 'Vender no alívio');
+              stEntry = t('sig_entry_down', '15M/1H em baixa - entrar em rally para resistencia. Conf pelo 4H');
+              stExit = t('sig_exit_down', 'TP nos fundos do 4H. Stop acima da resistencia do 15M');
+              stDir = -1;
+            } else if (longCount === shortCount && longCount >= 1) {
+              stBias = t('sig_neutral', 'NEUTRO');
+              stBiasColor = '#ffb020';
+              stAction = t('sig_wait_define', 'Aguardar definição');
+              stEntry = t('sig_mixed', 'Sinais mistos entre 15M, 1H e 4H. Aguardar alinhamento de 2+ periodos');
+              stExit = t('sig_avoid', 'Evitar abrir posicao. Risco de whipsaw');
+              stDir = 0;
+            }
+
+            // Niveis de trade (Entrada / Stop / Metas) a partir do preco real
+            var riskPct = 0.5;
+            var stEntryLvl = null, stSl = null, stTp1 = null, stTp2 = null, stRR = '—';
+            if (stDir > 0) {
+              stEntryLvl = stPrice * (1 - 0.001);
+              stSl = stPrice * (1 - riskPct / 100);
+              stTp1 = stPrice * (1 + 0.008);
+              stTp2 = stPrice * (1 + 0.016);
+            } else if (stDir < 0) {
+              stEntryLvl = stPrice * (1 + 0.001);
+              stSl = stPrice * (1 + riskPct / 100);
+              stTp1 = stPrice * (1 - 0.008);
+              stTp2 = stPrice * (1 - 0.016);
+            }
+            if (stDir !== 0 && stEntryLvl > 0 && stSl > 0) {
+              var stRis = Math.abs(stEntryLvl - stSl);
+              var stRew = Math.abs(stTp1 - stEntryLvl);
+              if (stRis > 0) stRR = (stRew / stRis).toFixed(2) + 'R';
+            }
+
+            // Melhor oportunidade: TF com maior forca (|score - 50|) e direcao definida
+            var best = null;
+            for (var bi = 0; bi < stSignals.length; bi++) {
+              var sgb = stSignals[bi];
+              if (!sgb.long && !sgb.short) continue;
+              if (!best || Math.abs(sgb.score - 50) > Math.abs(best.score - 50)) best = sgb;
+            }
+            var bestDir = best ? (best.long ? t('sig_buy', 'COMPRA') : t('sig_sell', 'VENDA')) : (stDir > 0 ? t('sig_buy', 'COMPRA') : (stDir < 0 ? t('sig_sell', 'VENDA') : t('sig_neutral', 'NEUTRO')));
+            var bestColor = best ? (best.long ? '#00e676' : '#ff3d71') : stBiasColor;
+            var bestForce = best ? Math.round(Math.abs(best.score - 50) * 2) : (stDir !== 0 ? 60 : 0);
+            var bestIcon = best ? (best.long ? 'arrow-up-right' : 'arrow-down-right') : 'move-right';
+
+            // Estrategia baseada no melhor setup com niveis calculados
+            if (best && stDir !== 0) {
+              if (stDir > 0) {
+                stEntry = t('sig_buy_near', 'Comprar perto de ' + stFmtUsd(stEntryLvl, 2) + ' - pullback na EMA do ' + best.tf + '.', { level: stFmtUsd(stEntryLvl, 2), tf: best.tf });
+                stExit = t('sig_exit_levels', 'TP1 em ' + stFmtUsd(stTp1, 2) + ', TP2 em ' + stFmtUsd(stTp2, 2) + '. Stop em ' + stFmtUsd(stSl, 2) + '.', { tp1: stFmtUsd(stTp1, 2), tp2: stFmtUsd(stTp2, 2), sl: stFmtUsd(stSl, 2) });
+              } else {
+                stEntry = t('sig_sell_near', 'Vender perto de ' + stFmtUsd(stEntryLvl, 2) + ' - rally na resistencia do ' + best.tf + '.', { level: stFmtUsd(stEntryLvl, 2), tf: best.tf });
+                stExit = t('sig_exit_levels', 'TP1 em ' + stFmtUsd(stTp1, 2) + ', TP2 em ' + stFmtUsd(stTp2, 2) + '. Stop em ' + stFmtUsd(stSl, 2) + '.', { tp1: stFmtUsd(stTp1, 2), tp2: stFmtUsd(stTp2, 2), sl: stFmtUsd(stSl, 2) });
+              }
+            }
+
+            var stCardsHtml = '';
+            for (var si2 = 0; si2 < stSignals.length; si2++) {
+              var s2 = stSignals[si2];
+              var sigColor = '#ffb020';
+              if (s2.long) {
+                sigColor = s2.strong ? '#00f0ff' : '#00e676';
+              } else if (s2.short) {
+                sigColor = s2.strong ? '#f44336' : '#ff3d71';
+              }
+              stCardsHtml +=
+                '<span class="vip-m-pill" style="background:' + sigColor + '1a;color:' + sigColor + ';border:1px solid ' + sigColor + '44;">' +
+                  s2.tf + ' · ' + (s2.theme.scoreText || '---') +
+                '</span>';
+            }
+
+            var stLevelsHtml = '';
+            if (stDir !== 0) {
+              stLevelsHtml =
+                '<div class="vip-m-levels">' +
+                  '<div class="vip-m-level entry"><span class="l-label">' + t('sig_entry_label', 'Entrada') + '</span><span class="l-value">' + stFmtUsd(stEntryLvl, 2) + '</span></div>' +
+                  '<div class="vip-m-level sl"><span class="l-label">' + t('sig_stop_label', 'Stop') + '</span><span class="l-value warn">' + stFmtUsd(stSl, 2) + '</span></div>' +
+                  '<div class="vip-m-level tp"><span class="l-label">TP1</span><span class="l-value ok">' + stFmtUsd(stTp1, 2) + '</span></div>' +
+                  '<div class="vip-m-level tp"><span class="l-label">TP2</span><span class="l-value ok">' + stFmtUsd(stTp2, 2) + '</span></div>' +
+                '</div>';
+            } else {
+              stLevelsHtml =
+                '<div class="vip-m-plan">' +
+                  '<span class="plan-label">' + t('sig_trade_plan', 'Plano de Trade') + '</span>' +
+                  '<span><b>' + t('sig_action_label', 'Ação:') + '</b> ' + stAction + '</span>' +
+                  '<span><b>' + t('sig_entry_label2', 'Entrada:') + '</b> ' + stEntry + '</span>' +
+                  '<span><b>' + t('sig_exit_label', 'Saída:') + '</b> ' + stExit + '</span>' +
+                '</div>';
+            }
+
+            blurContent.innerHTML =
+              '<div class="vip-modern">' +
+                '<div class="vip-m-head">' +
+                  '<span class="vip-m-pair"><i class="live-dot"></i> <i data-lucide="activity" width="15" height="15"></i> BTC/USDT</span>' +
+                  '<span class="vip-m-badge" style="background:' + stBiasColor + '1f;color:' + stBiasColor + ';border:1px solid ' + stBiasColor + '44;box-shadow:0 0 14px ' + stBiasColor + '22;">' + stBias + '</span>' +
+                '</div>' +
+                '<div class="vip-m-quote">' +
+                  '<div class="vip-m-quote-card"><span class="q-label">' + t('sig_price_label', 'Preço BTC') + '</span><span class="q-value ' + stChangeClass + '">' + stPriceFmt + '</span></div>' +
+                  '<div class="vip-m-quote-card"><span class="q-label">' + t('sig_change_label', 'Variação 24h') + '</span><span class="q-value ' + stChangeClass + '">' + stChange + '</span></div>' +
+                '</div>' +
+                '<div class="vip-m-section">' + t('sig_best', 'Melhor Oportunidade Agora') + '</div>' +
+                '<div class="vip-m-best" style="--glow-color:' + bestColor + ';">' +
+                  '<div class="vip-m-best-top">' +
+                    '<span class="vip-m-best-tf"><i data-lucide="' + bestIcon + '" width="15" height="15"></i> ' + (best ? best.tf : 'MULTI-TF') + '</span>' +
+                    '<span class="vip-m-best-tag">' + bestDir + '</span>' +
+                  '</div>' +
+                  '<div class="vip-m-force">' +
+                    '<span class="vip-m-force-label">' + t('sig_force', 'Força') + '</span>' +
+                    '<div class="vip-m-force-bar"><div class="vip-m-force-fill" style="width:' + bestForce + '%;"></div></div>' +
+                    '<span class="vip-m-force-val">' + bestForce + '%</span>' +
+                  '</div>' +
+                  stLevelsHtml +
+                '</div>' +
+                '<div class="vip-m-pills">' + stCardsHtml + '</div>' +
+                '<div class="vip-m-foot">' +
+                  '<span class="ft-live"><i></i> ' + t('sig_live', 'Ao vivo') + ' · ' + stBias + ' · ' + longCount + 'L / ' + shortCount + 'S</span>' +
+                  '<span>' + stTimeStr + '</span>' +
+                '</div>' +
+              '</div>';
+          }
+          if (window.lucide) window.lucide.createIcons();
+        } else {
+          if (blurOverlay) blurOverlay.style.display = '';
+          if (blurContent) {
+            blurContent.style.filter = 'blur(5px)';
+            blurContent.style.pointerEvents = 'none';
+            blurContent.style.userSelect = 'none';
+            blurContent.style.opacity = '0.7';
+          }
+        }
+      }
+
+      // Update SMC strategy card
+      const smcBadge = document.getElementById('smc-strategy-badge');
+      const smcBlur = document.getElementById('smc-strategy-content-blur');
+      const smcOverlay = document.getElementById('smc-strategy-paywall-overlay');
+      
+      if (smcBadge) {
+        smcBadge.textContent = isVip ? (currentLang === 'en' ? 'ACTIVE' : 'ATIVO') : t('strat_locked', 'BLOQUEADO');
+        smcBadge.style.color = isVip ? '#00e676' : '#a100ff';
+        smcBadge.style.background = isVip ? 'rgba(0, 230, 118, 0.1)' : 'rgba(161, 0, 255, 0.1)';
+      }
+      if (smcBlur) {
+        smcBlur.style.filter = isVip ? 'none' : 'blur(4px)';
+        smcBlur.style.pointerEvents = isVip ? 'auto' : 'none';
+        smcBlur.style.opacity = isVip ? '1' : '0.7';
+        smcBlur.style.userSelect = isVip ? 'auto' : 'none';
+      }
+      if (smcOverlay) {
+        smcOverlay.classList.toggle('hidden', isVip);
+      }
+    }
+    // updateCountdownDisplay - atualiza o contador de dias restantes da licença
+    function updateCountdownDisplay() {
+      const license = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+      const el = document.getElementById('license-countdown');
+      if (!el) return;
+      
+      if (!license || !license.daysLeft) {
+        el.style.display = 'none';
+        return;
+      }
+      
+      const tier = license.tier === 'vip' ? 'VIP' : 'Básico';
+      el.textContent = tier + ' expira em ' + license.daysLeft + ' dias';
+      el.style.display = 'block';
+    }
+    applyTierState();
+
+    // ===================== FLUXO DE COMPRA (NÃO-ASSINANTES) =====================
+    function showModal(m) {
+      if (!m) return;
+      m.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function hideModal(m) {
+      if (!m) return;
+      m.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    document.querySelectorAll('.modal-close').forEach(cb => {
+      cb.addEventListener('click', () => hideModal(cb.closest('.modal-overlay')));
+    });
+    document.querySelectorAll('.modal-overlay').forEach(ov => {
+      ov.addEventListener('click', (e) => { if (e.target === ov) hideModal(ov); });
+    });
+
+    // Botão "Área VIP Login" -> paywall (somente se ainda não for VIP)
+    if (btnLogin) {
+      btnLogin.addEventListener('click', () => {
+        const lic = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+        if ((lic && lic.tier) === 'vip' || isDevMode) return;
+        showModal(paywallModal);
+      });
+    }
+
+    // Botões de desbloqueio -> paywall
+    [btnUnlockSignals, btnUnlockStations, btnClaimStrategy].forEach(b => {
+      if (b) b.addEventListener('click', () => showModal(paywallModal));
+    });
+
+    // Botões de checkout (plano) -> modal de checkout com links Kiwify
+    document.querySelectorAll('.checkout-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const plan = btn.getAttribute('data-plan');
+        const cardLink = document.getElementById('checkout-card-link');
+        const planTitle = document.getElementById('checkout-plan-title');
+        const waLink = document.getElementById('checkout-whatsapp-link');
+        if (plan === 'annual') {
+          if (cardLink) cardLink.href = (adminConfig && adminConfig.linkElite) || 'https://pay.kiwify.com.br/vim8bDb';
+          if (planTitle) planTitle.textContent = '📆 VIP Anual';
+        } else {
+          if (cardLink) cardLink.href = (adminConfig && adminConfig.linkVip) || 'https://pay.kiwify.com.br/ffphj4e';
+          if (planTitle) planTitle.textContent = '👑 VIP Trader';
+        }
+        const wa = (adminConfig && adminConfig.whatsapp) ? String(adminConfig.whatsapp).replace(/\D/g, '') : '';
+        if (waLink) waLink.href = wa ? 'https://wa.me/' + wa : '#';
+        showModal(document.getElementById('checkout-modal'));
+      });
+    });
+
+    // Ativação de código VIP pelo modal de compra
+    const btnActivateVip = document.getElementById('btn-activate-vip');
+    const activationInput = document.getElementById('activation-key-input');
+    if (btnActivateVip && activationInput) {
+      btnActivateVip.addEventListener('click', async () => {
+        const code = activationInput.value.trim().toUpperCase();
+        const successEl = document.getElementById('activation-success');
+        const errorEl = document.getElementById('activation-error');
+        if (!code) return;
+        if (successEl) successEl.classList.add('hidden');
+        if (errorEl) errorEl.classList.add('hidden');
+        try {
+          const res = await fetch('/api/license/validate?code=' + encodeURIComponent(code));
+          const data = await res.json();
+          if (!data.valid) {
+            if (errorEl) errorEl.classList.remove('hidden');
+            return;
+          }
+          await fetch('/api/license/activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+          });
+          const vd = await (await fetch('/api/license/validate?code=' + encodeURIComponent(code))).json();
+          if (vd.valid) {
+            localStorage.setItem('btc_weather_license', JSON.stringify({ tier: vd.tier, daysLeft: vd.daysLeft, expiresAt: vd.expiresAt, code }));
+          } else {
+            localStorage.setItem('btc_weather_license', JSON.stringify({ tier: 'vip', daysLeft: 7, code }));
+          }
+          updateVipOfferBar();
+          applyTierState();
+          if (successEl) successEl.classList.remove('hidden');
+          hideModal(paywallModal);
+        } catch (e) {
+          if (errorEl) errorEl.classList.remove('hidden');
+        }
+      });
+    }
+
+    // ===================== TESTE GRÁTIS 7 DIAS (CONVITE) =====================
+    // Ativa o teste grátis 7 dias após o cadastro do lead (e-mail + Telegram)
+    async function activateFreeTrial() {
+      const emailInput = document.getElementById('lead-email-input');
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (!email || !email.includes('@') || !email.includes('.')) {
+        return { ok: false, error: 'Informe seu e-mail para liberar o teste grátis.' };
+      }
+      const nome = email.split('@')[0];
+      const res = await fetch('/api/trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'frontend-offer', email, nome })
+      });
+      if (!res.ok) return { ok: false, error: 'HTTP ' + res.status };
+      const data = await res.json();
+      if (!data.ok || !data.code) return { ok: false, error: 'Resposta inválida' };
+      const lic = {
+        tier: data.tier || 'vip',
+        daysLeft: typeof data.daysLeft === 'number' ? data.daysLeft : 7,
+        source: 'frontend-offer',
+        code: data.code
+      };
+      try { localStorage.setItem('btc_weather_license', JSON.stringify(lic)); } catch (se) { console.error('setItem falhou', se); }
+      try { applyTierState(); } catch (ue) { console.error('applyTierState falhou (VIP já ativado):', ue); }
+      return { ok: true, code: data.code };
+    }
+
+    // Ativa o teste grátis 7 dias direto, sem formulário de cadastro (card similar aos invites dos cards de previsão)
+    function claimFreeTrial(btn) {
+      const msgEl = document.getElementById('lead-msg');
+      if (msgEl) { msgEl.textContent = ''; }
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      (async () => {
+        try {
+          const r = await activateFreeTrial();
+          if (msgEl) {
+            if (r.ok) {
+              msgEl.innerHTML = t('trial_success_html', '🎉 Acesso liberado! Seus sinais operacionais, análise diária e alertas estão desbloqueados no painel.');
+              msgEl.className = 'lead-msg ok';
+            } else {
+              msgEl.textContent = r.error || t('lead_err', 'Erro. Tente novamente.');
+              msgEl.className = 'lead-msg error';
+            }
+          }
+        } catch (e) {
+          if (msgEl) { msgEl.textContent = t('lead_err', 'Erro de rede. Tente novamente.'); msgEl.className = 'lead-msg error'; }
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = '🎁 ' + t('invite_cta', 'Cadastre e Use'); }
+        }
+      })();
+    }
+
+    // Overlays de convite nos cards de previsão por período (4 de 7, rotativos)
+    function setupForecastInvites() {
+      const cards = Array.from(document.querySelectorAll('.forecast-card'));
+      cards.forEach(card => {
+        let ov = card.querySelector('.forecast-invite');
+        if (!ov) {
+          ov = document.createElement('div');
+          ov.className = 'forecast-invite';
+          ov.innerHTML =
+            '<div class="invite-inner">' +
+              '<span class="invite-lock">🔒</span>' +
+              '<span class="invite-title"></span>' +
+              '<span class="invite-sub"></span>' +
+              '<button class="btn btn-premium invite-cta"></button>' +
+              '<span class="invite-alt"></span>' +
+            '</div>';
+          card.appendChild(ov);
+        }
+        const tEl = ov.querySelector('.invite-title');
+        const sEl = ov.querySelector('.invite-sub');
+        const cEl = ov.querySelector('.invite-cta');
+        const aEl = ov.querySelector('.invite-alt');
+        if (tEl) tEl.textContent = t('invite_title', 'Análise VIP');
+        if (sEl) sEl.textContent = t('invite_sub', 'Previsão por período exclusiva para assinantes');
+        if (cEl) cEl.textContent = '🎁 ' + t('invite_cta', 'Cadastre e Use');
+        if (aEl) aEl.textContent = t('invite_buy', 'ou assinar por R$ 47/mês');
+      });
+      if (!inviteState) {
+        function refresh() {
+          cards.forEach(card => {
+            card.classList.add('invite-covered');
+          });
+        }
+        function rotate() {
+          refresh();
+        }
+        refresh();
+        inviteState = { rotate };
+      }
+      return inviteState.rotate;
+    }
+
+    function updateFreeTeaser() {
+      const lic = (() => { try { return JSON.parse(localStorage.getItem('btc_weather_license')); } catch(e) { return null; } })();
+      const tier = isDevMode ? 'vip' : (lic && lic.tier ? lic.tier : 'free');
+      const isVip = tier === 'vip';
+      const isAdmin = !!(lic && lic.source === 'admin');
+      document.body.classList.toggle('vip-active', !!(isAdmin || isVip));
+      const leadCard = document.getElementById('signal-lead-card');
+      if (leadCard) leadCard.style.display = (isAdmin || isVip) ? 'none' : '';
+      // Análise abaixo do preço do BTC: só visível para pagantes
+      const heroDesc = document.getElementById('hero-weather-desc');
+      if (heroDesc) heroDesc.style.display = (isAdmin || isVip) ? '' : 'none';
+      const cards = document.querySelectorAll('.forecast-card');
+      if (isVip || isAdmin) {
+        cards.forEach(c => c.classList.remove('invite-covered'));
+        if (inviteTimer) { clearInterval(inviteTimer); inviteTimer = null; }
+        return;
+      }
+      // Não-pagantes: todos os 7 cards ficam cobertos com blur + overlay (sem rotação)
+      if (inviteTimer) { clearInterval(inviteTimer); inviteTimer = null; }
+      setupForecastInvites();
+    }
+
+    const forecastGrid = document.getElementById('forecast-grid-container');
+    if (forecastGrid) {
+      forecastGrid.addEventListener('click', (e) => {
+        const cta = e.target.closest('.invite-cta');
+        const alt = e.target.closest('.invite-alt');
+        if (cta) { claimFreeTrial(cta); return; }
+        if (alt) { showModal(paywallModal); }
+      });
+    }
+
+    // ===================== CARD TESTE GRÁTIS 7 DIAS (SINAIS OPERACIONAIS) =====================
+    const leadAssinar = document.getElementById('lead-assinar');
+    if (leadAssinar) {
+      leadAssinar.addEventListener('click', (e) => {
+        e.preventDefault();
+        showModal(paywallModal);
+      });
+    }
+    const btnClaimFreeTrial = document.getElementById('btn-claim-free-trial');
+    if (btnClaimFreeTrial) {
+      btnClaimFreeTrial.addEventListener('click', () => claimFreeTrial(btnClaimFreeTrial));
+    }
+
+    // ----- BOTÃO SALVAR CONFIG ADMIN -----
+    const btnSaveAdmin = document.getElementById('btn-save-admin');
+    if (btnSaveAdmin) {
+      btnSaveAdmin.addEventListener('click', async () => {
+        const g = document.getElementById('admin-google-client-input');
+        const w = document.getElementById('admin-whatsapp-input');
+        const lv = document.getElementById('admin-link-vip-input');
+        const le = document.getElementById('admin-link-elite-input');
+        const vk = document.getElementById('admin-vip-key-input');
+        const tc = document.getElementById('admin-tg-chat-input');
+        const wg = document.getElementById('admin-wa-group-input');
+        const ae = document.getElementById('admin-alerts-enabled-checkbox');
+        if (g) adminConfig.googleClientId = g.value.trim();
+        if (w) adminConfig.whatsapp = w.value.trim();
+        if (lv) adminConfig.linkVip = lv.value.trim();
+        if (le) adminConfig.linkElite = le.value.trim();
+        if (vk) adminConfig.vipKey = vk.value.trim().toUpperCase();
+        if (tc) adminConfig.tgChatId = tc.value.trim();
+        if (wg) adminConfig.waGroupId = wg.value.trim();
+        if (ae) adminConfig.alertsEnabled = ae.checked;
+        try { localStorage.setItem('btc_weather_admin_config', JSON.stringify(adminConfig)); } catch (e) {}
+        try {
+          const res = await fetch('/api/weather/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              secret: adminConfig.vipKey,
+              whatsapp: adminConfig.whatsapp,
+              linkVip: adminConfig.linkVip,
+              linkElite: adminConfig.linkElite,
+              tgChatId: adminConfig.tgChatId,
+              waGroupId: adminConfig.waGroupId,
+              alertsEnabled: adminConfig.alertsEnabled,
+              googleClientId: adminConfig.googleClientId
+            })
+          });
+          const r = await res.json().catch(() => ({}));
+          if (!r.ok) console.warn('Config não salva no servidor (secret provavelmente diferente do SECRET_KEY):', r.error || r);
+        } catch (e) { console.error('Erro ao salvar config:', e); }
+        const ok = document.getElementById('admin-save-success');
+        if (ok) { ok.classList.remove('hidden'); setTimeout(() => ok.classList.add('hidden'), 3000); }
+      });
+    }
+
+    // Mantem o mostrador de sinais atualizado a cada minuto
+    setInterval(updateVipSignalsUI, 60000);
+
+    // Revela o container principal após o estado estar 100% configurado (evita o flash de F5)
+    const container = document.querySelector('.container');
+    if (container) {
+        container.classList.add('loaded');
+    }
+
+    // ========== CARROSSEL ECOSSISTEMA (efeito astros) ==========
+    function iniciarCarrosselEco() {
+      const carousel = document.getElementById('carousel-eco');
+      if (!carousel) return;
+      const slides = carousel.querySelectorAll('.carousel-slide');
+      const dotsContainer = carousel.querySelector('.carousel-dots');
+      if (!slides.length || !dotsContainer) return;
+
+      // Gera estrelinhas decorativas
+      const stars = carousel.querySelector('.stars-bg');
+      if (stars) {
+        for (let i = 0; i < 18; i++) {
+          const s = document.createElement('div');
+          s.className = 'star';
+          s.style.left = Math.random() * 100 + '%';
+          s.style.top = Math.random() * 100 + '%';
+          s.style.animationDelay = Math.random() * 5 + 's';
+          s.style.animationDuration = (3 + Math.random() * 3) + 's';
+          stars.appendChild(s);
+        }
+      }
+
+      let current = 0, interval;
+
+      slides.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => { show(i); resetInterval(); });
+        dotsContainer.appendChild(dot);
+      });
+
+      function show(i) {
+        slides.forEach(s => s.classList.remove('active'));
+        slides[i].classList.add('active');
+        dotsContainer.querySelectorAll('.carousel-dot').forEach((d, idx) => d.classList.toggle('active', idx === i));
+        current = i;
+      }
+      function nextSlide() { show((current + 1) % slides.length); }
+      function resetInterval() { clearInterval(interval); interval = setInterval(nextSlide, 7000); }
+      resetInterval();
+
+      carousel.addEventListener('mouseenter', () => clearInterval(interval));
+      carousel.addEventListener('mouseleave', () => resetInterval());
+
+      // Clique no botao "Contribuir" abre modal
+      carousel.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-contrib')) abrirContribModal();
+      });
+    }
+
+    // ========== CONTRIBUIÇÃO ==========
+    function abrirContribModal() {
+      const modal = document.getElementById('contrib-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('contrib-msg').value = '';
+      document.getElementById('contrib-email').value = '';
+      document.getElementById('contrib-status').textContent = '';
+      document.getElementById('contrib-status').className = '';
+      document.querySelectorAll('.contrib-tipo-btn').forEach(b => b.classList.remove('ativo'));
+      const primeiro = document.querySelector('.contrib-tipo-btn');
+      if (primeiro) primeiro.classList.add('ativo');
+    }
+
+    // Fechar modal
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('contrib-modal');
+      if (!modal) return;
+      if (e.target.classList.contains('modal-close') || e.target.classList.contains('contrib-close') || e.target === modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Alternar tipo
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.contrib-tipo-btn');
+      if (!btn) return;
+      document.querySelectorAll('.contrib-tipo-btn').forEach(b => b.classList.remove('ativo'));
+      btn.classList.add('ativo');
+    });
+
+    // Enviar contribuição
+    document.getElementById('contrib-enviar')?.addEventListener('click', async () => {
+      const tipo = document.querySelector('.contrib-tipo-btn.ativo');
+      const tipoVal = tipo ? tipo.dataset.tipo : 'ideia';
+      const msg = document.getElementById('contrib-msg').value.trim();
+      const email = document.getElementById('contrib-email').value.trim();
+      const status = document.getElementById('contrib-status');
+      if (!msg) { status.textContent = 'Digite uma mensagem.'; status.className = 'erro'; return; }
+      try {
+        const res = await fetch('/api/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'contribuicao', tipo: tipoVal, mensagem: msg, email: email || undefined })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.ok !== false) {
+          status.textContent = 'Obrigado! Sua contribuicao foi registrada.';
+          status.className = 'ok';
+          document.getElementById('contrib-msg').value = '';
+          document.getElementById('contrib-email').value = '';
+        } else {
+          status.textContent = 'Erro ao enviar. Tente novamente.';
+          status.className = 'erro';
+        }
+      } catch (e) {
+        status.textContent = 'Erro de conexao. Tente novamente.';
+        status.className = 'erro';
+      }
+    });
+});

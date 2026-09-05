@@ -1,0 +1,26 @@
+{
+  "stoploss": -5,
+  "trailing_stop": true,
+  "take_profit": 3,
+  "use_take_profit": true,
+  "max_open_trades": 2,
+  "stake_amount": 3,
+  "active_assets": [
+    {
+      "symbol": "BTC-USDT",
+      "name": "Bitcoin",
+      "active": true
+    },
+    {
+      "symbol": "ETH-USDT",
+      "name": "Ethereum",
+      "active": true
+    },
+    {
+      "symbol": "SOL-USDT",
+      "name": "Solana",
+      "active": true
+    }
+  ],
+  "max_trades_per_asset": 1
+}

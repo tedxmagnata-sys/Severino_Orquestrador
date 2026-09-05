@@ -1,0 +1,27 @@
+# Node
+node_modules/
+
+# Dados de runtime (NAO versionar)
+data/
+queue/
+events.json
+leads.json
+pending_codes.json
+tasks.json
+notifications.json
+card_alerts.json
+
+# Backups e versoes antigas locais
+*.pre-*
+*.bkp
+
+# Segredos / config local
+*.env
+.env.*
+
+# Logs e temporarios
+*.log
+*.tmp
+*.mp4
+*.png
+*.jpg

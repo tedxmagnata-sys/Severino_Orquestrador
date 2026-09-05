@@ -1,0 +1,35 @@
+# Secrets
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+whatsapp/.env
+mcp-muapi/.env
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Logs
+*.log
+logs/
+
+# System
+core
+*.core
+.cache
+.npm
+.local
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PM2
+.pm2/

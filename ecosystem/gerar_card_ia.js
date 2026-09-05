@@ -1,0 +1,229 @@
+/**
+ * 🎨 Gerar Card Diário — HÍBRIDO (Gemini Flash + sharp)
+ * 
+ * Fluxo:
+ *   1. Gera fundo artístico 1080x1350 com Gemini Flash (sem texto, baseado no clima do dia)
+ *   2. Compõe os dados reais por cima com sharp (preço, RSI, Fear&Greed, 7 períodos) — tipografia 100% exata
+ *   3. Se a API falhar / sem crédito → cai para gerar_card.js (sharp puro, grátis)
+ * 
+ * Custo: 1 imagem/dia ~ $0.0000003 (gemini-2.5-flash-image) ≈ R$0.002
+ * Saída: data/card_today.png
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const DATA_DIR = path.join(__dirname, 'data');
+const CLIMA_JSON = path.join(DATA_DIR, 'clima_card.json');
+const FUNDO_IA = path.join(DATA_DIR, 'card_bg.png');
+const OUT_PNG = path.join(DATA_DIR, 'card_today.png');
+
+const API_KEY = process.env.LLM_API_KEY || '';
+const MODELO_IA = 'google/gemini-2.5-flash-image';
+
+let sharp;
+try { sharp = require('sharp'); } catch (e) { sharp = null; }
+
+const DATA = JSON.parse(fs.readFileSync(CLIMA_JSON, 'utf8'));
+
+function brl(v) { return 'US$ ' + Number(v).toLocaleString('en-US'); }
+
+const principal = DATA.periodos['1D'] || {};
+const preco = DATA.precoBTC || principal.preco || 0;
+const fng = DATA.medoGanancia || {};
+const rsi = principal.rsi ?? 50;
+
+function mapearClima(clima) {
+  const c = (clima || '').toUpperCase();
+  if (c.includes('SOBRECOMPRA')) return { cor: '#ff3366', status: 'Tempestade', label: 'SOBRECOMPRA' };
+  if (c.includes('SOBREVENDA')) return { cor: '#ffb703', status: 'Oportunidade', label: 'SOBREVENDA' };
+  if (c.includes('ALTA')) return { cor: '#ffb703', status: 'Ensolarado', label: 'ALTA' };
+  if (c.includes('BAIXA')) return { cor: '#ff3366', status: 'Chuva Ácida', label: 'BAIXA' };
+  return { cor: '#00f0ff', status: 'Parcialmente Nublado', label: 'NEUTRO' };
+}
+
+const ICONES = {
+  'sun': 'M12 3v4m0 10v4m9-9h-4M7 12H3m15.36 6.36-2.83-2.83M8.47 8.47 5.64 5.64m12.72 0-2.83 2.83M8.47 15.53l-2.83 2.83M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  'cloud-sun': 'M13 13a4 4 0 0 0-7.2-2.6M7.5 17.5a4 4 0 0 0 .8 7.5H18a4 4 0 0 0 .6-8M12 2v3m6.36 6.36 2.12-2.12M16 5.5h3M17 3l-1 2',
+  'cloud-lightning': 'M6 16.33A5.5 5.5 0 0 1 7.5 6a6 6 0 0 1 11 2.5A4.5 4.5 0 0 1 18 16.33M13 11l-3 5h4l-3 5',
+  'cloud-rain': 'M4 14.9A4.8 4.8 0 0 1 5.6 5.4a6 6 0 0 1 11.5 1.7 4 4 0 0 1 .9 7.8M8 19l-1 3m5-3-1 3m5-3-1 3',
+  'wind': 'M12.8 19.6A2 2 0 1 0 14 16H2m15.4-2.6a2 2 0 1 0-3.5-1.9M14 5.5a2 2 0 1 1 3 1.7M2 8h9a3 3 0 1 0-3-3',
+  'flame': 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'
+};
+const ICON_TIMEFRAME = { '15M': 'cloud-rain', '1H': 'wind', '4H': 'sun', '1D': 'sun', '3D': 'flame', '1W': 'cloud-sun', '1M': 'cloud-lightning' };
+
+const BG_CARD = 'rgba(10,12,20,0.72)';
+const TXT = '#f1f3f9';
+const TXT2 = '#aab0c0';
+const PREMIUM = '#2979ff';
+
+const W = 1080, H = 1350;
+const ORD = ['15M', '1H', '4H', '1D', '3D', '1W', '1M'];
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function polar(cx, cy, r, angDeg) {
+  const rad = (angDeg - 135) * Math.PI / 180;
+  return [(cx + r * Math.cos(rad)).toFixed(1), (cx + r * Math.sin(rad)).toFixed(1)];
+}
+function arcPath(cx, cy, r, pct) {
+  const [x0, y0] = polar(cx, cy, r, 0);
+  const [x1, y1] = polar(cx, cy, r, 270 * pct);
+  const large = pct > 0.5 ? 1 : 0;
+  return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;
+}
+
+function lucideIcon(name, color, size, cx, cy) {
+  const d = ICONES[name] || ICONES['cloud-sun'];
+  const s = size / 24;
+  return `<g transform="translate(${cx},${cy}) scale(${s}) translate(-12,-12)"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+}
+
+// Encurta textos de clima longos e ajusta fonte para caber no card (122px)
+function climaTexto(clima) {
+  const c = (clima || '').toUpperCase();
+  if (c.includes('SOBRECOMPRA')) return 'SOBRECOMPRA';
+  if (c.includes('SOBREVENDA')) return 'SOBREVENDA';
+  if (c.includes('ALTA')) return 'ALTA';
+  if (c.includes('BAIXA')) return 'BAIXA';
+  if (c.includes('NEUTRO')) return 'NEUTRO';
+  return (clima || '--').toUpperCase().slice(0, 11);
+}
+function climaFonte(txt) { return txt.length > 8 ? 15 : 20; }
+
+// SVG de OVERLAY (transparente — compõe sobre o fundo IA)
+function svgOverlay() {
+  const sel = mapearClima(principal.clima);
+  const cols = ORD.map((k) => {
+    const p = DATA.periodos[k] || {};
+    const m = mapearClima(p.clima);
+    const active = k === '1D';
+    const x = 70 + ORD.indexOf(k) * 135;
+    const w = 122;
+    const yTop = active ? 1010 : 1032;
+    const h = active ? 208 : 178;
+    const ico = ICON_TIMEFRAME[k] || 'cloud-sun';
+    const icoSize = active ? 58 : 46;
+    const icoY = active ? yTop + 118 : yTop + 108;
+    const ctxt = climaTexto(p.clima);
+    const cf = climaFonte(ctxt);
+    return `
+      <g>
+        <rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="20" fill="${BG_CARD}" stroke="${active ? m.cor : 'rgba(255,255,255,0.14)'}" stroke-width="${active ? 3 : 1}"/>
+        <text x="${x + w/2}" y="${yTop + 34}" text-anchor="middle" font-family="Inter" font-size="22" font-weight="700" fill="${TXT2}">${k}</text>
+        ${lucideIcon(ico, m.cor, icoSize, x + w/2, icoY)}
+        <text x="${x + w/2}" y="${yTop + h - 32}" text-anchor="middle" font-family="Inter" font-size="${cf}" font-weight="800" fill="${m.cor}">${esc(ctxt)}</text>
+        <text x="${x + w/2}" y="${yTop + h - 8}" text-anchor="middle" font-family="Inter" font-size="15" font-weight="500" fill="${TXT2}">RSI ${p.rsi ?? '--'}</text>
+      </g>`;
+  }).join('');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <defs>
+      <linearGradient id="overlay" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(8,9,15,0.55)"/>
+        <stop offset="35%" stop-color="rgba(8,9,15,0.25)"/>
+        <stop offset="100%" stop-color="rgba(8,9,15,0.72)"/>
+      </linearGradient>
+      <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${sel.cor}" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="${sel.cor}"/>
+      </linearGradient>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/></filter>
+      <filter id="glowTxt" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="blurSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="30"/></filter>
+    </defs>
+
+    <rect width="${W}" height="${H}" fill="url(#overlay)"/>
+
+    <!-- Placa de titulo -->
+    <rect x="60" y="50" width="440" height="70" rx="18" fill="rgba(8,9,15,0.6)" filter="url(#shadow)"/>
+    <text x="80" y="95" font-family="Inter" font-size="34" font-weight="800" fill="${TXT}">BTC <tspan fill="${PREMIUM}">Weather</tspan></text>
+    <rect x="785" y="70" width="225" height="56" rx="28" fill="rgba(8,9,15,0.6)" filter="url(#shadow)"/>
+    <text x="897" y="107" text-anchor="middle" font-family="Inter" font-size="26" font-weight="700" fill="${TXT2}">${DATA.geradoEm.slice(0, 10).split('-').reverse().join('/')}</text>
+
+    <!-- Disco RSI (fundo mais solido para legibilidade) -->
+    <circle cx="540" cy="460" r="250" fill="rgba(8,9,15,0.55)" filter="url(#blurSoft)"/>
+    <circle cx="540" cy="460" r="240" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="24"/>
+    <path d="${arcPath(540, 460, 240, 1)}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="24" stroke-linecap="round"/>
+    <path d="${arcPath(540, 460, 240, Math.max(0.03, Math.min(1, rsi / 100)))}" fill="none" stroke="url(#arc)" stroke-width="24" stroke-linecap="round"/>
+
+    <text x="215" y="468" font-family="Inter" font-size="22" font-weight="700" fill="${TXT2}">0</text>
+    <text x="865" y="468" font-family="Inter" font-size="22" font-weight="700" fill="${TXT2}">100</text>
+    <text x="540" y="185" text-anchor="middle" font-family="Inter" font-size="26" font-weight="700" fill="${TXT2}">RSI ${rsi}/100</text>
+    <text x="540" y="540" text-anchor="middle" font-family="Inter" font-size="40" font-weight="700" letter-spacing="3" fill="${TXT2}">CLIMA HOJE</text>
+    <text x="540" y="625" text-anchor="middle" font-family="Inter" font-size="82" font-weight="900" fill="${sel.cor}" filter="url(#glowTxt)">${sel.label}</text>
+
+    <!-- Preço -->
+    <g filter="url(#shadow)">
+      <rect x="320" y="685" width="440" height="92" rx="46" fill="rgba(8,9,15,0.7)"/>
+      <text x="540" y="748" text-anchor="middle" font-family="Inter" font-size="58" font-weight="800" fill="${TXT}">${brl(preco)}</text>
+    </g>
+
+    <!-- Frase -->
+    <text x="540" y="880" text-anchor="middle" font-family="Inter" font-size="38" font-weight="600" fill="${TXT}">“${esc(sel.status === 'Ensolarado' ? 'Tendência de alta no radar. Estação de cultivar.' : sel.status === 'Chuva Ácida' ? 'Clima de queda no radar. Estação de se proteger.' : sel.status === 'Oportunidade' ? 'Medo no mercado, oportunidade de plantar.' : 'Mercado lateral. Paciência também é estratégia.')}”</text>
+
+    <!-- Grid períodos -->
+    ${cols}
+
+    <!-- Rodapé -->
+    <line x1="70" y1="1260" x2="1010" y2="1260" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+    <text x="80" y="1302" font-family="Inter" font-size="25" font-weight="600" fill="${TXT2}">😱 Medo &amp; Ganância: ${fng.value}/100 · ${esc(fng.classification)}</text>
+    <g filter="url(#shadow)">
+      <rect x="700" y="1272" width="290" height="76" rx="38" fill="${PREMIUM}"/>
+      <text x="845" y="1322" text-anchor="middle" font-family="Inter" font-size="29" font-weight="800" fill="#ffffff">7 DIAS GRÁTIS</text>
+    </g>
+  </svg>`;
+}
+
+// Gera fundo artístico com Gemini Flash (sem texto para evitar erros de tipografia)
+function gerarFundoIA() {
+  return new Promise((resolve, reject) => {
+    if (!API_KEY || !sharp) return reject(new Error('sem chave ou sharp'));
+    const sel = mapearClima(principal.clima);
+    const accent = sel.cor;
+    const prompt = `Vertical 9:16 abstract premium wallpaper, dark moody gradients in deep navy and ${accent} accent glow, subtle digital smoke and light particles, futuristic financial atmosphere, elegant minimal composition, cinematic lighting, rich detail. IMPORTANT: no text, no letters, no numbers, no watermark, no logos. Center area kept relatively clean for UI overlay. Bottom third darker gradient for readability. Museum-quality art.`;
+
+    fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODELO_IA,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    }).then(r => r.json()).then(d => {
+      const msg = d.choices?.[0]?.message;
+      if (!msg?.images?.length) return reject(new Error('sem imagem: ' + JSON.stringify(d).slice(0, 150)));
+      const url = msg.images[0].image_url.url;
+      if (!url.startsWith('data:image')) return reject(new Error('formato inesperado'));
+      const buf = Buffer.from(url.split(',')[1], 'base64');
+      fs.writeFileSync(FUNDO_IA, buf);
+      console.log('[gerar_card_ia] fundo IA OK', Math.round(buf.length / 1024), 'KB');
+      resolve();
+    }).catch(reject);
+  });
+}
+
+(async () => {
+  let usouIA = false;
+  try {
+    await gerarFundoIA();
+    usouIA = true;
+    // composição: fundo IA + overlay de dados
+    const overlay = Buffer.from(svgOverlay());
+    const overlayPNG = await sharp(overlay).png().toBuffer();
+    fs.writeFileSync(path.join(DATA_DIR, 'overlay_today.png'), overlayPNG);
+    const fundo = await sharp(FUNDO_IA).resize(W, H, { fit: 'cover' }).toBuffer();
+    const out = await sharp(fundo).composite([{ input: overlay, top: 0, left: 0 }]).png().toBuffer();
+    fs.writeFileSync(OUT_PNG, out);
+    console.log('[gerar_card_ia] CARD_HIBRIDO', Math.round(out.length / 1024), 'KB');
+  } catch (e) {
+    console.log('[gerar_card_ia] IA falhou (' + e.message + '). Usando fallback sharp puro (grátis)...');
+    try { execSync('node gerar_card.js', { cwd: __dirname, stdio: 'ignore' }); } catch (e2) {
+      console.log('[gerar_card_ia] fallback tambem falhou:', e2.message);
+      process.exit(1);
+    }
+    console.log('[gerar_card_ia] FALLBACK_SHARP_OK');
+  }
+})();

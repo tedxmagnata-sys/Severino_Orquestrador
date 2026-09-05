@@ -1,0 +1,30 @@
+{
+  "15M": {
+    "name": "SOBREVENDA",
+    "lastSentAt": 1788639364130
+  },
+  "1H": {
+    "name": "ALTA",
+    "lastSentAt": 1788641943214
+  },
+  "4H": {
+    "name": "NEUTRO",
+    "lastSentAt": 1788638407594
+  },
+  "1D": {
+    "name": "ALTA",
+    "lastSentAt": 1788480305404
+  },
+  "3D": {
+    "name": "SOBRECOMPRA",
+    "lastSentAt": 1788304804642
+  },
+  "1W": {
+    "name": "ALTA",
+    "lastSentAt": 1788534304399
+  },
+  "1M": {
+    "name": "BAIXA",
+    "lastSentAt": 1787148243562
+  }
+}

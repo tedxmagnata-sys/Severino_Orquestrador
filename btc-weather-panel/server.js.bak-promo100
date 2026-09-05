@@ -1,0 +1,776 @@
+/**
+ * 🪙 BTC Weather Panel — Servidor Independente
+ * Porta 3340 · PM2: btcweather
+ *
+ * Separado do severinobot.com (porta 3334) para rodar de forma independente.
+ * Serve o app + APIs do BTC. Dados compartilhados em /root/severino/data
+ * (licenses.json, telemetry, weather config) para o funil do ecossistema
+ * (orquestrador 3335) continuar seguindo os leads.
+ *
+ * Rotas:
+ *   Estáticos: /, /btc-weather-panel/, /weather-panel/, /app, /admin-dashboard, /oferta, /ebook-btc
+ *   API: /api/trial · /api/license/validate · /api/license/activate · /api/license/generate
+ *        /api/weather/config · /api/webhook/clima · /api/lead · /api/admin/metrics
+ *        /api/public/metrics · /api/telemetry/ping · /api/event · /api/cohort(/increment)
+ *        /api/purchase/webhook (Kiwify) · /api/telegram/webhook (bot compartilhado)
+ */
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+try { require('dotenv').config(); } catch (e) {}
+(function loadEnv() {
+  const candidate = process.env.ENV_FILE || '/root/severino/.env';
+  if (process.env.SECRET_KEY) return;
+  try {
+    const raw = fs.readFileSync(candidate, 'utf8');
+    raw.split(/\r?\n/).forEach(line => {
+      const t = line.trim();
+      if (!t || t.startsWith('#')) return;
+      const idx = t.indexOf('=');
+      if (idx > -1) { const k = t.slice(0, idx).trim(); if (!process.env[k]) process.env[k] = t.slice(idx + 1).trim(); }
+    });
+  } catch (e) { console.warn('⚠️ Sem .env:', e.message); }
+})();
+
+let telegramBot;
+try { telegramBot = require('/root/severino/ecosystem/telegram_bot'); } catch (e) { telegramBot = null; }
+let vendedor_ai;
+try { vendedor_ai = require('/root/severino/vendedor_ai'); } catch (e) { vendedor_ai = null; }
+
+const PORT = process.env.PORT || 3340;
+const WEATHER_ROOT = '/root/btc-weather-panel';
+const DATA_DIR = '/root/severino/data';
+const DB = path.join(DATA_DIR, 'diagnosticos.json');
+const EXT_TREINO = ['pdf','doc','docx','xls','xlsx','csv','txt','md','json','png','jpg','jpeg','webp','gif','mp4','mp3','wav','ogg'];
+
+const mime = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
+};
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ ERRO (não crashou):', err.message);
+});
+
+// ========== RATE LIMIT (30 req/min por IP nas /api/, exceto health) ==========
+const rateLimitMap = new Map();
+function rateLimit(ip) {
+  const now = Date.now();
+  const window = 60_000;
+  const maxReqs = 30;
+  if (!rateLimitMap.has(ip)) rateLimitMap.set(ip, []);
+  const timestamps = rateLimitMap.get(ip).filter(t => now - t < window);
+  if (timestamps.length >= maxReqs) return false;
+  timestamps.push(now);
+  rateLimitMap.set(ip, timestamps);
+  return true;
+}
+
+// ========== TELEMETRY & METRICS ==========
+const TELEMETRY_FILE = path.join(DATA_DIR, 'telemetry_stats.json');
+let telemetryStats = {
+  totalUniqueVisitors: new Set(),
+  dailyVisits: {},
+  totalAlertsCreated: 0,
+  sessions: new Map(),
+};
+if (fs.existsSync(TELEMETRY_FILE)) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(TELEMETRY_FILE, 'utf8'));
+    telemetryStats.dailyVisits = raw.dailyVisits || {};
+    telemetryStats.totalAlertsCreated = raw.totalAlertsCreated || 0;
+    if (Array.isArray(raw.uniqueVisitorIds)) telemetryStats.totalUniqueVisitors = new Set(raw.uniqueVisitorIds);
+  } catch (e) {}
+}
+function saveTelemetryStats() {
+  try {
+    fs.writeFileSync(TELEMETRY_FILE, JSON.stringify({
+      dailyVisits: telemetryStats.dailyVisits,
+      totalAlertsCreated: telemetryStats.totalAlertsCreated,
+      uniqueVisitorIds: Array.from(telemetryStats.totalUniqueVisitors)
+    }, null, 2));
+  } catch (e) {}
+}
+function cleanupStaleSessions() {
+  const now = Date.now();
+  for (const [sid, sess] of telemetryStats.sessions.entries()) {
+    if (now - sess.lastSeen > 90000) telemetryStats.sessions.delete(sid);
+  }
+}
+setInterval(cleanupStaleSessions, 30000);
+
+// ========== HELPERS ==========
+function readJSON(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return []; } }
+function writeJSON(file, data) { fs.writeFileSync(file, JSON.stringify(data, null, 2)); }
+function parseBody(req) {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({}); } });
+  });
+}
+function parseBodyLimit(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    let total = 0;
+    let tooLarge = false;
+    req.on('data', chunk => {
+      total += chunk.length;
+      if (maxBytes && total > maxBytes) { tooLarge = true; req.destroy(); return; }
+      body += chunk;
+    });
+    req.on('end', () => {
+      if (tooLarge) return reject(Object.assign(new Error('Payload too large'), { code: '413' }));
+      try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+    });
+  });
+}
+
+// ========== LICENÇAS 7 dias ==========
+const LICENSE_PATH = path.join(DATA_DIR, 'licenses.json');
+if (!fs.existsSync(LICENSE_PATH)) writeJSON(LICENSE_PATH, {});
+function loadLicenses() { return readJSON(LICENSE_PATH); }
+function generateCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = 'VIP7-';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+function getTier(activatedAt) {
+  if (!activatedAt) return 'pending';
+  const daysSince = (Date.now() - new Date(activatedAt).getTime()) / 86400000;
+  if (daysSince <= 7) return 'vip';
+  return 'basic';
+}
+
+function emitirTrialAtivado({ code, email = '', nome = '', telegramId = null, source = '' }) {
+  try {
+    const payload = JSON.stringify({
+      tipo: 'trial.ativado',
+      origem: 'btc:' + (source || 'ativacao'),
+      produto: 'btcweather',
+      payload: {
+        leadId: 'lic-' + code, nome, telegramId, email, produto: 'btcweather', code, origem: source || 'ativacao'
+      }
+    });
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port: parseInt(process.env.ECOSISTEMA_PORT || '3335', 10),
+      path: '/api/ecosystem/enviar',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Secret': process.env.SECRET_KEY || '',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => { res.resume(); });
+    req.on('error', (e) => console.error('❌ emitirTrialAtivado:', e.message));
+    req.write(payload);
+    req.end();
+  } catch (e) { console.error('❌ emitirTrialAtivado:', e.message); }
+}
+
+function emitirVendaConfirmada({ code, email = '', nome = '', value = 0 }) {
+  try {
+    const payload = JSON.stringify({
+      tipo: 'venda.confirmada',
+      origem: 'btc:kiwify',
+      produto: 'btcweather',
+      payload: { leadId: 'lic-' + code, customer_email: email, customer_name: nome, value, code, produto: 'btcweather' }
+    });
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port: parseInt(process.env.ECOSISTEMA_PORT || '3335', 10),
+      path: '/api/ecosystem/enviar',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Secret': process.env.SECRET_KEY || '',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => { res.resume(); });
+    req.on('error', (e) => console.error('❌ emitirVendaConfirmada:', e.message));
+    req.write(payload);
+    req.end();
+  } catch (e) { console.error('❌ emitirVendaConfirmada:', e.message); }
+}
+
+http.createServer(async (req, res) => {
+  const origin = req.headers.origin || '';
+  const allowedOrigins = ['http://localhost', 'http://127.0.0.1', 'https://btcweatherpanel.com', 'https://app.btcweatherpanel.com', 'http://187.127.42.146'];
+  if (origin && allowedOrigins.some(a => origin.startsWith(a))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'https://btcweatherpanel.com');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
+
+  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
+  const rawUrl = req.url.split('?')[0];
+  const url = rawUrl;
+  const method = req.method;
+
+  // Health SEM rate limit
+  if (method === 'GET' && rawUrl === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, name: 'btc-weather-panel', port: PORT, ts: new Date().toISOString() }));
+  }
+
+  if (rawUrl.startsWith('/api/')) {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+    if (!rateLimit(ip)) {
+      res.writeHead(429, { 'Retry-After': '60' });
+      return res.end(JSON.stringify({ error: 'Muitas requisições. Tente novamente em 60 segundos.' }));
+    }
+  }
+
+  // ========== TELEGRAM WEBHOOK (bot compartilhado do ecossistema) ==========
+  if (method === 'POST' && rawUrl === '/api/telegram/webhook') {
+    if (telegramBot && telegramBot.handleWebhook) return telegramBot.handleWebhook(req, res);
+    res.writeHead(200); return res.end('ok');
+  }
+
+  // ========== WEBHOOK CLIMA ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/webhook/clima')) {
+    const dados = await parseBody(req);
+    const CONFIG_PATH = path.join(DATA_DIR, 'weather_alert_config.json');
+    let config = { telegram_token: process.env.TELEGRAM_TOKEN, telegram_chat_id: process.env.TELEGRAM_CHAT_ID, whatsapp_enabled: false, whatsapp_group_id: "", whatsapp_client_id: process.env.WHATSAPP_CLIENT_ID || "severino", secret_key: process.env.SECRET_KEY };
+    if (fs.existsSync(CONFIG_PATH)) {
+      try { config = { ...config, ...JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) }; } catch (e) {}
+    } else {
+      try { fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2)); } catch (e) {}
+    }
+    const { secret, mensagem, chat_id } = dados;
+    if (!secret || secret !== config.secret_key) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Não autorizado' }));
+    }
+    if (!mensagem) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Mensagem obrigatória' }));
+    }
+    const finalChatId = chat_id || config.telegram_chat_id;
+    const finalToken = config.telegram_token;
+    let telegramSent = false;
+    if (finalToken && finalChatId) {
+      try {
+        const https = require('https');
+        const payload = JSON.stringify({ chat_id: finalChatId, text: mensagem, parse_mode: 'HTML' });
+        await new Promise((resolve, reject) => {
+          const q = https.request({
+            hostname: 'api.telegram.org', port: 443,
+            path: `/bot${finalToken}/sendMessage`, method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+          }, (resTg) => { let d = ''; resTg.on('data', c => d += c); resTg.on('end', () => { if (resTg.statusCode === 200) { telegramSent = true; resolve(); } else reject(new Error(d)); }); });
+          q.on('error', reject);
+          q.write(payload);
+          q.end();
+        });
+      } catch (err) { console.error('❌ Webhook clima → Telegram:', err.message); }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, telegram: telegramSent, message: 'Alerta disparado com sucesso!' }));
+  }
+
+  // ========== WEATHER CONFIG ==========
+  if (rawUrl.endsWith('/api/weather/config')) {
+    const CONFIG_PATH = path.join(DATA_DIR, 'weather_alert_config.json');
+    let config = { telegram_token: process.env.TELEGRAM_TOKEN, telegram_chat_id: process.env.TELEGRAM_CHAT_ID, whatsapp_enabled: false, whatsapp_group_id: "", whatsapp_client_id: process.env.WHATSAPP_CLIENT_ID || "severino", secret_key: process.env.SECRET_KEY, whatsapp: "5511999998888", linkVip: "https://pay.kiwify.com.br/ffphj4e", linkElite: "https://pay.kiwify.com.br/vim8bDb", alertsEnabled: true, googleClientId: "" };
+    if (fs.existsSync(CONFIG_PATH)) {
+      try { config = { ...config, ...JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) }; } catch (e) {}
+    }
+    if (method === 'GET') {
+      const urlParts = req.url.split('?');
+      let clientSecret = '';
+      if (urlParts.length > 1) clientSecret = new URLSearchParams(urlParts[1]).get('secret');
+      if (clientSecret && clientSecret === config.secret_key) {
+        const adminResponse = {
+          whatsapp: config.whatsapp || "5511999998888",
+          linkVip: config.linkVip || "https://kiwify.com.br/",
+          linkElite: config.linkElite || "https://kiwify.com.br/",
+          vipKey: config.secret_key,
+          tgChatId: config.telegram_chat_id,
+          waGroupId: config.whatsapp_group_id || "",
+          alertsEnabled: config.whatsapp_enabled !== false,
+          googleClientId: config.googleClientId || ""
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(adminResponse));
+      } else {
+        const publicConfig = {
+          whatsapp: config.whatsapp || "5511999998888",
+          linkVip: config.linkVip || "https://kiwify.com.br/",
+          linkElite: config.linkElite || "https://kiwify.com.br/",
+          alertsEnabled: config.whatsapp_enabled !== false
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(publicConfig));
+      }
+    }
+    if (method === 'POST') {
+      const dados = await parseBody(req);
+      const { secret } = dados;
+      if (!secret || secret !== config.secret_key) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: 'Não autorizado' }));
+      }
+      if (dados.whatsapp !== undefined) config.whatsapp = dados.whatsapp;
+      if (dados.linkVip !== undefined) config.linkVip = dados.linkVip;
+      if (dados.linkElite !== undefined) config.linkElite = dados.linkElite;
+      if (dados.vipKey !== undefined) config.secret_key = dados.vipKey;
+      if (dados.tgChatId !== undefined) config.telegram_chat_id = dados.tgChatId;
+      if (dados.waGroupId !== undefined) config.whatsapp_group_id = dados.waGroupId;
+      if (dados.alertsEnabled !== undefined) config.whatsapp_enabled = dados.alertsEnabled;
+      if (dados.googleClientId !== undefined) config.googleClientId = dados.googleClientId;
+      try {
+        fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, message: 'Configurações salvas no servidor!' }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    }
+  }
+
+  // ========== TELEMETRY PING ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/telemetry/ping')) {
+    const dados = await parseBody(req);
+    const { sessionId, device, alertsCount } = dados;
+    const now = Date.now();
+    const today = new Date().toISOString().split('T')[0];
+    if (sessionId) {
+      if (!telemetryStats.totalUniqueVisitors.has(sessionId)) {
+        telemetryStats.totalUniqueVisitors.add(sessionId);
+        saveTelemetryStats();
+      }
+      telemetryStats.dailyVisits[today] = (telemetryStats.dailyVisits[today] || 0) + 1;
+      telemetryStats.sessions.set(sessionId, { lastSeen: now, device: device || 'desktop', alertsCount: typeof alertsCount === 'number' ? alertsCount : 0 });
+    }
+    cleanupStaleSessions();
+    const activeSessions = Array.from(telemetryStats.sessions.values());
+    const activeNow = activeSessions.length;
+    const mobileCount = activeSessions.filter(s => s.device === 'mobile').length;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      ok: true, activeNow, totalVisitors: telemetryStats.totalUniqueVisitors.size,
+      todayVisits: telemetryStats.dailyVisits[today] || activeNow,
+      mobileCount, desktopCount: activeNow - mobileCount
+    }));
+  }
+
+  // ========== ADMIN METRICS ==========
+  if (method === 'GET' && rawUrl.endsWith('/api/admin/metrics')) {
+    cleanupStaleSessions();
+    const today = new Date().toISOString().split('T')[0];
+    const activeSessions = Array.from(telemetryStats.sessions.values());
+    const activeNow = activeSessions.length;
+    const mobileCount = activeSessions.filter(s => s.device === 'mobile').length;
+    const desktopCount = activeNow - mobileCount;
+    const totalConfiguredAlerts = activeSessions.reduce((acc, s) => acc + (s.alertsCount || 0), 0);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      ok: true, activeNow,
+      totalVisitors: telemetryStats.totalUniqueVisitors.size,
+      todayVisits: telemetryStats.dailyVisits[today] || activeNow,
+      totalAlertsCreated: Math.max(telemetryStats.totalAlertsCreated, totalConfiguredAlerts),
+      activeAlertsCount: totalConfiguredAlerts,
+      mobilePct: activeNow > 0 ? Math.round((mobileCount / activeNow) * 100) : 0,
+      desktopPct: activeNow > 0 ? Math.round((desktopCount / activeNow) * 100) : 0,
+      timestamp: new Date().toISOString()
+    }));
+  }
+
+  // ========== PUBLIC METRICS (dashboard público) ==========
+  if (method === 'GET' && rawUrl.endsWith('/api/public/metrics')) {
+    cleanupStaleSessions();
+    const today = new Date().toISOString().split('T')[0];
+    const activeSessions = Array.from(telemetryStats.sessions.values());
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      ok: true,
+      todayVisits: telemetryStats.dailyVisits[today] || activeSessions.length,
+      totalAlertsCreated: telemetryStats.totalAlertsCreated,
+      totalUniqueVisitors: telemetryStats.totalUniqueVisitors.size,
+      activeNow: activeSessions.length
+    }));
+  }
+
+  // ========== LEAD ==========
+  if (method === 'POST' && rawUrl === '/api/lead') {
+    const body = await parseBody(req);
+    const email = (body.email || '').toString().trim().toLowerCase();
+    const telegram = (body.telegram || '').toString().trim().replace(/^@/, '');
+    const nome = (body.nome || '').toString().trim();
+    if (!email.includes('@') || !email.includes('.')) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'E-mail inválido' }));
+    }
+    const LEADS_PATH = path.join('/root/severino/ecosystem', 'leads.json');
+    if (!fs.existsSync(LEADS_PATH)) writeJSON(LEADS_PATH, []);
+    const leads = readJSON(LEADS_PATH);
+    const idx = leads.findIndex(l => l.email && String(l.email).toLowerCase() === email);
+    if (idx >= 0) {
+      leads[idx].telegram_username = telegram || leads[idx].telegram_username;
+      leads[idx].fonte = 'site';
+      leads[idx].updatedAt = new Date().toISOString();
+    } else {
+      leads.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        nome, email, telegram_username: telegram, fonte: 'site', status: 'novo', score: 1,
+        createdAt: new Date().toISOString()
+      });
+    }
+    writeJSON(LEADS_PATH, leads);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, email, telegram: telegram || '' }));
+  }
+
+  // ========== LICENÇAS ==========
+  if (method === 'POST' && rawUrl === '/api/license/generate') {
+    const adminSecret = req.headers['x-admin-secret'];
+    if (adminSecret !== process.env.SECRET_KEY) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    }
+    const body = await parseBody(req);
+    const count = Math.min(Math.max(parseInt(body.count) || 1, 1), 50);
+    const source = body.source || 'api';
+    const licenses = loadLicenses();
+    const codes = [];
+    for (let i = 0; i < count; i++) {
+      let code = generateCode();
+      while (licenses[code]) code = generateCode();
+      licenses[code] = { createdAt: new Date().toISOString(), activatedAt: null, source };
+      codes.push(code);
+    }
+    writeJSON(LICENSE_PATH, licenses);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, codes }));
+  }
+
+  if (method === 'GET' && rawUrl === '/api/license/validate') {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const code = urlObj.searchParams.get('code');
+    if (!code) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'code required' }));
+    }
+    const licenses = loadLicenses();
+    const license = licenses[code];
+    if (!license) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ valid: false, error: 'Código inválido' }));
+    }
+    const tier = getTier(license.activatedAt);
+    const activatedAt = license.activatedAt;
+    const daysLeft = activatedAt ? Math.max(0, 7 - Math.floor((Date.now() - new Date(activatedAt).getTime()) / 86400000)) : 7;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ valid: true, code, tier, daysLeft, activatedAt: !!activatedAt, createdAt: license.createdAt }));
+  }
+
+  if (method === 'POST' && rawUrl === '/api/license/activate') {
+    const body = await parseBody(req);
+    const code = body.code;
+    if (!code) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'code required' }));
+    }
+    const licenses = loadLicenses();
+    const license = licenses[code];
+    if (!license) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Código inválido' }));
+    }
+    if (license.activatedAt) {
+      res.writeHead(409, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Código já ativado', activatedAt: license.activatedAt }));
+    }
+    license.activatedAt = new Date().toISOString();
+    writeJSON(LICENSE_PATH, licenses);
+    emitirTrialAtivado({ code, email: license.customerEmail || '', nome: license.customerName || '', source: license.source || 'activate' });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, code, activatedAt: license.activatedAt, tier: 'vip' }));
+  }
+
+  if (method === 'POST' && rawUrl === '/api/trial') {
+    const body = await parseBody(req);
+    const licenses = loadLicenses();
+    let code = generateCode();
+    while (licenses[code]) code = generateCode();
+    const source = body.source || 'frontend-offer';
+    const email = String(body.email || '').trim().toLowerCase();
+    const nome = String(body.nome || '').trim();
+    const telegram = body.telegram || '';
+    const lic = { createdAt: new Date().toISOString(), activatedAt: new Date().toISOString(), source };
+    if (email) lic.customerEmail = email;
+    if (nome) lic.customerName = nome;
+    if (telegram) lic.telegram = telegram;
+    licenses[code] = lic;
+    writeJSON(LICENSE_PATH, licenses);
+    if (req.headers['x-ecosystem'] !== '1') {
+      emitirTrialAtivado({ code, email, nome, source });
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, code, tier: 'vip', daysLeft: 7 }));
+  }
+
+  // ========== EVENT + COHORT ==========
+  const EVENTS_LOG = path.join(DATA_DIR, 'events.jsonl');
+  const COHORT_PATH = path.join(DATA_DIR, 'pricing-state.json');
+  if (!fs.existsSync(COHORT_PATH)) writeJSON(COHORT_PATH, { totalSignups: 0, totalActivations: 0, cohorts: [] });
+
+  if (method === 'POST' && rawUrl === '/api/event') {
+    const body = await parseBody(req);
+    const event = { event: body.event || 'unknown', timestamp: new Date().toISOString(), ...body };
+    delete event.secret;
+    try {
+      fs.appendFileSync(EVENTS_LOG, JSON.stringify(event) + '\n');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: e.message }));
+    }
+  }
+
+  if (method === 'GET' && rawUrl === '/api/cohort') {
+    const state = readJSON(COHORT_PATH);
+    const discountTier = state.totalSignups <= 100 ? 0 : state.totalSignups <= 200 ? 1 : state.totalSignups <= 300 ? 2 : 3;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      totalSignups: state.totalSignups, totalActivations: state.totalActivations, discountTier,
+      slotsLeft: Math.max(0, 100 - state.totalSignups),
+      discounts: {
+        foundingMember: state.totalSignups < 100 ? 40 : state.totalSignups < 200 ? 35 : state.totalSignups < 300 ? 30 : 25,
+        annualExtra: 10
+      }
+    }));
+  }
+
+  if (method === 'POST' && rawUrl === '/api/cohort/increment') {
+    const adminSecret = req.headers['x-admin-secret'];
+    if (adminSecret !== process.env.SECRET_KEY) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    }
+    const body = await parseBody(req);
+    const field = body.field === 'activation' ? 'totalActivations' : 'totalSignups';
+    const state = readJSON(COHORT_PATH);
+    state[field] = (state[field] || 0) + 1;
+    writeJSON(COHORT_PATH, state);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, [field]: state[field] }));
+  }
+
+  // ========== PURCHASE WEBHOOK (Kiwify) — BTC + Severino ==========
+  if (method === 'POST' && rawUrl.startsWith('/api/purchase/webhook')) {
+    const body = await parseBody(req);
+    const expectedSecret = process.env.SECRET_KEY || '';
+    const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const providedSecret = urlObj.searchParams.get('secret') || req.headers['x-webhook-secret'] || req.headers['x-kiwify-token'] || body.secret || '';
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    }
+    if (body.data && typeof body.data === 'object') Object.assign(body, body.data);
+    const hasOrderData = body.event || body.order_id || body.transaction || body.id || body.customer || body.customer_email || body.email || body.purchase || body.order_status || body.product;
+    if (!hasOrderData) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, heartbeat: true }));
+    }
+    const PAID_EVENTS = ['compra_aprovada', 'order.paid', 'order.payment_confirmed', 'purchase_approved', 'payment_confirmed', 'payment_received'];
+    const IGNORED_EVENTS = ['compra_reembolsada', 'compra_recusada', 'compra_recusado', 'chargeback', 'boleto_gerado', 'pix_gerado', 'carrinho_abandonado', 'subscription_canceled', 'subscription_late'];
+    const evt = (body.event || '').toLowerCase();
+    if (evt) {
+      if (IGNORED_EVENTS.includes(evt)) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, ignored: evt }));
+      }
+      if (!PAID_EVENTS.includes(evt)) {
+        const st = (body.order_status || '').toLowerCase();
+        if (st && st !== 'paid' && st !== 'approved' && st !== 'completed') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, ignored: evt }));
+        }
+      }
+    } else if (body.order_status && !['paid', 'approved', 'completed'].includes(String(body.order_status).toLowerCase())) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, ignored: body.order_status }));
+    }
+
+    const gateway = body.gateway || (req.headers['x-gateway'] || 'kiwify');
+    let customerName = body.customer_name || body.name || body.nome || '';
+    if (body.customer && body.customer.full_name) customerName = body.customer.full_name;
+    if (body.buyer && body.buyer.name) customerName = body.buyer.name;
+    if (body.kiwify && body.kiwify.customer_name) customerName = body.kiwify.customer_name;
+    let customerEmail = body.customer_email || body.email || '';
+    if (body.customer && body.customer.email) customerEmail = body.customer.email;
+    if (body.buyer && body.buyer.email) customerEmail = body.buyer.email;
+    if (body.kiwify && body.kiwify.customer_email) customerEmail = body.kiwify.customer_email;
+    let productName = body.product_name || body.produto || '';
+    if (body.product && body.product.product_name) productName = body.product.product_name;
+    if (body.kiwify && body.kiwify.product_name) productName = body.kiwify.product_name;
+    const plan = body.plan || productName || 'vip_mensal';
+    let value = body.value || body.price || body.amount || 0;
+    if (body.purchase && body.purchase.original_offer_price) value = body.purchase.original_offer_price;
+    if (gateway === 'kiwify' && value > 0 && value < 100000) value = value / 100;
+    let tx = body.transaction || body.id || body.transaction_id || '';
+    if (body.order_id) tx = body.order_id;
+    if (body.kiwify && body.kiwify.id) tx = body.kiwify.id;
+    if (!customerEmail && !tx) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'customer_email or transaction id required' }));
+    }
+
+    const ehSeverino = /severino|vendedor|consul|basico|básico|pro/.test(String(productName || plan || '').toLowerCase());
+    if (ehSeverino && vendedor_ai) {
+      try {
+        const vendedoresDir = path.join(DATA_DIR, 'vendedores');
+        let dbV = [];
+        try { dbV = JSON.parse(fs.readFileSync(path.join(vendedoresDir, 'vendedores.json'), 'utf8')); } catch (e) {}
+        const emailNorm = String(customerEmail || '').trim().toLowerCase();
+        const vendedor = dbV.find(v =>
+          (v.email && String(v.email).toLowerCase() === emailNorm) ||
+          (v.whatsapp && customerEmail && String(v.whatsapp).replace(/\D/g, '') === String(customerEmail).replace(/\D/g, ''))
+        );
+        if (!vendedor) {
+          const esperaPath = path.join(DATA_DIR, 'vendedores', 'compra_sem_cadastro.json');
+          let espera = [];
+          try { espera = JSON.parse(fs.readFileSync(esperaPath, 'utf8')); } catch (e) {}
+          espera.push({ email: emailNorm, nome: customerName, plano: plan, valor: value, tx, criadoEm: new Date().toISOString() });
+          try { fs.writeFileSync(esperaPath, JSON.stringify(espera, null, 2)); } catch (e) {}
+          if (telegramBot) telegramBot.sendTelegram(process.env.TELEGRAM_CHAT_ID,
+            '🛒 <b>SEVERINO: compra sem cadastro!</b>\n\n👤 ' + (customerName || '—') + '\n📧 ' + (emailNorm || '—') + '\n📦 ' + plan + '\n💰 R$ ' + value + '\n🧾 ' + tx, process.env.TELEGRAM_TOKEN);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, status: 'aguardando_cadastro', product: 'severino' }));
+        }
+        vendedor.status = 'ativo';
+        vendedor.pagoEm = new Date().toISOString();
+        vendedor.transactionId = tx;
+        vendedor.valorPago = value;
+        vendedor.ativoAte = new Date(Date.now() + (vendedor.frequencia === 'anual' ? 365 : vendedor.frequencia === 'semestral' ? 180 : 30) * 86400000).toISOString();
+        const treino = await vendedor_ai.treinar(vendedor, vendedoresDir);
+        vendedor.contextoTreinado = true;
+        vendedor.contextoArquivo = treino.arquivo;
+        vendedor.treinadoEm = new Date().toISOString();
+        try { fs.writeFileSync(path.join(vendedoresDir, 'vendedores.json'), JSON.stringify(dbV, null, 2)); } catch (e) {}
+        const link = vendedor_ai.linkAcesso(vendedor);
+        if (telegramBot) telegramBot.sendTelegram(process.env.TELEGRAM_CHAT_ID,
+          '✅ <b>SEVERINO PAGO E ATIVADO (automático)</b>\n\n🏪 ' + vendedor.negocio + '\n📦 Plano: ' + vendedor.plano + ' | 💰 R$ ' + value + '\n📧 ' + (emailNorm || '—') + '\n🧾 ' + tx + '\n🔗 Acesso: ' + link, process.env.TELEGRAM_TOKEN);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, status: 'ativo', product: 'severino', vendedorId: vendedor.id, link }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: 'Erro na ativação automática: ' + e.message }));
+      }
+    }
+
+    const licenses = loadLicenses();
+    let code = generateCode();
+    while (licenses[code]) code = generateCode();
+    licenses[code] = {
+      createdAt: new Date().toISOString(), activatedAt: null, source: 'purchase:' + gateway,
+      plan, customerName, customerEmail, transactionId: tx, value
+    };
+    writeJSON(LICENSE_PATH, licenses);
+    const purchasesPath = path.join(DATA_DIR, 'purchases.json');
+    let purchases = [];
+    try { purchases = JSON.parse(fs.readFileSync(purchasesPath, 'utf8')); } catch (e) {}
+    purchases.push({ transactionId: tx, gateway, customerName, customerEmail, plan, value, code, createdAt: new Date().toISOString() });
+    writeJSON(purchasesPath, purchases);
+    emitirVendaConfirmada({ code, email: customerEmail, nome: customerName, value });
+
+    const tgToken = process.env.TELEGRAM_TOKEN || '';
+    const adminChat = process.env.TELEGRAM_CHAT_ID || '';
+    const linkAtivar = 'https://btcweatherpanel.com/btc-weather-panel/?code=' + code;
+    const nomeComprador = customerName || 'Cliente';
+    const msgResumo = `🛒 <b>NOVA COMPRA</b>\n\n👤 Cliente: ${nomeComprador}\n📧 Email: ${customerEmail || '—'}\n📦 Plano: ${plan}\n💰 Valor: R$ ${value}\n🧾 Tx: ${tx}\n\n🔑 Código: <code>${code}</code>\n🌐 Ativar: ${linkAtivar}`;
+    if (tgToken && adminChat && telegramBot) {
+      telegramBot.sendTelegram(adminChat, msgResumo, tgToken);
+    }
+    if (customerEmail && tgToken && telegramBot) {
+      try {
+        const notifPath = path.join(DATA_DIR, 'notifications.json');
+        const notifUsers = fs.existsSync(notifPath) ? JSON.parse(fs.readFileSync(notifPath, 'utf8')) : {};
+        const buyer = Object.values(notifUsers).find(u => u.email && String(u.email).toLowerCase() === String(customerEmail).toLowerCase());
+        if (buyer && buyer.telegramId) {
+          const msgWelcome = `🎉 <b>Bem-vindo(a) ao BTC Weather Panel, ${nomeComprador}!</b>\n\nSeu acesso VIP está liberado:\n\n🔑 <b>Código:</b> <code>${code}</code>\n📦 <b>Plano:</b> ${plan}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n✅ <b>Passo 1 — Ative seu acesso:</b>\n${linkAtivar}\n\n💬 <b>Passo 2 — Receba suas notificações:</b>\nEnvie aqui /vincular ${code} e ative:\n• 📊 Análise diária do BTC às 9h\n• 🌦️ Alertas de mudança de clima\n• 📡 Sinais operacionais\n\n📋 <b>Passo 3 — Confira:</b>\nUse /status para ver seu VIP.\n\n❓ Precisa de ajuda? Envie /ajuda.`;
+          telegramBot.sendTelegram(buyer.telegramId, msgWelcome, tgToken);
+        }
+      } catch (e) { console.error('❌ Erro na entrega do código por Telegram:', e.message); }
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, code, customerName, customerEmail, plan }));
+  }
+
+  // ========== ARQUIVOS ESTÁTICOS ==========
+  if (rawUrl.startsWith('/weather-panel') || rawUrl.startsWith('/btc-weather-panel')) {
+    let relativePath = 'index.html';
+    if (url !== '/weather-panel' && url !== '/btc-weather-panel' && url !== '/weather-panel/' && url !== '/btc-weather-panel/') {
+      relativePath = url.replace('/weather-panel/', '').replace('/btc-weather-panel/', '');
+    }
+    const weatherPath = path.join(WEATHER_ROOT, relativePath);
+    if (fs.existsSync(weatherPath) && fs.statSync(weatherPath).isFile()) {
+      const extname = path.extname(weatherPath).toLowerCase();
+      res.writeHead(200, {
+        'Content-Type': mime[extname] || 'application/octet-stream',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      return res.end(fs.readFileSync(weatherPath));
+    }
+  }
+
+  // Raiz: app.btcweatherpanel.com → app.html; outros → redirect /btc-weather-panel/
+  if (url === '/') {
+    const host = (req.headers.host || '').toLowerCase();
+    if (host === 'app.btcweatherpanel.com') {
+      const appPath = path.join(WEATHER_ROOT, 'app.html');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(fs.readFileSync(appPath));
+    }
+    res.writeHead(302, { 'Location': '/btc-weather-panel/' });
+    return res.end();
+  }
+
+  // Arquivos soltos do produto (app.html, admin-dashboard.html, oferta.html, ebook-btc.html, etc.)
+  if (url.startsWith('/app') || url.startsWith('/admin-dashboard') || url.startsWith('/oferta') || url.startsWith('/ebook-btc')) {
+    const clean = url.split('?')[0].replace(/^\//, '');
+    const fPath = path.join(WEATHER_ROOT, clean);
+    if (fs.existsSync(fPath) && fs.statSync(fPath).isFile()) {
+      const extname = path.extname(fPath).toLowerCase();
+      res.writeHead(200, { 'Content-Type': mime[extname] || 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(fs.readFileSync(fPath));
+    }
+  }
+
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  return res.end('404');
+}).listen(PORT, () => {
+  console.log('🪙 BTC Weather Panel — Servidor Independente');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`🌐 http://localhost:${PORT}/ → /btc-weather-panel/ (app)`);
+  console.log(`🔑 API Licenças: /api/trial · /api/license/*`);
+  console.log(`🌦️ API Clima: /api/weather/config · /api/webhook/clima`);
+  console.log(`📊 Metrics: /api/admin/metrics · /api/public/metrics`);
+  console.log(`🤖 Telegram Webhook: /api/telegram/webhook`);
+  console.log(`💳 Kiwify: /api/purchase/webhook`);
+});

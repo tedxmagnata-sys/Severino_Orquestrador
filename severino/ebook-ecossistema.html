@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Manual do Severino — Como Construir um Ecossistema de Vendas IA</title>
+<style>
+  :root {
+    --bg1: #0d1117;
+    --bg2: #161b22;
+    --gold: #d4af37;
+    --gold-light: #f0e0a8;
+    --white: #ffffff;
+    --grey: #c9d1d9;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --blue: #58a6ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    color: var(--white);
+    line-height: 1.75;
+  }
+  .container { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+  /* ===== CAPA ===== */
+  .capa {
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    position: relative;
+  }
+  .capa::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 60%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .capa .ork { width: 120px; height: 120px; margin-bottom: 22px; border-radius: 50%;
+    border: 4px solid var(--gold); padding: 6px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 3rem; background: rgba(212,175,55,0.08); }
+  .capa .kicker { letter-spacing: 4px; font-size: 0.85rem; color: var(--gold); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
+  .capa h1 { font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1.2; margin-bottom: 16px; }
+  .capa h1 span { color: var(--gold); }
+  .capa .sub { font-size: clamp(1rem, 3vw, 1.25rem); color: var(--grey); max-width: 620px; margin-bottom: 28px; }
+  .capa .preco-badge {
+    display: inline-block; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.4);
+    padding: 10px 22px; border-radius: 40px; color: var(--gold); font-weight: 700; margin-bottom: 22px; font-size: 0.95rem;
+  }
+  .capa .verse { font-style: italic; color: var(--muted); font-size: 0.95rem; max-width: 520px; }
+
+  /* ===== INDICE ===== */
+  .indice {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 28px; margin: 48px 0;
+  }
+  .indice h2 { color: var(--gold); margin-bottom: 16px; font-size: 1.3rem; }
+  .indice ol { padding-left: 22px; }
+  .indice li { margin: 8px 0; color: var(--grey); }
+
+  /* ===== CAPITULOS ===== */
+  .capitulo { padding: 40px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .capitulo:last-child { border-bottom: none; }
+  .cap-tag { color: var(--gold); font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .capitulo h2 { font-size: 1.7rem; margin: 8px 0 20px; line-height: 1.3; }
+  .capitulo h3 { color: var(--gold-light); font-size: 1.1rem; margin: 22px 0 8px; }
+  .capitulo p { color: var(--grey); margin-bottom: 14px; }
+  .capitulo ul { padding-left: 22px; margin-bottom: 14px; }
+  .capitulo ul li { color: var(--grey); margin: 6px 0; }
+  .capitulo ol.check { padding-left: 22px; margin-bottom: 14px; }
+  .capitulo ol.check li { color: var(--grey); margin: 6px 0; padding-left: 6px; }
+  .capitulo code {
+    background: rgba(88,166,255,0.12); color: var(--blue); padding: 2px 7px;
+    border-radius: 6px; font-size: 0.9em; font-family: Consolas, monospace; word-break: break-all;
+  }
+  .capitulo blockquote {
+    border-left: 3px solid var(--gold); background: rgba(212,175,55,0.07);
+    padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 18px 0; font-style: italic; color: var(--gold-light);
+  }
+  .dica {
+    background: rgba(63,185,80,0.10); border: 1px dashed rgba(63,185,80,0.5);
+    border-radius: 12px; padding: 14px 18px; margin: 18px 0; color: #7ee787;
+  }
+  .alerta {
+    background: rgba(212,175,55,0.10); border: 1px dashed rgba(212,175,55,0.5);
+    border-radius: 12px; padding: 14px 18px; margin: 18px 0; color: var(--gold-light);
+  }
+  .fluxo {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 20px; margin: 18px 0; font-family: Consolas, monospace;
+    font-size: 0.88rem; color: var(--grey); white-space: pre; overflow-x: auto; line-height: 1.6;
+  }
+  .fluxo .ok { color: var(--green); }
+
+  /* ===== TABELAS ===== */
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: top; }
+  th { color: var(--gold); font-weight: 700; }
+  td { color: var(--grey); font-size: 0.95rem; }
+  .destacado td { color: var(--gold-light); background: rgba(212,175,55,0.06); }
+
+  /* ===== CTA ===== */
+  .cta {
+    background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+    border: 1px solid rgba(212,175,55,0.45);
+    border-radius: 16px; padding: 28px; text-align: center; margin: 40px 0;
+  }
+  .cta h3 { color: var(--gold); font-size: 1.4rem; margin-bottom: 10px; }
+  .cta p { color: var(--grey); margin-bottom: 16px; }
+  .cta .btn {
+    display: inline-block; background: var(--gold); color: var(--bg1); font-weight: 800;
+    padding: 14px 32px; border-radius: 40px; text-decoration: none; font-size: 1.05rem;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .cta .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,175,55,0.35); }
+
+  .footer { text-align: center; color: var(--muted); padding: 30px 0 40px; font-size: 0.9rem; }
+  .footer .oro { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- CAPA -->
+  <div class="capa">
+    <div class="ork">🤖</div>
+    <div class="kicker">Blueprint do Ecossistema de Vendas IA</div>
+    <h1>O MANUAL DO <span>SEVERINO</span></h1>
+    <p class="sub">Como construir um ecossistema de vendas IA 24/7 do zero: orquestrador de agentes, funil inteligente, conteúdo diário e cobrança automática — numa VPS barata.</p>
+    <div class="preco-badge">VPS ~R$ 60/mês · fases de 1 a 5 dias · tudo open-source</div>
+    <p class="verse">"O que você vai construir aqui é uma equipe que não dorme, não esquece e não erra."</p>
+  </div>
+
+  <!-- ÍNDICE -->
+  <div class="indice">
+    <h2>📑 Sumário</h2>
+    <ol>
+      <li>Parte 1 — A Visão: o que é um ecossistema de vendas IA</li>
+      <li>Parte 2 — O Básico Necessário: hardware, contas e credenciais</li>
+      <li>Parte 3 — A Arquitetura: o cérebro, o barramento e os agentes</li>
+      <li>Parte 4 — O Passo a Passo por Fases (Fase 0 → Fase 6)</li>
+      <li>Parte 5 — A Rotina Diária Automática</li>
+      <li>Parte 6 — Custos e Economia</li>
+      <li>Parte 7 — Métricas que Mandam</li>
+      <li>Checklist Final</li>
+    </ol>
+  </div>
+
+  <!-- PARTE 1 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 1</div>
+    <h2>A Visão: o que é um Ecossistema de Vendas IA</h2>
+    <p>É uma <strong>máquina de vendas autônoma</strong>: um conjunto de programas (agentes) que trabalham em equipe dentro de um servidor, sem humanos no meio, transformando atenção em dinheiro.</p>
+    <p>Cada agente tem <strong>um papel claro</strong> e conversa com os outros através de um <em>barramento de eventos</em> — como numa esteira de fábrica. O <strong>orquestrador</strong> lê cada evento e roteia para o agente certo.</p>
+    <div class="fluxo">redes / site / bot
+        │
+        ▼
+  CAPTADOR (atrai) ─► lead.novo
+        │
+        ▼
+ QUALIFICADOR (pontua) ─► lead.qualificado
+        │
+        ▼
+   NUTRIDOR (educa) ─► lead.quente
+        │
+        ▼
+   CONVERSOR (vende) ─► venda.proposta
+        │
+        ▼
+   ONBOARDER (entrega) ─► trial.ativado
+        │
+        ▼
+   RETENTOR + COBRADOR (pós-venda)
+        │
+        ▼
+   ANALISTA → ESTRATEGISTA (fecha o ciclo)</div>
+    <div class="alerta">⚙️ <strong>Regra de ouro:</strong> os agentes <strong>não se chamam diretamente</strong> — postam eventos no barramento e o orquestrador roteia. Isso garante rastreabilidade, resiliência e testes.</div>
+  </div>
+
+  <!-- PARTE 2 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 2</div>
+    <h2>O Básico Necessário</h2>
+
+    <h3>2.1 Hardware (o único "tijolo")</h3>
+    <table>
+      <tr><th>Item</th><th>Especificação</th><th>Custo</th></tr>
+      <tr><td>VPS</td><td>2 vCPU · 4 GB RAM · 80 GB SSD</td><td>R$ 40–70/mês</td></tr>
+      <tr><td>Domínio</td><td>1 domínio + SSL Let's Encrypt (grátis)</td><td>R$ 30–90/ano</td></tr>
+      <tr><td>DNS dinâmico (opcional)</td><td>DuckDNS</td><td>grátis</td></tr>
+    </table>
+    <p>Servidores Node.js + ffmpeg + Postiz rodam bem em 4 GB. A VPS é onde <strong>tudo mora</strong>: sites, bot, agentes, conteúdo e dados (JSON em arquivos — sem banco SQL).</p>
+
+    <h3>2.2 Software base no servidor</h3>
+    <ul>
+      <li><strong>Node.js ≥ 18</strong> — runtime de tudo</li>
+      <li><strong>PM2</strong> — mantém serviços online, reinicia sozinho</li>
+      <li><strong>Nginx</strong> — servidor web / proxy reverso + SSL</li>
+      <li><strong>Certbot / Let's Encrypt</strong> — HTTPS grátis</li>
+      <li><strong>ffmpeg 6.x</strong> — geração e animação de vídeos/cards</li>
+      <li><strong>git</strong> — versionamento + backups</li>
+    </ul>
+
+    <h3>2.3 Contas e credenciais (o "corpo de conhecimento")</h3>
+    <table>
+      <tr><th>Serviço</th><th>Para quê</th><th>Variável .env</th></tr>
+      <tr><td>LLM (OpenRouter/OpenAI)</td><td>Cérebro: conversar, qualificar, escrever</td><td><code>LLM_API_KEY</code>, <code>LLM_PROVIDER</code>, <code>LLM_MODEL_BARATO</code>, <code>LLM_MODEL_FORTE</code></td></tr>
+      <tr><td>Telegram Bot</td><td>Canal com leads + admin</td><td><code>TELEGRAM_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code></td></tr>
+      <tr><td>Kiwify</td><td>Checkout e pagamentos</td><td><code>KIWIFY_WEBHOOK_SECRET</code></td></tr>
+      <tr><td>Postiz (self-hosted)</td><td>Agenda e publica redes sociais</td><td><code>POSTIZ_API_URL</code>, <code>POSTIZ_API_KEY</code></td></tr>
+      <tr><td>MuAPI</td><td>Geração de imagens/vídeos por IA</td><td><code>MUAPI_API_KEY</code></td></tr>
+      <tr><td>SMTP (Brevo/Zoho)</td><td>E-mails transacionais e nurturing</td><td><code>SMTP_*</code>, <code>EMAIL_FROM</code></td></tr>
+      <tr><td>X (Twitter)</td><td>Prospeção e publicação</td><td><code>X_API_KEY/SECRET</code>, <code>X_ACCESS_TOKEN/SECRET</code>, <code>X_BEARER_TOKEN</code></td></tr>
+      <tr><td>Instagram Graph API</td><td>Prospeção via comentários</td><td>contas de serviço</td></tr>
+      <tr><td>Reddit (opcional)</td><td>Prospeção orgânica</td><td><code>REDDIT_*</code></td></tr>
+    </table>
+    <div class="alerta">🔐 <strong>Segurança:</strong> todas as chaves no <code>.env</code> do servidor, nunca no front. Rotas de admin exigem <code>X-Admin-Secret</code>. Segredos nunca em logs.</div>
+
+    <h3>2.4 O que cada ferramenta faz no conjunto</h3>
+    <table>
+      <tr><th>Ferramenta</th><th>Papel</th></tr>
+      <tr><td>Orquestrador</td><td>Loop 24/7: lê a fila, roteia eventos, timeouts</td></tr>
+      <tr><td>Barramento</td><td>Caixa de correio única dos agentes (<code>queue/events.jsonl</code>)</td></tr>
+      <tr><td>Serviço de IA (<code>ia.js</code>)</td><td>Wrapper do LLM: modelo barato/forte, retry, orçamento</td></tr>
+      <tr><td>Guardião</td><td>Ética + custos: filtra saídas, monitora tokens/dia</td></tr>
+      <tr><td>Canais</td><td>Envio real (Telegram, e-mail, WhatsApp)</td></tr>
+      <tr><td>Registro de produtos (<code>produtos.json</code>)</td><td>Produto novo = uma entrada aqui, zero mudança no núcleo</td></tr>
+      <tr><td>Site/painel</td><td>Dupla captura (e-mail → Telegram), trial, painel admin</td></tr>
+    </table>
+  </div>
+
+  <!-- PARTE 3 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 3</div>
+    <h2>A Arquitetura</h2>
+
+    <h3>3.1 Os agentes e seus papéis</h3>
+    <table>
+      <tr><th>Agente</th><th>Papel</th><th>Evento que posta</th></tr>
+      <tr><td>Estrategista</td><td>Decide o que divulgar, para quem, quando</td><td><code>campanha.nova</code>, <code>rota.produto</code></td></tr>
+      <tr><td>Captador</td><td>Atrai tráfego → gera leads</td><td><code>lead.novo</code></td></tr>
+      <tr><td>Qualificador</td><td>Pontua e rotula (frio/morno/quente)</td><td><code>lead.qualificado</code></td></tr>
+      <tr><td>Nutridor</td><td>Educa e relaciona até pedir oferta</td><td><code>msg.enviada</code>, <code>lead.quente</code></td></tr>
+      <tr><td>Conversor</td><td>Conversa de venda 1:1, envia oferta</td><td><code>venda.proposta</code>, <code>venda.confirmada</code></td></tr>
+      <tr><td>Onboarder</td><td>Ativa trial e entrega o acesso</td><td><code>onboarding.ok</code></td></tr>
+      <tr><td>Retentor</td><td>Pós-venda, upsell, renovação, anti-churn</td><td><code>followup.vencido</code>, <code>renovacao.pendente</code></td></tr>
+      <tr><td>Cobrador</td><td>Cobranças e reembolso automático</td><td><code>reembolso.pedido</code></td></tr>
+      <tr><td>Analista</td><td>Lê KPIs e fecha o ciclo</td><td><code>relatorio.diario</code></td></tr>
+      <tr><td>Guardião</td><td>Ética + custos (filtra toda saída)</td><td><code>bloqueio.abuso</code></td></tr>
+      <tr><td>Observador/Videasta</td><td>Gera e publica conteúdo</td><td><code>conteudo.pronto</code></td></tr>
+    </table>
+
+    <h3>3.2 O ciclo de um lead (exemplo real)</h3>
+    <div class="fluxo">Postiz (redes) ─► Captador: lead.novo
+    └► Qualificador: lead.qualificado (quente)
+       └► Nutridor: 2-3 conteúdos educativos
+          └► Conversor: 1:1; aceita trial → venda.proposta
+             └► Onboarder: POST /api/trial → onboarding.ok
+                └► Retentor: upsell → venda.confirmada
+                   └► Cobrador → Analista → Estrategista ajusta</div>
+
+    <h3>3.3 Configuração por produto (desacoplamento)</h3>
+    <p>O núcleo é <strong>independente dos produtos</strong>. O plug-in é <code>produtos.json</code>:</p>
+    <div class="fluxo">{ "id": "btcweather", "nome": "BTC Weather Panel",
+  "plano": "R$ 47/mês", "checkout": "https://pay.kiwify.com.br/...",
+  "ativacao": { "tipo": "trial", "endpoint": "/api/trial" } }</div>
+    <p>Lançar produto novo = <strong>só</strong> criar uma entrada. Zero mudança no núcleo.</p>
+  </div>
+
+  <!-- PARTE 4 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 4</div>
+    <h2>O Passo a Passo por Fases</h2>
+    <blockquote>Princípio de escalagem: cada fase termina com uma meta alcançada → review (o que converteu, CPL, tempo de ciclo) → escalar <strong>só o canal que provou</strong>.</blockquote>
+
+    <h3>Fase 0 — Fundação (1–2 dias)</h3>
+    <ol class="check">
+      <li>VPS + Node + PM2 + Nginx + SSL configurados</li>
+      <li><code>produtos.json</code> com o primeiro produto</li>
+      <li><code>ia.js</code>: wrapper LLM (retry, timeout, contador de tokens)</li>
+      <li>Barramento: <code>queue/events.jsonl</code> + <code>pendentes.json</code> + <code>postar()</code>/<code>ler()</code></li>
+      <li>Orquestrador PM2 (loop 1s, <code>max_hops=5</code>, heartbeat)</li>
+      <li>Guardião mínimo (ética + custo)</li>
+      <li>Rotas <code>/api/ecosystem/*</code> protegidas</li>
+    </ol>
+    <p><strong>Entregável:</strong> orquestrador no ar, publicando/consumindo eventos. ✅</p>
+
+    <h3>Fase 1 — Núcleo de Vendas (3–5 dias)</h3>
+    <ol class="check">
+      <li>Agentes LLM: Estrategista, Captador, Qualificador, Nutridor, Conversor</li>
+      <li><code>canais.js</code> + <code>guardiao.js</code> (filtro ético em toda saída)</li>
+      <li>Estado por lead: <code>data/funil.json</code></li>
+      <li>Onboarder ativando trial real (<code>POST /api/trial</code>)</li>
+      <li>Retentor básico (follow-up pós-trial)</li>
+      <li>Dupla captura no site (e-mail → Telegram via <code>?start=CODIGO</code>)</li>
+    </ol>
+    <p><strong>Entregável:</strong> lead entra no funil e sai com trial ativado, rastreado. ✅</p>
+
+    <h3>Fase 2 — Divulgação 24/7 (2–3 dias)</h3>
+    <ol class="check">
+      <li>Postiz self-hosted + publicação automática (X + Instagram)</li>
+      <li>Gerador de card diário (<code>clima_card.json</code> → PNG + overlay)</li>
+      <li>Animador de vídeo (MP4 de loop perfeito com céu do clima, ffmpeg)</li>
+      <li>Cron diário: postar → gerar → animar → publicar</li>
+      <li>Sequências de e-mail/WhatsApp com anti-spam</li>
+    </ol>
+    <p><strong>Entregável:</strong> conteúdo automático diário em X e Instagram. ✅</p>
+
+    <h3>Fase 3 — Vendas &amp; Cobrança (2–3 dias)</h3>
+    <ol class="check">
+      <li>Webhook Kiwify → <code>venda.confirmada</code> no barramento</li>
+      <li>Conversor integra checkout e pós-venda</li>
+      <li>Cobrador: garantia/reembolso automático + avisos de vencimento</li>
+      <li>E-mail obrigatório no trial (alimenta o funil)</li>
+    </ol>
+    <p><strong>Entregável:</strong> venda paga → entrega + cobrança + garantia sem humano. ✅</p>
+
+    <h3>Fase 4 — Multi-Produto (2–3 dias)</h3>
+    <ol class="check">
+      <li>Qualificador decide o produto certo por lead</li>
+      <li>Conversor/Onboarder paramétricos via <code>produtos.json</code></li>
+      <li>Vitrine consumindo <code>produtos.json</code></li>
+      <li>Um bot atende todos os produtos (onboarding unificado)</li>
+    </ol>
+    <p><strong>Entregável:</strong> funil multicase rodando. ✅</p>
+
+    <h3>Fase 5 — Lançamento de Novos Micro-SaaS</h3>
+    <p><em>Regra: só lançar novo produto se o case anterior provou <strong>trial→pago ≥ 5%</strong>. Novo produto recicla captura, bot, funil, checkout e e-mail.</em></p>
+    <ul>
+      <li>Auto-bio / legendas com IA</li>
+      <li>Relatório diário de mercado (outras criptos)</li>
+      <li>Bot de vendas como serviço</li>
+    </ul>
+
+    <h3>Fase 6 — Escala Pós-100 Pagantes</h3>
+    <ul>
+      <li>Escalar só o canal campeão (melhor CPL)</li>
+      <li>Tráfego pago com pixel de conversão instalado</li>
+      <li>Programa de indicação (referral)</li>
+      <li>Jornada pós-venda: onboarder → retentor → cross-sell</li>
+    </ul>
+  </div>
+
+  <!-- PARTE 5 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 5</div>
+    <h2>A Rotina Diária Automática</h2>
+    <table>
+      <tr><th>Horário</th><th>Comando</th><th>O que faz</th></tr>
+      <tr><td><code>*/5 min</code></td><td>duckdns</td><td>Mantém DNS dinâmico</td></tr>
+      <tr><td><code>toda hora</code></td><td>notifier climate-signal</td><td>Alerta de clima de mercado</td></tr>
+      <tr><td><code>toda hora</code></td><td>watchdog</td><td>Reinicia processos caídos</td></tr>
+      <tr><td><code>8:00</code></td><td>analista + gestor_leads</td><td>Relatórios diários de leads</td></tr>
+      <tr><td><code>9:00</code></td><td>notifier daily</td><td>Análise diária do mercado</td></tr>
+      <tr><td><code>9:30</code></td><td>onboarder</td><td>Onboarding de novos leads</td></tr>
+      <tr><td><code>10:00</code></td><td>retentor</td><td>Check-ins, upsell D7, reativação D8</td></tr>
+      <tr class="destacado"><td><code>11:10</code></td><td>card → redes → animar → publicar</td><td>Card do dia + vídeo animado + X/IG</td></tr>
+      <tr><td><code>22:00</code></td><td>educativo</td><td>Conteúdo educativo da noite</td></tr>
+      <tr><td><code>3:00</code></td><td>backup + git-backup</td><td>Backups automáticos</td></tr>
+    </table>
+    <h3>Serviços PM2 rodando</h3>
+    <div class="fluxo">severino     → app principal (site + APIs, porta 3334)
+ecosistema   → orquestrador dos agentes (24/7)
+btcweather   → painel de clima (porta 3340)
+suporte      → atendimento automático
+leadbook     → gestão de leads
+produto-*    → outros cases (ex.: agendabarber)</div>
+  </div>
+
+  <!-- PARTE 6 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 6</div>
+    <h2>Custos e Economia</h2>
+    <table>
+      <tr><th>Item</th><th>Custo mensal</th></tr>
+      <tr><td>VPS (2 vCPU / 4 GB)</td><td>R$ 40–70</td></tr>
+      <tr><td>Domínio (amortizado)</td><td>R$ 3–8</td></tr>
+      <tr><td>LLM (modelo barato, orçado)</td><td>R$ 10–40</td></tr>
+      <tr class="destacado"><td><strong>Total</strong></td><td><strong>R$ 60–120/mês</strong></td></tr>
+    </table>
+    <h3>Alavancas de economia</h3>
+    <ul>
+      <li><strong>Modelo barato por padrão</strong>, forte só quando necessário</li>
+      <li><strong>Orçamento de tokens/dia</strong> — Guardião bloqueia excesso</li>
+      <li><strong>Rate limiting</strong> por IP/endpoint</li>
+      <li>Prospeção orgânica (X, IG, Reddit) sem tráfego pago no começo</li>
+      <li>Cards/vídeos gerados <strong>no próprio servidor</strong> com ffmpeg</li>
+    </ul>
+    <div class="dica">💡 <strong>Regra do fundador:</strong> provar no pequeno → medir → escalar só o que converteu. Custo fica baixo até existir prova de CPL.</div>
+  </div>
+
+  <!-- PARTE 7 -->
+  <div class="capitulo">
+    <div class="cap-tag">Parte 7</div>
+    <h2>Métricas que Mandam</h2>
+    <table>
+      <tr><th>Métrica</th><th>Onde</th><th>Alvo</th></tr>
+      <tr><td>Trial → pago</td><td><code>funil.json</code> / checkout</td><td>≥ 5%</td></tr>
+      <tr><td>CPL (custo por lead)</td><td>origem do lead</td><td>&lt; preço do plano</td></tr>
+      <tr><td>Tempo trial → pago</td><td><code>funil.json</code></td><td>&lt; 7 dias</td></tr>
+      <tr><td>Churn mensal</td><td>cobrador</td><td>&lt; 10%</td></tr>
+      <tr><td>MRR</td><td>dashboard</td><td>crescente</td></tr>
+      <tr><td>Conversão por origem</td><td>analista</td><td>para alocar esforço</td></tr>
+    </table>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="capitulo">
+    <div class="cap-tag">Checklist Final</div>
+    <h2>Do Começo à Primeira Venda</h2>
+
+    <h3>1. Infra</h3>
+    <ol class="check">
+      <li>VPS + Node + PM2 + Nginx + SSL</li>
+      <li>Domínio apontando (e DuckDNS se precisar)</li>
+      <li>ffmpeg instalado</li>
+    </ol>
+    <h3>2. Contas</h3>
+    <ol class="check">
+      <li>LLM com <code>LLM_API_KEY</code></li>
+      <li>Telegram Bot → <code>TELEGRAM_TOKEN</code></li>
+      <li>Kiwify → <code>KIWIFY_WEBHOOK_SECRET</code> + link de checkout</li>
+      <li>SMTP → e-mails</li>
+      <li>Postiz self-hosted → <code>POSTIZ_API_KEY</code></li>
+      <li>MuAPI → <code>MUAPI_API_KEY</code></li>
+      <li>X (opcional) e IG Graph (opcional)</li>
+    </ol>
+    <h3>3. Código</h3>
+    <ol class="check">
+      <li><code>orquestrador.js</code> (PM2 <code>ecosistema</code>)</li>
+      <li><code>ia.js</code>, <code>canais.js</code>, <code>guardiao.js</code>, <code>rota.js</code></li>
+      <li>Agentes em <code>agentes/</code></li>
+      <li><code>produtos.json</code> com o 1º produto</li>
+      <li>Rotas <code>/api/ecosystem/*</code> protegidas</li>
+      <li>Site com dupla captura + trial</li>
+    </ol>
+    <h3>4. Conteúdo</h3>
+    <ol class="check">
+      <li>Gerador de card + animador de vídeo + cron diário</li>
+      <li>Postiz publicando em X/IG</li>
+      <li>Sequência educativa (educa → quente)</li>
+    </ol>
+    <h3>5. Fechamento</h3>
+    <ol class="check">
+      <li>Webhook Kiwify → <code>venda.confirmada</code></li>
+      <li>Retentor + Cobrador ativos</li>
+      <li>Backups diários (arquivos + git)</li>
+    </ol>
+    <h3>6. Métricas</h3>
+    <ol class="check">
+      <li>Analista gerando relatório diário no Telegram admin</li>
+      <li>Acompanhar trial→pago ≥ 5% e CPL &lt; preço do plano</li>
+    </ol>
+  </div>
+
+  <!-- CONCLUSÃO + CTA -->
+  <div class="capitulo">
+    <div class="cap-tag">Conclusão</div>
+    <h2>Você Pode Construir Isso</h2>
+    <p>O Severino não é mágica: é <strong>uma VPS barata + uma fila de eventos + agentes de IA com papéis claros + conteúdo automático + um funil rastreado de ponta a ponta</strong>.</p>
+    <p>Você monta em fases, prova no pequeno e escala só o que converteu. O ecossistema trabalha 24/7: prospecta, educa, vende, entrega, cobra e relata — enquanto você dorme.</p>
+    <p>A IA não veio substituir o empreendedor. Ela veio garantir que <strong>nenhum lead seja desperdiçado</strong>.</p>
+
+    <div class="cta">
+      <h3>🚀 Bora construir o seu?</h3>
+      <p>Comece pela Fase 0: uma VPS barata, Node.js e o orquestrador de agentes no ar. A partir daí, cada fase é uma peça que encaixa na anterior.</p>
+      <a class="btn" href="https://severinobot.com/" target="_blank">🌱 Começar pela Fase 0</a>
+    </div>
+
+    <p style="text-align:center; color:var(--gold-light); font-style:italic;">Que Deus abençoe seus negócios! 🙏</p>
+  </div>
+
+  <div class="footer">
+    <p><span class="oro">O Manual do Severino</span> — Blueprint do Ecossistema de Vendas IA.</p>
+    <p>Ferramenta com princípios cristãos: atendimento honesto, paciente e respeitoso.</p>
+  </div>
+
+</div>
+</body>
+</html>

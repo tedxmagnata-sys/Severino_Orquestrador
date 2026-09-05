@@ -1,0 +1,2 @@
+#!/bin/bash
+docker exec postiz sh -c 'grep -rn "tags" /app/apps/backend/dist/libraries/nestjs-libraries/src/dtos/public-integration --include=*.js 2>/dev/null | head -10; echo ===; find /app/apps/backend/dist/libraries/nestjs-libraries/src/dtos -name "*post*" -o -name "*public*" 2>/dev/null | head'

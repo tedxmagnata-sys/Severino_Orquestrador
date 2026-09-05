@@ -1,0 +1,2 @@
+#!/bin/bash
+docker exec postiz sh -c 'grep -n "createPost\|mapTypeToPost\|class-validator\|IsArray\|@Body\|@UsePipes" /app/apps/backend/dist/apps/backend/src/public-api/routes/v1/public.integrations.controller.js 2>/dev/null | head -20'

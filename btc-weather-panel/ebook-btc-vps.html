@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Estratégia do Agricultor de Bitcoin — Clima do BTC</title>
+<meta name="description" content="Aprenda a estratégia DCA do agricultor: plantar quando o clima perde força de venda, cultivar no neutro e colher na sobrecompra. Grátis.">
+<meta property="og:title" content="A Estratégia do Agricultor de Bitcoin">
+<meta property="og:description" content="Todo fruto tem estação. O Bitcoin também. Aprenda a ler o clima e colher melhor.">
+<style>
+  :root {
+    --bg1: #08090f;
+    --bg2: #141a2e;
+    --sunny: #ffb703;
+    --cloudy: #00f0ff;
+    --stormy: #ff3366;
+    --green: #00e676;
+    --white: #f1f3f9;
+    --grey: #c8cdda;
+    --muted: #8f92a3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    color: var(--white);
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+  .container { max-width: 840px; margin: 0 auto; padding: 24px; position: relative; }
+  .glow { position: fixed; border-radius: 50%; filter: blur(160px); opacity: 0.14; pointer-events: none; z-index: 0; }
+  .glow-1 { top: -10%; left: 10%; width: 500px; height: 500px; background: var(--sunny); }
+  .glow-2 { top: 40%; right: -12%; width: 560px; height: 560px; background: var(--cloudy); }
+  .glow-3 { bottom: -10%; left: 25%; width: 520px; height: 520px; background: var(--stormy); }
+
+  /* CAPA */
+  .capa { min-height: 92vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; position: relative; z-index: 1; }
+  .capa::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:60%; height:2px; background: linear-gradient(90deg, transparent, var(--sunny), transparent); }
+  .capa .selo { width: 116px; height: 116px; border-radius: 50%; border: 4px solid var(--sunny); padding: 6px; margin-bottom: 22px; background: radial-gradient(circle, rgba(255,183,3,0.12), transparent); }
+  .capa .selo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .capa .kicker { letter-spacing: 4px; font-size: 0.85rem; color: var(--cloudy); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
+  .capa h1 { font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.15; margin-bottom: 16px; letter-spacing: -1px; }
+  .capa h1 .grad { background: linear-gradient(92deg, var(--sunny), var(--stormy), var(--cloudy)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .capa .sub { font-size: clamp(1rem, 3vw, 1.3rem); color: var(--grey); max-width: 600px; margin-bottom: 28px; }
+  .capa .preco-badge { display:inline-block; background: rgba(255,183,3,0.1); border:1px solid rgba(255,183,3,0.4); padding: 10px 22px; border-radius: 40px; color: var(--sunny); font-weight: 700; margin-bottom: 22px; }
+  .capa .verse { font-style: italic; color: var(--muted); font-size: 0.95rem; max-width: 480px; }
+
+  /* INDICE */
+  .indice { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; margin: 48px 0; z-index: 1; position: relative; }
+  .indice h2 { color: var(--sunny); margin-bottom: 16px; font-size: 1.3rem; }
+  .indice ol { padding-left: 22px; }
+  .indice li { margin: 8px 0; color: var(--grey); }
+
+  /* CAPITULOS */
+  .capitulo { padding: 44px 0; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 1; }
+  .capitulo:last-child { border-bottom: none; }
+  .cap-tag { color: var(--cloudy); font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .capitulo h2 { font-size: 1.75rem; margin: 8px 0 20px; line-height: 1.3; }
+  .capitulo h2 .destaque { color: var(--sunny); }
+  .capitulo h3 { color: var(--sunny); font-size: 1.15rem; margin: 24px 0 8px; }
+  .capitulo p { color: var(--grey); margin-bottom: 14px; }
+  .capitulo ul { padding-left: 22px; margin-bottom: 14px; }
+  .capitulo ul li { color: var(--grey); margin: 6px 0; }
+  .capitulo strong { color: var(--white); }
+  .capitulo em { color: var(--cloudy); }
+  blockquote { border-left: 3px solid var(--sunny); background: rgba(255,183,3,0.06); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 18px 0; font-style: italic; color: var(--sunny); }
+
+  /* ESTACOES */
+  .estacoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 20px 0; }
+  .estacao { border-radius: 14px; padding: 18px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); }
+  .estacao .ico { font-size: 2rem; }
+  .estacao h4 { font-size: 1.05rem; margin: 8px 0 6px; }
+  .estacao p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  .estacao.plantar { border-color: rgba(0,240,255,0.4); }
+  .estacao.plantar h4 { color: var(--cloudy); }
+  .estacao.cultivar { border-color: rgba(255,183,3,0.4); }
+  .estacao.cultivar h4 { color: var(--sunny); }
+  .estacao.colher { border-color: rgba(255,51,102,0.4); }
+  .estacao.colher h4 { color: var(--stormy); }
+
+  /* PLANO DCA */
+  .plano-dca { background: rgba(0,230,118,0.05); border: 1px solid rgba(0,230,118,0.3); border-radius: 14px; padding: 18px 20px; margin: 20px 0; }
+  .plano-dca h4 { color: var(--green); font-size: 1.05rem; margin-bottom: 8px; }
+  .plano-dca p, .plano-dca li { font-size: 0.92rem; }
+
+  /* TABELA */
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; }
+  th { color: var(--sunny); font-weight: 700; }
+  td { color: var(--grey); }
+  .destacado td { color: var(--white); background: rgba(255,183,3,0.06); }
+
+  /* COMPARTILHAR */
+  .share-box { text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(0,240,255,0.4); border-radius: 14px; padding: 22px; margin: 24px 0; }
+  .share-box p { margin-bottom: 14px; color: var(--grey); }
+  .share-box .frase { font-size: 1.05rem; color: var(--white); font-style: italic; margin-bottom: 16px; }
+  .btn-share { display:inline-block; background: var(--cloudy); color: var(--bg1); font-weight: 800; padding: 12px 24px; border-radius: 40px; text-decoration: none; margin: 4px 6px; font-size: 0.95rem; transition: transform .15s, box-shadow .15s; }
+  .btn-share:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,240,255,0.3); }
+
+  /* CTA */
+  .cta { background: linear-gradient(135deg, rgba(255,183,3,0.15), rgba(255,51,102,0.08)); border: 1px solid rgba(255,183,3,0.45); border-radius: 16px; padding: 30px; text-align: center; margin: 40px 0; }
+  .cta h3 { color: var(--sunny); font-size: 1.5rem; margin-bottom: 10px; }
+  .cta p { color: var(--grey); margin-bottom: 16px; }
+  .cta .btn { display:inline-block; background: linear-gradient(92deg, var(--sunny), var(--stormy)); color: var(--bg1); font-weight: 800; padding: 15px 36px; border-radius: 40px; text-decoration: none; font-size: 1.1rem; transition: transform .15s, box-shadow .15s; box-shadow: 0 6px 24px rgba(255,183,3,0.25); }
+  .cta .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,183,3,0.35); }
+  .cta .garantia { font-size: 0.85rem; color: var(--muted); margin-top: 14px; }
+  .cta .garantia b { color: var(--green); }
+
+  .footer { text-align: center; color: var(--muted); padding: 30px 0 40px; font-size: 0.9rem; z-index: 1; position: relative; }
+  .footer .oro { color: var(--sunny); }
+</style>
+</head>
+<body>
+<div class="glow glow-1"></div><div class="glow glow-2"></div><div class="glow glow-3"></div>
+<div class="container">
+
+  <!-- CAPA -->
+  <div class="capa">
+    <img src="/btc-weather-panel/ebook-capa.png" alt="Capa do E-book — A Estratégia do Agricultor de Bitcoin" style="max-width:420px; width:100%; border-radius:20px; border:1px solid rgba(255,183,3,0.35); box-shadow:0 20px 60px rgba(0,0,0,0.6); margin-bottom:32px;" onerror="this.style.display='none';">
+    <div class="kicker">O Segredo que os Agricultores Sabem</div>
+    <h1>A ESTRATÉGIA DO <span class="grad">AGRICULTOR DE BITCOIN</span></h1>
+    <p class="sub">Plante no medo, cultive na paciência, colha na euforia — e nunca mais compre na hora errada.</p>
+    <div class="preco-badge">🌦️ Clima do BTC · Teste grátis 7 dias</div>
+    <p class="verse">"Todo fruto tem estação." — Eclesiastes 3:1</p>
+  </div>
+
+  <!-- ÍNDICE -->
+  <div class="indice">
+    <h2>📑 Sumário</h2>
+    <ol>
+      <li>Introdução — O Erro que 90% dos Investidores Cometem</li>
+      <li>Capítulo 1 — O Mercado Tem Estações (E Você Não Estava Lendo o Céu)</li>
+      <li>Capítulo 2 — O Clima do BTC: seu Radar Meteorológico</li>
+      <li>Capítulo 3 — A Estratégia DCA do Agricultor 🧑‍🌾</li>
+      <li>Capítulo 4 — Como o Clima do BTC Automatiza Tudo</li>
+      <li>🤖 Capítulo 4.1 — Severino Trader: Seu Agricultor Automático na OKX</li>
+      <li>Capítulo 5 — Seu Plano de Colheita em 7 Dias</li>
+      <li>Conclusão — A Estação da Sua Colheita Começa Hoje</li>
+    </ol>
+  </div>
+
+  <!-- INTRODUÇÃO -->
+  <div class="capitulo">
+    <div class="cap-tag">Introdução</div>
+    <h2>O Erro que 90% dos Investidores Cometem</h2>
+    <blockquote>"A raiz de toda a estupidez é comprar quando o coração acelera."</blockquote>
+    <p>Imagine um agricultor que planta suas sementes no auge do verão, esperando que a terra quente faça tudo brotar.</p>
+    <p>É exatamente isso que acontece com a maioria das pessoas no Bitcoin: elas compram <strong>quando todos estão animados</strong> — e vendem <strong>quando todos estão com medo</strong>.</p>
+    <p>Resultado? Compram no topo. Vendem no fundo. Ano após ano.</p>
+    <ul>
+      <li>😱 <strong>O medo</strong> faz você vender barato.</li>
+      <li>🥳 <strong>A euforia</strong> faz você comprar caro.</li>
+      <li>🧭 <strong>A falta de direção</strong> faz você agir no impulso, sem plano.</li>
+    </ul>
+    <p>Mas existe um grupo de pessoas que não faz isso. E não é porque elas "previram o futuro" — é porque elas aprenderam a <strong>ler o clima do mercado</strong>, como um agricultor lê o céu antes de decidir plantar ou colher.</p>
+    <p><strong>Este guia vai te ensinar essa arte</strong> — a estratégia do agricultor: o que fazer em cada estação, com disciplina, sem emoção e com um plano simples que qualquer pessoa consegue seguir.</p>
+    <p>E a melhor parte: você vai sair daqui <strong>tão animado</strong> que vai querer contar para todo mundo. Vamos lá? 🚀</p>
+  </div>
+
+  <!-- CAP 1 -->
+  <div class="capitulo">
+    <div class="cap-tag">Capítulo 1</div>
+    <h2>O Mercado Tem Estações <span class="destaque">(E Você Não Estava Lendo o Céu)</span></h2>
+    <p>Na natureza, tudo segue um ciclo: plantio, crescimento, colheita, descanso. Quem tenta forçar a colheita antes da hora, colhe frutos verdes. Quem dorme na colheita, perde a safra.</p>
+    <p>O Bitcoin funciona exatamente igual. Ele tem <strong>estações bem definidas</strong>, movidas pela psicologia coletiva — o eterno balanço entre <em>medo</em> e <em>ganância</em>.</p>
+    <div class="estacoes">
+      <div class="estacao plantar">
+        <div class="ico">🌱</div>
+        <h4>Plantar</h4>
+        <p>Mercado frio, medo no ar, preço despencando. A terra parece morta — mas é quando as sementes de ouro são mais baratas.</p>
+      </div>
+      <div class="estacao cultivar">
+        <div class="ico">🌾</div>
+        <h4>Cultivar</h4>
+        <p>Tendência neutra, mercado indeciso. Nada parece acontecer. É aqui que a paciência separa os grandes dos que desistem.</p>
+      </div>
+      <div class="estacao colher">
+        <div class="ico">🌾</div>
+        <h4>Colher</h4>
+        <p>Euforia, sobrecompra, todo mundo celebrando. O mercado está "maduro demais" — é hora de colher, não de plantar.</p>
+      </div>
+    </div>
+    <p>O segredo do agricultor não é ser mais inteligente. É <strong>saber em qual estação está</strong> — e agir de acordo com o calendário do clima, não com o impulso do coração.</p>
+    <p>Mas como saber em que estação o mercado está <em>agora</em>, em tempo real, sem ficar olhando gráficos 24h por dia?</p>
+    <p>É aí que entra o <strong>Clima do BTC</strong>. 🌦️</p>
+  </div>
+
+  <!-- CAP 2 -->
+  <div class="capitulo">
+    <div class="cap-tag">Capítulo 2</div>
+    <h2>O Clima do BTC: <span class="destaque">Seu Radar Meteorológico</span></h2>
+    <p>Assim como o agricultor consulta a previsão do tempo, você pode consultar a previsão do mercado. O Clima do BTC transforma indicadores complexos em uma leitura simples: <strong>em que estação estamos?</strong></p>
+    <p>Ele monitora o mercado 24/7 e traduz em linguagem de agricultor:</p>
+    <table>
+      <tr><th>🌡️ Indicador</th><th>O que mede</th><th>Como o agricultor lê</th></tr>
+      <tr><td>Medo &amp; Ganância</td><td>Sentimento coletivo (0–100)</td><td>Frio = hora de plantar · Quente = hora de colher</td></tr>
+      <tr><td>RSI em 7 períodos</td><td>Força da tendência</td><td>Sobrevendido = barato · Sobrecomprado = caro</td></tr>
+      <tr class="destacado"><td>Clima por período</td><td>15M a 1M</td><td>Alta / Neutro / Baixa — a estação de cada tempo gráfico</td></tr>
+    </table>
+    <h3>Por que 7 períodos?</h3>
+    <p>O agricultor olha não só o céu de hoje, mas a previsão da semana. O Clima do BTC analisa desde os <strong>15 minutos</strong> (o clima da manhã) até <strong>1 mês</strong> (a estação da safra). Cada período é uma pista. Juntos, eles formam o mapa completo.</p>
+    <p>Mas o mapa só vale se você <strong>agir</strong> nele. E é exatamente aí que a magia acontece...</p>
+  </div>
+
+  <!-- CAP 3 — DCA -->
+  <div class="capitulo">
+    <div class="cap-tag">Capítulo 3 · ⭐ O Coração do Guia</div>
+    <h2>A Estratégia DCA do Agricultor 🧑‍🌾</h2>
+    <p>Você já ouviu falar de DCA — <em>Dollar Cost Averaging</em> — comprar em parcelas no lugar de uma vez só. É a estratégia favorita dos investidores mais sábios do mundo. Mas o agricultor inteligente faz uma versão <strong>muito mais poderosa</strong>:</p>
+    <blockquote>O agricultor não planta no mesmo ritmo o ano inteiro. Ele planta <strong>quando o clima pede</strong> — e guarda a colheita quando o fruto está maduro.</blockquote>
+    <p>Isso é o <strong>DCA alinhado ao clima</strong>: você usa a leitura do mercado para decidir <em>quando</em> reforçar o plantio, <em>quando</em> apenas aguardar e <em>quando</em> colher. Simples, automático e disciplinado.</p>
+
+    <h3>🌱 Estação de Plantio — DCA na Fraqueza</h3>
+    <p>Quando o clima está <strong>perdendo força de venda</strong> (preço caindo, mas a força do movimento vendendo esfriando — sinais de sobrevenda e medo extremo), é o momento que o agricultor ama: <strong>a terra está barata</strong>.</p>
+    <div class="plano-dca">
+      <h4>✅ O que fazer na fraqueza:</h4>
+      <ul>
+        <li>Aumente o valor do seu DCA (compre mais com o mesmo dinheiro)</li>
+        <li>Compre em <strong>parcelas</strong>, não tudo de uma vez</li>
+        <li>Mantenha a calma: o medo é o desconto do agricultor</li>
+        <li>Nunca interrompa o plano no pior momento</li>
+      </ul>
+    </div>
+
+    <h3>🌾 Estação de Cultivo — Aguardar no Neutro</h3>
+    <p>Quando o clima está <strong>neutro</strong>, o mercado não decide. É a estação do <strong>descanso e da observação</strong>. Aqui, o agricultor sábio não força nada.</p>
+    <div class="plano-dca">
+      <h4>✅ O que fazer no neutro:</h4>
+      <ul>
+        <li>Mantenha o DCA <strong>normal</strong>, sem exageros</li>
+        <li>Guarde sua reserva para a próxima estação de plantio</li>
+        <li>Observe se o clima muda — a mudança de estação é o seu sinal</li>
+        <li>Paciência não é inação: é estratégia esperando o momento certo</li>
+      </ul>
+    </div>
+
+    <h3>🌾🍯 Estação de Colheita — Realizar na Sobrecompra</h3>
+    <p>Quando o clima começa a ficar <strong>sobrecomprado</strong> (euforia, ganância extrema, todo mundo "brilhando"), o agricultor experiente sabe: <strong>é hora de colher as frutinhas</strong>.</p>
+    <div class="plano-dca">
+      <h4>✅ O que fazer na sobrecompra:</h4>
+      <ul>
+        <li><strong>Realize parte dos lucros</strong> — colha as frutas maduras</li>
+        <li>Venda <strong>gradualmente</strong>, aproveitando a alta</li>
+        <li>Deixe o lucro "no bolso" para replantar na próxima fraqueza</li>
+        <li>Nunca seja ganancioso: a euforia vira chuva de um dia para o outro</li>
+      </ul>
+    </div>
+
+    <h3>📊 O Ciclo Completo do Agricultor</h3>
+    <table>
+      <tr><th>Clima do Mercado</th><th>Estação</th><th>Ação do Agricultor</th></tr>
+      <tr class="destacado"><td>🌧️ Força de venda esfriando / Sobrevenda</td><td>🌱 Plantar</td><td>Aumentar o DCA — comprar mais barato</td></tr>
+      <tr><td>⛅ Neutro / Indeciso</td><td>🌾 Cultivar</td><td>DCA normal + guardar reserva + observar</td></tr>
+      <tr class="destacado"><td>☀️ Sobrecompra / Euforia</td><td>🌾🍯 Colher</td><td>Realizar lucros gradualmente</td></tr>
+    </table>
+    <div class="plano-dca">
+      <h4>🧠 Por que isso funciona?</h4>
+      <p>Porque você <strong>compra quando os outros têm medo</strong> e <strong>vende quando os outros estão cegos de ganância</strong>. Você não adivinha o futuro — você apenas segue o calendário das estações, com disciplina e método.</p>
+    </div>
+    <p>O resultado? Você deixa de ser o agricultor que planta no verão e passa a ser o que <strong>colhe em toda estação</strong>. 🍇</p>
+  </div>
+
+  <!-- CAP 4 -->
+  <div class="capitulo">
+    <div class="cap-tag">Capítulo 4</div>
+    <h2>Como o Clima do BTC Automatiza <span class="destaque">Tudo Isso</span></h2>
+    <p>Você não precisa virar analista de gráficos. O <strong>Clima do BTC</strong> faz o trabalho pesado por você:</p>
+    <ul>
+      <li>📡 Lê o mercado em tempo real, 24/7 — 7 períodos ao mesmo tempo</li>
+      <li>🌦️ Traduz tudo em uma linguagem simples: <strong>Alta, Neutro, Baixa</strong></li>
+      <li>🎯 Mostra RSI e Medo &amp; Ganância em cada período</li>
+      <li>🔔 Identifica quando o clima está <strong>perdendo força</strong> (sinal de plantio) ou <strong>sobrecomprado</strong> (sinal de colheita)</li>
+      <li>📊 Te dá o mapa para você decidir com dados, não com emoção</li>
+      <li>📲 Envia os <strong>sinais do clima direto no seu Telegram</strong>, todos os dias</li>
+    </ul>
+    <h3>📲 Os sinais chegam no seu Telegram</h3>
+    <p>Além do painel, você recebe os sinais <strong>sem precisar abrir nada</strong>: o bot <strong>@btcweatherpanel_bot</strong> publica diariamente no canal <strong>@btc_weather_panel</strong> o card do clima — preço do BTC, Medo &amp; Ganância, RSI e a estação de cada período.</p>
+    <blockquote>"O mercado amanheceu em Alta nos 15M, Neutro no 1D e perdendo força de venda no 1M. Estação de plantio se aproximando. 🌱"</blockquote>
+    <p>É como receber a <strong>previsão do tempo do mercado na palma da mão</strong>, antes de qualquer decisão. Basta abrir o Telegram e ver o clima de hoje — com método, sem achismo.</p>
+    <h3>Uma olhada de 10 segundos, uma decisão com método</h3>
+    <p>Imagine abrir o painel e ver:</p>
+    <blockquote>"15M em Alta forte · 1H sobrecomprado · 4H neutro · 1D perdendo força de venda..."</blockquote>
+    <p>Na hora, você sabe: <strong>o 1D sinaliza plantio</strong>, o 1H sinaliza cuidado. Sem gráficos complicados, sem planilhas. Só o clima — e a estratégia do agricultor.</p>
+    <p>É a diferença entre <strong>jogar dardos no escuro</strong> e <strong>decidir com um mapa na mão</strong>.</p>
+
+    <h3>🤖 Apresentando o Severino Trader — Seu Agricultor Automático</h3>
+    <p>Agora, o <strong>BTC Weather Panel</strong> vai além de te mostrar o clima: ele pode <strong>plantar e colher automaticamente</strong> para você.</p>
+    <p>O <strong>Severino Trader</strong> é um agente de Inteligência Artificial que analisa o mercado 24 horas por dia e executa <strong>compras (PLANTAR) e vendas (COLHER) na sua conta da OKX</strong> — você mantém a custódia, ele opera com sua permissão. É como ter um agricultor digital cuidando da sua lavoura enquanto você dorme.</p>
+    
+    <h4>🌱 Quando ele planta (compra)</h4>
+    <ul>
+      <li>Regime do mercado está em <strong>acumulação</strong> ou <strong>bull</strong></li>
+      <li><strong>Fear &amp; Greed Index</strong> abaixo de 75 (sem euforia)</li>
+      <li>Preço dentro da <strong>zona Fibonacci</strong> ideal (38.2%–61.8%)</li>
+      <li><strong>Smart Money confirma</strong> o movimento: funding rate negativo ou sweep de liquidez</li>
+      <li>Respeita o <strong>espaçamento entre entradas</strong> para não comprar tudo no mesmo preço</li>
+    </ul>
+    
+    <h4>🌾 Quando ele colhe (vende)</h4>
+    <ul>
+      <li>Regime muda para <strong>distribuição extrema</strong> — sinal de que o smart money está vendendo</li>
+      <li><strong>Stop loss</strong> de -25% no total investido para proteger o capital</li>
+      <li><strong>Take profit parcial</strong>: +50% (vende 25%), +100% (vende 50%)</li>
+      <li><strong>Sobrecompra</strong>: RSI ≥ 75 com score ≥ 90 (vende 20%)</li>
+      <li><strong>Smart Money em alta</strong>: funding positivo + sweep (vende 15%)</li>
+    </ul>
+    
+    <h4>⚙️ Como configurar em 3 passos</h4>
+    <ol>
+      <li>Crie uma <strong>API Key na OKX</strong> com permissão <strong>apenas Trade</strong> (nunca saque/withdraw)</li>
+      <li>Cole a <strong>API Key, Secret e Passphrase</strong> no modal do Severino no painel</li>
+      <li>Ative o <strong>Auto Plantar</strong> e defina o valor por entrada (ex: US$ 5)</li>
+    </ol>
+    
+    <p>O <strong>auto colher</strong> fica desligado por segurança — você confirma manualmente no Telegram. O Severino só planta quando <strong>todos os gatilhos</strong> disparam simultaneamente. Segurança acima de tudo.</p>
+    <p>No painel, a barra do Severino mostra em tempo real:</p>
+    <ul>
+      <li>🤖 <strong>Sinal</strong>: 🟢 PLANT, 🟡 MANTER, 🔴 HARVEST</li>
+      <li>🌱 <strong>Plantar</strong>: status da entrada atual</li>
+      <li>🌾 <strong>Colher</strong>: status da saída + lucro</li>
+      <li>💰 <strong>Resultado</strong>: valor investido vs P&amp;L</li>
+      <li>💼 <strong>Saldo OKX</strong>: quanto USDT disponível</li>
+    </ul>
+    <blockquote>O Segredo: Em regime de distribuição (como agora, com BTC em ~US$ 77k), o Severino <strong>não planta propositalmente</strong>. Ele espera o medo extremo (FNG &lt; 25) e o início da acumulação — é aí que o smart money compra pesado, e ele compra junto. Paciência é a maior vantagem do agricultor.</blockquote>
+  </div>
+
+  <!-- CAP 5 -->
+  <div class="capitulo">
+    <div class="cap-tag">Capítulo 5</div>
+    <h2>Seu Plano de Colheita em 7 Dias</h2>
+    <p>Você leu a teoria. Agora é hora de praticar — com risco zero.</p>
+    <div class="plano-dca">
+      <h4>📆 Seu calendário da semana:</h4>
+      <ul>
+        <li><strong>Dia 1:</strong> Ative o teste grátis e veja o clima do mercado agora</li>
+        <li><strong>Dia 2:</strong> Identifique em que estação cada período está (plantar/cultivar/colher)</li>
+        <li><strong>Dia 3:</strong> Monte seu plano de DCA alinhado ao clima</li>
+        <li><strong>Dia 4:</strong> Acompanhe os sinais no seu Telegram (@btc_weather_panel) — perda de força e sobrecompra em tempo real</li>
+        <li><strong>Dia 5:</strong> Aplique a estratégia do agricultor com confiança</li>
+        <li><strong>Dia 6:</strong> Anote o que o clima te mostrou — você já está lendo o céu</li>
+        <li><strong>Dia 7:</strong> Decida com dados se vale a pena continuar</li>
+      </ul>
+    </div>
+    <p><strong>7 dias grátis. Sem cartão de crédito. Sem compromisso.</strong> Depois, o plano VIP custa menos que uma pizza por mês: <s>R$ 79</s> <strong>R$ 47/mês</strong> — com cancele quando quiser.</p>
+    <p>E se não gostar? <strong>Garantia incondicional: reembolso total, sem perguntas.</strong> O agricultor não teme perder o que não arriscou. 🛡️</p>
+  </div>
+
+  <!-- COMPARTILHAR -->
+  <div class="share-box">
+    <p class="frase">"Se todo mundo está plantando no verão, então alguém está colhendo no inverno. Seja o agricultor que lê o céu. 🌦️"</p>
+    <a class="btn-share" href="https://t.me/share/url?url=https%3A%2F%2Fbtcweatherpanel.com%2Febook&text=Todo%20fruto%20tem%20esta%C3%A7%C3%A3o.%20O%20Bitcoin%20tamb%C3%A9m.%20Aprendi%20a%20Estrat%C3%A9gia%20do%20Agricultor%20de%20Bitcoin%20%E2%80%94%20plante%20no%20medo%2C%20colha%20na%20euforia.%20E-book%20gr%C3%A1tis%3A" target="_blank">📲 Compartilhar no Telegram</a>
+    <a class="btn-share" href="https://wa.me/?text=Todo%20fruto%20tem%20esta%C3%A7%C3%A3o.%20O%20Bitcoin%20tamb%C3%A9m.%20Aprendi%20a%20Estrat%C3%A9gia%20do%20Agricultor%20de%20Bitcoin%20%E2%80%94%20plante%20no%20medo%2C%20colha%20na%20euforia.%20E-book%20gr%C3%A1tis%3A%20https%3A%2F%2Fbtcweatherpanel.com%2Febook" target="_blank">💬 Compartilhar no WhatsApp</a>
+    <a class="btn-share" href="https://twitter.com/intent/tweet?text=Todo%20fruto%20tem%20esta%C3%A7%C3%A3o.%20O%20Bitcoin%20tamb%C3%A9m.%20Aprenda%20a%20Estrat%C3%A9gia%20do%20Agricultor%20de%20Bitcoin%3A%20plante%20no%20medo%2C%20colha%20na%20euforia%20%F0%9F%8C%A6&url=https%3A%2F%2Fbtcweatherpanel.com%2Febook" target="_blank">🐦 Compartilhar no X</a>
+  </div>
+
+  <!-- CONCLUSÃO + CTA -->
+  <div class="capitulo">
+    <div class="cap-tag">Conclusão</div>
+    <h2>A Estação da Sua Colheita <span class="destaque">Começa Hoje</span></h2>
+    <p>Você não precisa ser um gênio do mercado. Você precisa ser como o agricultor: <strong>paciente, disciplinado e atento ao clima</strong>.</p>
+    <p>Pense nisso: as pessoas que compraram Bitcoin no fundo do medo e colheram na euforia não fizeram nada de complicado. Elas apenas <strong>seguiram o calendário das estações</strong>.</p>
+    <p>Agora você tem o guia <strong>e</strong> o radar meteorológico.</p>
+    <p>E tem mais: este guia foi feito para ser <strong>compartilhado</strong>. Quando você entende o ciclo das estações, você quer que todos a sua volta entendam também — porque todo mundo cansa de comprar no topo. 🌾</p>
+
+    <div class="cta">
+      <h3>🌦️ Comece a ler o céu do mercado hoje</h3>
+      <p>Teste grátis por 7 dias — sem cartão, sem risco. Veja em que estação o Bitcoin está <strong>agora</strong> e receba os sinais diários no seu Telegram.</p>
+      <a class="btn" href="https://btcweatherpanel.com/btc-weather-panel/" target="_blank">🚀 Testar o Clima do BTC Grátis</a>
+      <p class="garantia">📲 Acompanhe também o canal <b>@btc_weather_panel</b> no Telegram para receber os cards do clima todos os dias.<br>🛡️ <b>Garantia incondicional de 7 dias.</b> Não gostou? Reembolso total, sem perguntas.<br>Depois: <s>R$ 79</s> <b>R$ 47/mês</b> · cancele quando quiser.</p>
+    </div>
+
+    <p style="text-align:center; color:var(--sunny); font-style:italic;">Que a sua safra seja abundante, e que você colha no tempo certo. 🙏</p>
+  </div>
+
+  <div class="footer">
+    <p><span class="oro">Clima do BTC — BTC Weather Panel</span> · btcweatherpanel.com</p>
+    <p>Ferramenta de análise de mercado. Não é recomendação de investimento. Invista com responsabilidade.</p>
+    <p style="margin-top:6px; color:var(--muted);">🌱 Plante no medo · 🌾 Cultive com paciência · 🌾🍯 Colha na euforia</p>
+  </div>
+
+</div>
+</body>
+</html>

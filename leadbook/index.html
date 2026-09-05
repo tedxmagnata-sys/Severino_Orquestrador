@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>LeadBook Engine v1.0</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topo">
+  <div class="marca">
+    <span class="logo">LE</span>
+    <div>
+      <h1>LeadBook Engine <span class="v">v1.0</span></h1>
+      <p>Infoprodutos que se vendem pela clareza da ideia.</p>
+    </div>
+  </div>
+  <div class="status" id="statusPill"><span class="dot"></span><span id="statusTxt">…</span></div>
+  <span class="plano-badge" id="planoBadge">Grátis</span>
+</header>
+
+<main class="wrap">
+  <section class="card form-card" id="formCard">
+    <h2>O que você vai criar?</h2>
+    <p class="sub">Preencha e receba o pacote completo em segundos: ebook, landing page, reels e capa.</p>
+
+    <label class="campo">
+      <span>Tema do infoproduto</span>
+      <input id="tema" type="text" placeholder="Ex: Como usar IA para vender mais sem aparecer" maxlength="120">
+    </label>
+
+    <label class="campo">
+      <span>Público-alvo</span>
+      <input id="publico" type="text" placeholder="Ex: Empreendedores iniciantes que vendem produtos digitais" maxlength="160">
+    </label>
+
+    <label class="campo">
+      <span>Objetivo de conversão</span>
+      <input id="objetivo" type="text" placeholder="Ex: Gerar leads para uma isca digital gratuita" maxlength="160">
+    </label>
+
+    <div class="linha">
+      <label class="campo">
+        <span>Idioma</span>
+        <select id="idioma">
+          <option value="pt-br">Português (BR)</option>
+          <option value="en">Inglês</option>
+          <option value="es">Espanhol</option>
+        </select>
+      </label>
+      <label class="campo check">
+        <input type="checkbox" id="gerarCapa">
+        <span>Gerar capa por IA</span>
+        <small id="capaInfo">prompt incluso</small>
+      </label>
+    </div>
+
+    <button id="btnGerar" class="btn">Gerar infoproduto</button>
+    <div id="progresso" class="progresso oculto">
+      <div class="barra"><div class="fill" id="fill"></div></div>
+      <p id="passoAtual">Preparando…</p>
+    </div>
+    <div id="erro" class="erro oculto"></div>
+  </section>
+
+  <section class="card resultado oculto" id="resultado">
+    <div class="cab">
+      <div>
+        <h2 id="tituloEbook"></h2>
+        <p id="subtituloEbook" class="sub"></p>
+      </div>
+      <button class="btn-mini" id="btnCopiarJson" title="Copiar JSON completo">Copiar JSON</button>
+    </div>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="ebook" class="tab ativo">Ebook</button>
+      <button data-tab="landing" class="tab">Landing</button>
+      <button data-tab="reels" class="tab">Reels</button>
+      <button data-tab="capa" class="tab">Capa</button>
+      <button data-tab="json" class="tab">JSON</button>
+    </nav>
+
+    <div class="pane ativo" id="pane-ebook">
+      <div class="acoes">
+        <button class="btn-mini" data-download="md">Baixar .md</button>
+        <button class="btn-mini" data-download="json">Baixar .json</button>
+      </div>
+      <textarea id="mdEdit" class="editor" spellcheck="false"></textarea>
+      <article id="mdPreview" class="preview"></article>
+    </div>
+
+    <div class="pane" id="pane-landing">
+      <div id="landingView"></div>
+    </div>
+
+    <div class="pane" id="pane-reels">
+      <div id="reelsView"></div>
+    </div>
+
+    <div class="pane" id="pane-capa">
+      <div id="capaView"></div>
+    </div>
+
+    <div class="pane" id="pane-json">
+      <pre id="jsonView"></pre>
+    </div>
+  </section>
+
+  <section class="card oculto" id="histCard">
+    <h2>Projetos salvos</h2>
+    <ul id="historico" class="historico"></ul>
+  </section>
+</main>
+
+<div class="modal-overlay oculto" id="modalPlanos">
+  <div class="modal">
+    <button class="modal-fechar" id="modalFechar" title="Fechar">&times;</button>
+    <h2>Você esgotou a versão gratuita</h2>
+    <p class="sub">Na conta grátis você gera até <strong id="mFreeLimite">3</strong> infoprodutos por dia. Assine e gere sem limites, incluindo capa por IA.</p>
+    <a class="btn btn-compra" id="btnCompra" href="#" target="_blank" rel="noopener">Assinar agora</a>
+    <div class="divisor"><span>ou já comprou?</span></div>
+    <label class="campo">
+      <span>Seu e-mail da compra na Kiwify</span>
+      <input id="unlockEmail" type="email" placeholder="voce@email.com">
+    </label>
+    <button class="btn btn-ghost" id="btnUnlock">Desbloquear acesso</button>
+    <p id="unlockMsg" class="msg oculto"></p>
+  </div>
+</div>
+
+<footer class="rodape">LeadBook Engine v1.0 · Shielded &amp; Protected · ética e cuidado em cada saída</footer>
+
+<script>window.LB_BASE = "__LB_BASE__";</script>
+<script src="app.js"></script>
+</body>
+</html>

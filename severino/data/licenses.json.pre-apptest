@@ -1,0 +1,364 @@
+{
+  "VIP7-7HI6RL": {
+    "createdAt": "2026-07-24T17:00:08.230Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "manual",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-DY29BM": {
+    "createdAt": "2026-07-24T17:16:39.099Z",
+    "activatedAt": "2026-07-24T23:44:47.235Z",
+    "source": "manual"
+  },
+  "VIP7-6MVW65": {
+    "createdAt": "2026-07-24T23:46:20.353Z",
+    "activatedAt": "2026-07-24T23:46:20.358Z",
+    "source": "manual"
+  },
+  "VIP7-1A1GUI": {
+    "createdAt": "2026-07-24T23:46:20.353Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "manual",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-8ZUWUA": {
+    "createdAt": "2026-07-25T00:18:48.827Z",
+    "activatedAt": "2026-07-25T00:18:48.832Z",
+    "source": "manual"
+  },
+  "VIP7-FS352G": {
+    "createdAt": "2026-07-25T00:54:38.247Z",
+    "activatedAt": "2026-07-25T00:54:38.248Z",
+    "source": "manual"
+  },
+  "VIP7-6507ZU": {
+    "createdAt": "2026-07-25T00:55:47.042Z",
+    "activatedAt": "2026-07-10T00:55:47.047604Z",
+    "source": "manual"
+  },
+  "VIP7-3MLJHU": {
+    "createdAt": "2026-07-25T01:09:24.747Z",
+    "activatedAt": "2026-07-25T01:09:24.753496Z",
+    "source": "manual"
+  },
+  "VIP7-AAVULB": {
+    "createdAt": "2026-07-25T01:48:50.314Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-5MOPOA": {
+    "createdAt": "2026-07-25T01:48:50.314Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-D4VJ39": {
+    "createdAt": "2026-07-25T01:49:29.320Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-0Q8P9R": {
+    "createdAt": "2026-07-25T01:49:42.793Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-6E4L67": {
+    "createdAt": "2026-07-25T01:49:55.818Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-H7IG39": {
+    "createdAt": "2026-07-25T01:50:35.534Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-MR2163": {
+    "createdAt": "2026-07-25T01:58:38.071Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-8DCG0B": {
+    "createdAt": "2026-07-25T02:14:37.668Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-ZJ2WC0": {
+    "createdAt": "2026-07-25T02:14:37.668Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-KIPCT0": {
+    "createdAt": "2026-07-25T02:55:12.395Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-JEK78O": {
+    "createdAt": "2026-07-25T02:55:12.396Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-XTY2MN": {
+    "createdAt": "2026-07-25T02:55:12.397Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-AQSKHK": {
+    "createdAt": "2026-07-25T02:55:12.398Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-NCPAT6": {
+    "createdAt": "2026-07-25T02:55:12.399Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-VF12BU": {
+    "createdAt": "2026-07-25T02:55:12.400Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-TCLEFB": {
+    "createdAt": "2026-07-25T03:21:37.381Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-85S6WT": {
+    "createdAt": "2026-07-25T03:21:37.384Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-U0D7NQ": {
+    "createdAt": "2026-07-25T03:21:37.385Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-S4792M": {
+    "createdAt": "2026-07-25T03:21:37.386Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-WQ5VPL": {
+    "createdAt": "2026-07-25T03:21:37.388Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-QY5E29": {
+    "createdAt": "2026-07-25T03:21:37.390Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-G7BM3V": {
+    "createdAt": "2026-07-25T03:22:02.137Z",
+    "activatedAt": "2026-07-25T03:22:11.658Z",
+    "source": "manual-admin"
+  },
+  "VIP7-NHEWU2": {
+    "createdAt": "2026-07-28T17:38:32.489Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "api",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-S3MAKQ": {
+    "createdAt": "2026-07-28T17:39:04.846Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor_telegram",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-59RMYY": {
+    "createdAt": "2026-07-28T17:39:04.850Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor_telegram",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-FG1MCG": {
+    "createdAt": "2026-07-28T17:39:04.852Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor_telegram",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-46N5B4": {
+    "createdAt": "2026-07-28T17:39:04.853Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "conversor_telegram",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-3X34OQ": {
+    "createdAt": "2026-07-28T18:39:47.330Z",
+    "activatedAt": "2026-07-29T19:14:53.060694+00:00",
+    "source": "api",
+    "activatedAt_ts": 1785352493060,
+    "tier": "vip",
+    "batchActivation": "2026-07-29"
+  },
+  "VIP7-D6XPQG": {
+    "createdAt": "2026-07-29T02:32:49.136Z",
+    "activatedAt": "2026-07-29T11:56:52.709Z",
+    "source": "manual:guest",
+    "plan": "vip_mensal",
+    "customerName": "Convidado",
+    "customerEmail": "",
+    "transactionId": "",
+    "value": 0
+  },
+  "VIP7-6TF7KO": {
+    "createdAt": "2026-07-30T00:15:44.938Z",
+    "activatedAt": null,
+    "source": "telegram_bot"
+  },
+  "VIP7-TDPZIN": {
+    "createdAt": "2026-07-30T18:04:26.983Z",
+    "activatedAt": null,
+    "source": "telegram_bot"
+  },
+  "VIP7-4DNF60": {
+    "createdAt": "2026-08-03T03:07:50.602Z",
+    "activatedAt": "2026-08-03T03:07:50.602Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-V00G7K": {
+    "createdAt": "2026-08-03T03:21:53.564Z",
+    "activatedAt": "2026-08-03T03:21:53.564Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-AX3VCN": {
+    "createdAt": "2026-08-03T03:21:57.955Z",
+    "activatedAt": "2026-08-03T03:21:57.955Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-8KEJOB": {
+    "createdAt": "2026-08-03T03:22:24.338Z",
+    "activatedAt": "2026-08-03T03:22:24.338Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-2H9RXC": {
+    "createdAt": "2026-08-03T03:23:04.835Z",
+    "activatedAt": "2026-08-03T03:23:04.835Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-8PL0LO": {
+    "createdAt": "2026-08-03T03:23:49.116Z",
+    "activatedAt": "2026-08-03T03:23:49.116Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-TCYDE0": {
+    "createdAt": "2026-08-03T03:23:49.157Z",
+    "activatedAt": "2026-08-03T03:23:49.157Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-BUI315": {
+    "createdAt": "2026-08-03T03:23:49.197Z",
+    "activatedAt": "2026-08-03T03:23:49.197Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-YW697S": {
+    "createdAt": "2026-08-03T03:49:08.839Z",
+    "activatedAt": "2026-08-03T03:49:08.839Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-3SY2EG": {
+    "createdAt": "2026-08-03T03:55:21.457Z",
+    "activatedAt": "2026-08-03T03:55:21.457Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-7WZ70U": {
+    "createdAt": "2026-08-03T06:21:27.978Z",
+    "activatedAt": "2026-08-03T06:21:27.978Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-HS4WQL": {
+    "createdAt": "2026-08-03T13:35:05.864Z",
+    "activatedAt": "2026-08-03T13:35:05.864Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-RQW0CN": {
+    "createdAt": "2026-08-06T13:55:28.052Z",
+    "activatedAt": "2026-08-06T13:55:28.052Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-EAD060": {
+    "createdAt": "2026-08-06T14:49:22.083Z",
+    "activatedAt": "2026-08-06T14:49:22.083Z",
+    "source": "frontend-offer"
+  },
+  "VIP7-ZBPAFX": {
+    "createdAt": "2026-08-06T17:23:45.071Z",
+    "activatedAt": "2026-08-06T17:23:45.071Z",
+    "source": "frontend-offer"
+  }
+}

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Severino Ecossistema IA — Guia de Implementação (OpenCode + OpenRouter + Hostinger)</title>
+<style>
+  :root {
+    --bg1: #0d1117;
+    --bg2: #161b22;
+    --gold: #d4af37;
+    --gold-light: #f0e0a8;
+    --white: #ffffff;
+    --grey: #c9d1d9;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --blue: #58a6ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    color: var(--white);
+    line-height: 1.75;
+  }
+  .container { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+  .capa {
+    min-height: 92vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 40px 20px; position: relative;
+  }
+  .capa::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 60%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .capa .ork { width: 120px; height: 120px; margin-bottom: 22px; border-radius: 50%;
+    border: 4px solid var(--gold); padding: 6px; display:flex; align-items:center; justify-content:center;
+    font-size: 3rem; background: rgba(212,175,55,0.08); }
+  .capa .kicker { letter-spacing: 4px; font-size: 0.85rem; color: var(--gold); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
+  .capa h1 { font-size: clamp(2rem, 6vw, 3.1rem); line-height: 1.2; margin-bottom: 16px; }
+  .capa h1 span { color: var(--gold); }
+  .capa .sub { font-size: clamp(1rem, 3vw, 1.25rem); color: var(--grey); max-width: 640px; margin-bottom: 28px; }
+  .capa .preco-badge {
+    display: inline-block; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.4);
+    padding: 10px 22px; border-radius: 40px; color: var(--gold); font-weight: 700; margin-bottom: 22px; font-size: 0.95rem;
+  }
+  .capa .verse { font-style: italic; color: var(--muted); font-size: 0.95rem; max-width: 540px; }
+
+  .indice {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 28px; margin: 48px 0;
+  }
+  .indice h2 { color: var(--gold); margin-bottom: 16px; font-size: 1.3rem; }
+  .indice ol { padding-left: 22px; }
+  .indice li { margin: 8px 0; color: var(--grey); }
+
+  .capitulo { padding: 40px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .capitulo:last-child { border-bottom: none; }
+  .cap-tag { color: var(--gold); font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .capitulo h2 { font-size: 1.7rem; margin: 8px 0 20px; line-height: 1.3; }
+  .capitulo h3 { color: var(--gold-light); font-size: 1.1rem; margin: 22px 0 8px; }
+  .capitulo p { color: var(--grey); margin-bottom: 14px; }
+  .capitulo ul { padding-left: 22px; margin-bottom: 14px; }
+  .capitulo ul li { color: var(--grey); margin: 6px 0; }
+  .capitulo ol { padding-left: 24px; margin-bottom: 14px; }
+  .capitulo ol li { color: var(--grey); margin: 6px 0; }
+  .capitulo ol.check { padding-left: 22px; margin-bottom: 14px; }
+  .capitulo ol.check li { color: var(--grey); margin: 6px 0; padding-left: 6px; }
+  .capitulo code {
+    background: rgba(88,166,255,0.12); color: var(--blue); padding: 2px 7px;
+    border-radius: 6px; font-size: 0.9em; font-family: Consolas, monospace; word-break: break-all;
+  }
+  .capitulo pre {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 18px; margin: 16px 0;
+    font-family: Consolas, monospace; font-size: 0.85rem; color: #e6edf3;
+    white-space: pre-wrap; word-break: break-word; line-height: 1.6;
+  }
+  .capitulo blockquote {
+    border-left: 3px solid var(--gold); background: rgba(212,175,55,0.07);
+    padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 18px 0; font-style: italic; color: var(--gold-light);
+  }
+  .dica {
+    background: rgba(63,185,80,0.10); border: 1px dashed rgba(63,185,80,0.5);
+    border-radius: 12px; padding: 14px 18px; margin: 18px 0; color: #7ee787;
+  }
+  .alerta {
+    background: rgba(212,175,55,0.10); border: 1px dashed rgba(212,175,55,0.5);
+    border-radius: 12px; padding: 14px 18px; margin: 18px 0; color: var(--gold-light);
+  }
+  .fluxo {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 20px; margin: 18px 0; font-family: Consolas, monospace;
+    font-size: 0.88rem; color: var(--grey); white-space: pre; overflow-x: auto; line-height: 1.6;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: top; }
+  th { color: var(--gold); font-weight: 700; }
+  td { color: var(--grey); font-size: 0.95rem; }
+  .destacado td { color: var(--gold-light); background: rgba(212,175,55,0.06); }
+
+  .cta {
+    background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+    border: 1px solid rgba(212,175,55,0.45);
+    border-radius: 16px; padding: 28px; text-align: center; margin: 40px 0;
+  }
+  .cta h3 { color: var(--gold); font-size: 1.4rem; margin-bottom: 10px; }
+  .cta p { color: var(--grey); margin-bottom: 16px; }
+  .cta .btn {
+    display: inline-block; background: var(--gold); color: var(--bg1); font-weight: 800;
+    padding: 14px 32px; border-radius: 40px; text-decoration: none; font-size: 1.05rem;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .cta .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,175,55,0.35); }
+
+  .footer { text-align: center; color: var(--muted); padding: 30px 0 40px; font-size: 0.9rem; }
+  .footer .oro { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="capa">
+    <div class="ork">🧠</div>
+    <div class="kicker">OpenCode · OpenRouter · VPS Hostinger</div>
+    <h1>SEVERINO ECOSSISTEMA <span>IA</span></h1>
+    <p class="sub">Guia de implementação passo a passo: monte sua máquina de vendas IA 24/7 — orquestrador de agentes, funil autônomo, conteúdo diário e cobrança automática.</p>
+    <div class="preco-badge">VPS ~R$ 60/mês · fases de 1 a 5 dias · a mesma stack do projeto real</div>
+    <p class="verse">"Uma equipe digital que não dorme, não esquece e não erra."</p>
+  </div>
+
+  <div class="indice">
+    <h2>📑 Sumário</h2>
+    <ol>
+      <li>A Stack: o que é cada peça (e por que essa combinação)</li>
+      <li>VPS Hostinger do zero</li>
+      <li>OpenRouter — o cérebro barato</li>
+      <li>OpenCode — o construtor no seu PC</li>
+      <li>Fase 0 — Fundação: orquestrador + barramento</li>
+      <li>Fase 1 — Núcleo de Vendas: os agentes LLM</li>
+      <li>Fase 2 — Conteúdo 24/7: cards, vídeos e Postiz</li>
+      <li>Fase 3 — Pagamentos: Kiwify webhook autenticado</li>
+      <li>Fase 4+ — Multi-produto e escala</li>
+      <li>Deploy na prática: comandos reais</li>
+      <li>Custos reais e Guardião de Saldo</li>
+      <li>Rotina diária automática</li>
+      <li>Checklist completo</li>
+    </ol>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 1</div>
+    <h2>A Stack — o que é cada peça</h2>
+    <table>
+      <tr><th>Ferramenta</th><th>Papel</th><th>Você paga?</th></tr>
+      <tr><td><strong>OpenCode</strong></td><td>Agente de IA que escreve/edita o código no seu PC e executa comandos</td><td>grátis (open-source)</td></tr>
+      <tr><td><strong>OpenRouter</strong></td><td>Um único gateway com dezenas de LLMs (free, baratos e fortes)</td><td>crédito pré-pago</td></tr>
+      <tr><td><strong>VPS Hostinger</strong></td><td>Servidor Ubuntu 24/7 onde tudo roda</td><td>~US$ 5–10/mês</td></tr>
+      <tr><td>Node.js + PM2</td><td>Runtime do código + mantém serviços online</td><td>grátis</td></tr>
+      <tr><td>Nginx + Certbot</td><td>Servidor web + HTTPS</td><td>grátis</td></tr>
+      <tr><td>ffmpeg</td><td>Geração/animação de vídeos e cards</td><td>grátis</td></tr>
+      <tr><td>Telegram Bot</td><td>Canal com leads + admin</td><td>grátis (@BotFather)</td></tr>
+      <tr><td>Kiwify</td><td>Checkout e cobrança</td><td>taxa por venda</td></tr>
+      <tr><td>Postiz (self-hosted)</td><td>Agenda e publica X/Instagram</td><td>grátis</td></tr>
+      <tr><td>MuAPI (opcional)</td><td>Imagens/vídeos por IA</td><td>pré-pago</td></tr>
+    </table>
+    <div class="alerta">⚙️ <strong>Regra do projeto real:</strong> LLM barato por padrão, modelo forte só quando necessário. Orçamento de tokens/dia sempre ativo.</div>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 2</div>
+    <h2>VPS Hostinger do Zero</h2>
+    <h3>2.1 Criar a VPS</h3>
+    <ol>
+      <li>Hoster Home → <strong>VPS</strong> → KVM 1 ou 2 (2 vCPU / 4 GB RAM / 80 GB).</li>
+      <li>Sistema Operacional: <strong>Ubuntu 22.04 ou 24.04</strong>.</li>
+      <li>Defina root password forte (ou chave SSH).</li>
+      <li>Anote o IP (ex.: <code>187.127.42.146</code>).</li>
+    </ol>
+    <h3>2.2 Primeiro acesso e instalação base</h3>
+    <pre>ssh root@SEU_IP
+
+# Atualizar sistema
+export DEBIAN_FRONTEND=noninteractive
+apt update && apt upgrade -y
+
+# Node.js 22
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+node -v   # v22.x
+
+# PM2
+npm install -g pm2
+
+# Nginx + Certbot
+apt-get install -y nginx certbot python3-certbot-nginx
+
+# ffmpeg (vídeos/cards)
+apt-get install -y ffmpeg
+
+# git + ferramentas
+apt-get install -y git curl unzip</pre>
+    <h3>2.3 Habilitar PM2 na inicialização</h3>
+    <pre>pm2 startup systemd
+pm2 save</pre>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 3</div>
+    <h2>OpenRouter — o Cérebro Barato</h2>
+    <ol>
+      <li>Acesse <strong>openrouter.ai</strong> → crie conta (Google/GitHub).</li>
+      <li><strong>Wallet → Deposit</strong> com ~US$ 5–10 para começar.</li>
+      <li>Aba <strong>Keys → Create Key</strong> → copie a chave <code>sk-or-v1-...</code>.</li>
+      <li>Monte sua config de modelos:</li>
+    </ol>
+    <pre>LLM_MODEL_BARATO=openrouter/free            # agentes do dia a dia
+LLM_MODEL_FORTE=deepseek/deepseek-v3.2       # estratégia, análise
+LLM_BUDGET_TOKENS_DIA=200000                 # teto diário</pre>
+    <div class="dica">💡 <strong>Economia:</strong> o Guardião de Saldo consulta o saldo real do OpenRouter (<code>GET /api/v1/credits</code>) e bloqueia gasto abaixo de 50% do mínimo definido.</div>
+    <h3>Reforço opcional: roteador free-first (9Router)</h3>
+    <pre>npm install -g 9router       # dashboard em http://localhost:20128
+
+# no .env:
+LLM_BASE_URL=http://localhost:20128/v1/chat/completions
+LLM_MODEL_BARATO=free-first
+LLM_MODEL_FORTE=gpt-4o-mini</pre>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 4</div>
+    <h2>OpenCode — o Construtor no seu PC</h2>
+    <ol>
+      <li>Instale a <strong>extensão OpenCode</strong> no VS Code (ou o CLI no seu PC).</li>
+      <li>Configure o provedor/modelo apontando para o <strong>OpenRouter</strong>.</li>
+      <li>Fluxo: você <strong>descreve a peça</strong> → o OpenCode lê os arquivos existentes → escreve no padrão do projeto → você sincroniza para a VPS.</li>
+    </ol>
+    <h3>As regras que o OpenCode segue (padrão do ecossistema)</h3>
+    <pre>- Node puro + fetch (sem framework externo)
+- Reaproveitar: require('../ia'), require('../muapi'), require('../canais')
+- Prompt de imagem/vídeo em INGLÊS; copy/legenda em PT-BR
+- Segredos SÓ no .env
+- Portas: 3335 (orquestrador) · 3334 (painel produto) · 4007 (Postiz)</pre>
+    <div class="alerta">🔧 <strong>Dica:</strong> guarde essas regras num <code>CONSTITUICAO.md</code> e peça ao OpenCode para segui-las em toda sessão.</div>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 5 · Fase 0</div>
+    <h2>Fundação — Orquestrador + Barramento</h2>
+    <h3>5.1 Estrutura de pastas no VPS</h3>
+    <pre>mkdir -p /root/severino/ecosystem/{agentes,queue,data,scripts}
+cd /root/severino/ecosystem
+npm init -y && npm i dotenv</pre>
+    <h3>5.2 Arquivos essenciais (crie com o OpenCode)</h3>
+    <table>
+      <tr><th>Arquivo</th><th>Função</th></tr>
+      <tr><td><code>ia.js</code></td><td>Wrapper LLM: modelo barato/forte, retry, timeout, contador de tokens</td></tr>
+      <tr><td><code>bus.js</code></td><td>Barramento: <code>postar(ev)</code> / <code>ler()</code> — fila idempotente</td></tr>
+      <tr><td><code>orquestrador.js</code></td><td>Loop 1s: lê eventos, roteia, <code>max_hops=5</code>, heartbeat</td></tr>
+      <tr><td><code>rota.js</code></td><td>Mapeia tipo de evento → agente</td></tr>
+      <tr><td><code>canais.js</code></td><td>Envio real (Telegram, e-mail, WhatsApp)</td></tr>
+      <tr><td><code>guardiao.js</code></td><td>Ética + custos: filtra toda saída</td></tr>
+      <tr><td><code>guardiao_saldo.js</code></td><td>Saldo real + trava pré-gasto</td></tr>
+      <tr><td><code>produtos.json</code></td><td>Registro de produtos (plug-and-play)</td></tr>
+      <tr><td><code>.env</code></td><td>Todas as chaves (o coração do sistema)</td></tr>
+    </table>
+    <h3>5.3 Subir o orquestrador</h3>
+    <pre>node --check orquestrador.js
+pm2 start orquestrador.js --name ecosistema
+pm2 save
+curl http://localhost:3335/api/ecosystem/status</pre>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 6 · Fase 1</div>
+    <h2>Núcleo de Vendas — os Agentes LLM</h2>
+    <table>
+      <tr><th>Agente</th><th>Evento que posta</th><th>Papel</th></tr>
+      <tr><td>estrategista</td><td><code>campanha.nova</code></td><td>Decide o que divulgar</td></tr>
+      <tr><td>captador</td><td><code>lead.novo</code></td><td>Atrai tráfego</td></tr>
+      <tr><td>qualificador</td><td><code>lead.qualificado</code></td><td>Pontua o lead (LLM)</td></tr>
+      <tr><td>nutridor</td><td><code>msg.enviada</code>, <code>lead.quente</code></td><td>Educa (follow-ups 1h/24h/72h)</td></tr>
+      <tr><td>conversor</td><td><code>venda.proposta</code></td><td>Conversa de venda 1:1</td></tr>
+      <tr><td>onboarder</td><td><code>onboarding.ok</code></td><td>Ativa trial</td></tr>
+      <tr><td>retentor</td><td><code>followup.vencido</code></td><td>Pós-venda/upsell</td></tr>
+      <tr><td>cobrador</td><td><code>reembolso.pedido</code></td><td>Cobrança/garantia</td></tr>
+      <tr><td>analista</td><td><code>relatorio.diario</code></td><td>KPIs</td></tr>
+    </table>
+    <div class="fluxo">Postiz (redes) ─► Captador: lead.novo
+    └► Qualificador: lead.qualificado (quente)
+       └► Nutridor: 2-3 conteúdos educativos
+          └► Conversor: 1:1; aceita trial → venda.proposta
+             └► Onboarder: POST /api/trial → onboarding.ok
+                └► Retentor: upsell → venda.confirmada
+                   └► Cobrador → Analista → Estrategista ajusta</div>
+    <div class="alerta">🛡️ <strong>Regras anti-fraude e ética:</strong> e-mail obrigatório no trial externo (senão 400); Guardião filtra toda mensagem (nunca lucro garantido); follow-ups máx. 3 e honoráveis.</div>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 7 · Fase 2</div>
+    <h2>Conteúdo 24/7 — Cards, Vídeos e Postiz</h2>
+    <h3>7.1 Pipeline do card diário</h3>
+    <div class="fluxo">clima_card.js (dados de mercado)
+   → gerar_card_ia.js (design + overlay_today.png)
+   → animar_card.js (ffmpeg: MP4 9s, loop perfeito, céu do clima, música)
+   → publicar_redes.js (Postiz: X vídeo + Instagram)</div>
+    <h3>7.2 Cron diário</h3>
+    <pre>10 11 * * * node postar_card.js && node gerar_post_redes.js \
+  && node animar_card.js && node publicar_redes.js
+
+0 22 * * * node gerar_post_educativo.js && node publicar_educativo.js</pre>
+    <h3>7.3 Postiz self-hosted</h3>
+    <pre>POSTIZ_API_URL=http://localhost:4007
+POSTIZ_API_KEY=&lt;key&gt;</pre>
+    <div class="alerta">🎬 <strong>Nota:</strong> esta versão do Postiz não suporta <code>reel</code> — use <code>post_type: 'post'</code>; o MP4 sai como vídeo de feed.</div>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 8 · Fase 3</div>
+    <h2>Pagamentos — Kiwify Webhook Autenticado</h2>
+    <ol>
+      <li>Crie o produto no Kiwify (ex.: R$ 47/mês mensal e anual).</li>
+      <li>Em <strong>Integrações → Webhooks</strong>:
+        <code>https://seu-dominio.com/api/purchase/webhook?secret=SEU_SECRET</code></li>
+    </ol>
+    <h3>Fluxo validado no projeto real</h3>
+    <pre>Kiwify ──POST──► /api/purchase/webhook
+   ├─ valida secret (query ?secret= | header x-webhook-secret | body.secret)
+   ├─ ignora: boleto_gerado, pix_gerado, carrinho_abandonado, chargeback
+   ├─ compra aprovada → gera licença VIP-* + purchases.json
+   └─ posta venda.confirmada → orquestrador → cobrador → funil.registrarCompra()</pre>
+    <div class="alerta">💰 <strong>Nunca creditar POST aberto.</strong> Crédito real SÓ com assinatura válida. Kiwify envia em <strong>centavos</strong> (<code>47</code> → R$0,47; <code>4700</code> → R$47,00) — normalize.</div>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 9</div>
+    <h2>Deploy na Prática (OpenCode → VPS)</h2>
+    <h3>Sincronizar do PC</h3>
+    <pre>scp arquivo.js root@SEU_IP:/root/severino/ecosystem/arquivo.js</pre>
+    <h3>Sequência de deploy segura</h3>
+    <pre>cd /root/severino/ecosystem
+node --check arquivo.js        # 1. sintaxe
+pm2 restart ecosistema          # 2. reiniciar
+pm2 logs ecosistema --lines 20 # 3. conferir heartbeat
+pm2 save                        # 4. persistir</pre>
+    <h3>Antes de tocar no servidor compartilhado</h3>
+    <pre>cp servidor.js servidor.js.pre-$(date -I)
+cp /etc/nginx/sites-enabled/severino /root/severino/nginx_severino.bak
+nginx -t</pre>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 10</div>
+    <h2>Custos Reais e Guardião de Saldo</h2>
+    <table>
+      <tr><th>Item</th><th>Custo mensal</th></tr>
+      <tr><td>VPS Hostinger (2 vCPU / 4 GB)</td><td>US$ 5–10 (R$ 40–70)</td></tr>
+      <tr><td>Domínio (amortizado)</td><td>R$ 3–8</td></tr>
+      <tr><td>OpenRouter (modelos baratos, orçados)</td><td>R$ 10–40</td></tr>
+      <tr><td>MuAPI (opcional, se ativo)</td><td>~US$ 1/dia</td></tr>
+      <tr class="destacado"><td><strong>Total</strong></td><td><strong>R$ 60–120/mês</strong></td></tr>
+    </table>
+    <h3>Guardião de Saldo (não queima crédito à toa)</h3>
+    <ul>
+      <li>Consulta saldo REAL do OpenRouter e MuAPI</li>
+      <li>Alerta por degrau (queda de 3% do mínimo)</li>
+      <li>Trava pré-gasto: saldo ≤ 50% do mínimo → evento <code>bloqueado</code></li>
+      <li>Segurança: se não conseguir consultar → <code>ok:true</code> (nunca bloqueia na dúvida)</li>
+    </ul>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Parte 11</div>
+    <h2>Rotina Diária Automática</h2>
+    <table>
+      <tr><th>Horário</th><th>Ação</th></tr>
+      <tr><td><code>*/5 min</code></td><td>DNS dinâmico (DuckDNS)</td></tr>
+      <tr><td><code>toda hora</code></td><td>Monitor clima + watchdog</td></tr>
+      <tr><td><code>8:00</code></td><td>Analista + gestor de leads</td></tr>
+      <tr><td><code>9:00</code></td><td>Notificação diária</td></tr>
+      <tr><td><code>9:30</code></td><td>Onboarder</td></tr>
+      <tr><td><code>10:00</code></td><td>Retentor (check-ins, upsell)</td></tr>
+      <tr class="destacado"><td><code>11:10</code></td><td>Card do dia + vídeo + X/IG</td></tr>
+      <tr><td><code>22:00</code></td><td>Conteúdo educativo</td></tr>
+      <tr><td><code>3:00</code></td><td>Backups</td></tr>
+    </table>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Checklist</div>
+    <h2>Checklist Completo</h2>
+    <h3>VPS</h3>
+    <ol class="check"><li>VPS Hostinger Ubuntu criada + SSH</li><li>Node 22, PM2, Nginx, Certbot, ffmpeg, git</li><li><code>pm2 startup</code> + <code>pm2 save</code></li></ol>
+    <h3>Cérebro</h3>
+    <ol class="check"><li>OpenRouter com crédito</li><li><code>LLM_API_KEY</code>, modelos e orçamento configurados</li></ol>
+    <h3>Construtor</h3>
+    <ol class="check"><li>OpenCode instalado</li><li>Regras do padrão num <code>CONSTITUICAO.md</code></li></ol>
+    <h3>Fundação</h3>
+    <ol class="check"><li><code>orquestrador.js</code> no ar (PM2 <code>ecosistema</code>)</li><li><code>bus.js</code>, <code>ia.js</code>, <code>canais.js</code>, <code>guardiao.js</code>, <code>rota.js</code></li><li><code>produtos.json</code> com o 1º produto</li><li>Rotas <code>/api/ecosystem/*</code> protegidas</li></ol>
+    <h3>Vendas</h3>
+    <ol class="check"><li>Agentes Fase 1 ligados ao barramento</li><li>Dupla captura (e-mail → Telegram)</li><li>Trial com e-mail obrigatório</li></ol>
+    <h3>Conteúdo</h3>
+    <ol class="check"><li><code>gerar_card_ia</code> + <code>animar_card</code> + cron 11:10</li><li>Postiz publicando X/IG</li></ol>
+    <h3>Pagamentos</h3>
+    <ol class="check"><li>Kiwify webhook com secret + validação</li><li>Normalização de centavos</li><li><code>venda.confirmada</code> → cobrador → funil</li></ol>
+    <h3>Proteção e Métricas</h3>
+    <ol class="check"><li>Guardiao de ética + saldo</li><li>Backups diários (arquivos + git)</li><li>Analista com relatório diário no Telegram</li><li>trial→pago ≥ 5% e CPL &lt; preço do plano</li></ol>
+  </div>
+
+  <div class="capitulo">
+    <div class="cap-tag">Conclusão</div>
+    <h2>Você Pode Construir Isso</h2>
+    <p>O Severino Ecossistema IA é <strong>replicável</strong>: uma VPS Hostinger barata, OpenRouter como cérebro econômico, OpenCode como construtor, e um orquestrador de agentes com papéis claros.</p>
+    <p>Você monta em fases curtas (1–5 dias), prova no pequeno e escala só o que converteu. O resultado: uma equipe digital que prospecta, educa, vende, entrega, cobra e relata — 24/7.</p>
+    <div class="cta">
+      <h3>🚀 Bora montar o seu?</h3>
+      <p>Comece pela VPS Hostinger e a Fase 0. Cada fase é uma peça que encaixa na anterior.</p>
+      <a class="btn" href="https://severinobot.com/" target="_blank">🌱 Start na Fase 0</a>
+    </div>
+    <p style="text-align:center; color:var(--gold-light); font-style:italic;">Que Deus abençoe seus negócios! 🙏</p>
+  </div>
+
+  <div class="footer">
+    <p><span class="oro">Severino Ecossistema IA</span> — Guia de Implementação com OpenCode + OpenRouter + VPS Hostinger.</p>
+    <p>Ferramenta com princípios cristãos: atendimento honesto, paciente e respeitoso.</p>
+  </div>
+
+</div>
+</body>
+</html>

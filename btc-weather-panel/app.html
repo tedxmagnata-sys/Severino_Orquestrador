@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do Cliente · BTC Weather Panel</title>
+<style>
+  :root{
+    --bg:#0a0e17; --card:#141b2d; --card2:#1a2340; --line:#223052;
+    --txt:#e6ecff; --muted:#8fa1c7; --accent:#f7931a; --accent2:#ffc266;
+    --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; --tg:#2aabee;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column}
+  .top{background:linear-gradient(135deg,#1a2340,#141b2d);border-bottom:1px solid var(--line);padding:18px 20px;display:flex;align-items:center;gap:12px}
+  .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#1a1206}
+  .top h1{font-size:17px;line-height:1.2}
+  .top small{color:var(--muted);font-size:12px}
+  main{flex:1;max-width:560px;width:100%;margin:0 auto;padding:24px 20px 40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .card h2{font-size:15px;margin-bottom:14px;color:var(--accent2)}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input,select{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:12px 14px;font-size:15px;outline:none}
+  input:focus,select:focus{border-color:var(--accent)}
+  button{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#1a1206;font-weight:700;font-size:15px;padding:13px;cursor:pointer;margin-top:12px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .btn-tg{background:linear-gradient(135deg,#2aabee,#229ed9);color:#fff}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600}
+  .hidden{display:none!important}
+  .row{display:flex;gap:12px}
+  .row>*{flex:1}
+  .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .badge-ok{background:rgba(34,197,94,.15);color:var(--ok)}
+  .badge-warn{background:rgba(245,158,11,.15);color:var(--warn)}
+  .badge-err{background:rgba(239,68,68,.15);color:var(--err)}
+  .kpi{display:flex;gap:12px;margin-top:14px}
+  .kpi>div{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .kpi .num{font-size:22px;font-weight:800;color:var(--accent2)}
+  .kpi .lab{font-size:11px;color:var(--muted);margin-top:4px}
+  .msg{font-size:13px;margin-top:12px;padding:10px 12px;border-radius:10px}
+  .msg-ok{background:rgba(34,197,94,.12);color:var(--ok)}
+  .msg-err{background:rgba(239,68,68,.12);color:var(--err)}
+  .link{color:var(--accent2);text-decoration:none;font-weight:600}
+  .foot{text-align:center;padding:20px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+  .btc-ico{font-size:14px;margin-left:6px}
+  .steps{list-style:none;counter-reset:s;margin-top:6px}
+  .steps li{counter-increment:s;padding:8px 0 8px 34px;position:relative;font-size:14px;color:var(--muted)}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:24px;height:24px;background:var(--card2);border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent)}
+  .codebox{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;font-size:18px;font-weight:800;letter-spacing:2px;color:var(--accent2);margin:12px 0;user-select:all}
+  .tg-steps{list-style:none;margin:10px 0 0;padding:0;counter-reset:tg}
+  .tg-steps li{counter-increment:tg;padding:8px 0 8px 34px;position:relative;font-size:13px;color:var(--muted)}
+  .tg-steps li::before{content:counter(tg);position:absolute;left:0;top:8px;width:22px;height:22px;background:rgba(42,171,238,.15);border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--tg)}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="logo">₿</div>
+    <div>
+      <h1>BTC Weather Panel</h1>
+      <small>Painel do Cliente</small>
+    </div>
+  </div>
+
+  <main>
+    <div id="view-query">
+      <div class="card">
+        <h2>🔑 Consultar minha licença</h2>
+        <label for="code">Código de licença</label>
+        <input id="code" placeholder="Ex: VIP7-XXXXXX" autocomplete="off">
+        <button id="btn-check">Consultar</button>
+        <div id="msg-query" class="msg hidden"></div>
+      </div>
+
+      <div class="card">
+        <h2>🎁 Ainda não tem acesso?</h2>
+        <p style="font-size:14px;color:var(--muted);margin-bottom:12px">Ative o <b style="color:var(--accent2)">teste grátis de 7 dias</b> e comece a acompanhar o clima do BTC agora mesmo.</p>
+        <label for="trial-name">Seu nome</label>
+        <input id="trial-name" placeholder="Ex: João" autocomplete="name">
+        <div style="margin-top:12px"></div>
+        <label for="trial-email">Seu melhor e-mail</label>
+        <input id="trial-email" type="email" placeholder="voce@email.com" autocomplete="email">
+        <button id="btn-trial">Ativar Teste Grátis 7 Dias</button>
+        <div id="msg-trial" class="msg hidden"></div>
+      </div>
+    </div>
+
+    <div id="view-telegram" class="hidden">
+      <div class="card">
+        <h2>📲 Receba os sinais no Telegram</h2>
+        <p style="font-size:14px;color:var(--muted)">Seu teste está <b style="color:var(--ok)">ativo</b>! Para receber o card diário e os alertas em tempo real, conecte seu Telegram em 3 passos:</p>
+        <div class="codebox" id="tg-code">—</div>
+        <ol class="tg-steps">
+          <li>Toque no botão abaixo para abrir o bot do BTC Weather Panel no Telegram.</li>
+          <li>Toque em <b style="color:var(--tg)">Iniciar</b> dentro do chat.</li>
+          <li>Envie <b style="color:var(--accent2)">/vincular SEUCODIGO</b> usando o código acima.</li>
+        </ol>
+        <a id="tg-link" href="https://t.me/btcweatherpanel_bot" target="_blank" rel="noopener" style="text-decoration:none">
+          <button class="btn-tg" style="margin-top:14px">💬 Abrir no Telegram</button>
+        </a>
+        <button id="btn-copy" class="btn-ghost">📋 Copiar código</button>
+        <div id="msg-tg" class="msg hidden"></div>
+        <button id="btn-later" class="btn-ghost">Depois eu conecto</button>
+      </div>
+    </div>
+
+    <div id="view-license" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <h2 style="margin:0">✅ Licença Ativa</h2>
+          <span id="b-tier" class="badge"></span>
+        </div>
+        <p style="font-size:13px;color:var(--muted)">Código: <b id="l-code" style="color:var(--txt)"></b></p>
+        <div class="kpi">
+          <div><div class="num" id="k-days">—</div><div class="lab">dias restantes</div></div>
+          <div><div class="num" id="k-trial">—</div><div class="lab">status</div></div>
+          <div><div class="num" id="k-when">—</div><div class="lab">ativação</div></div>
+        </div>
+        <button id="btn-new">Consultar outro código</button>
+      </div>
+      <div class="card">
+        <h2>📲 Acompanhe o clima</h2>
+        <p style="font-size:14px;color:var(--muted)">Receba o card diário com análise do clima do Bitcoin direto no Telegram.</p>
+        <a id="tg-link2" href="https://t.me/btcweatherpanel_bot" target="_blank" rel="noopener" style="text-decoration:none">
+          <button class="btn-tg">💬 Abrir no Telegram</button>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <div class="foot">BTC Weather Panel · clima do Bitcoin, sem ruído.</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const api = location.origin;
+
+function showMsg(el, txt, ok){
+  el.textContent = txt;
+  el.className = 'msg ' + (ok ? 'msg-ok' : 'msg-err');
+}
+
+async function checkCode(){
+  const code = $('code').value.trim().toUpperCase();
+  const m = $('msg-query');
+  if(!code){ showMsg(m, 'Digite seu código de licença.', false); return; }
+  $('btn-check').disabled = true;
+  try{
+    const r = await fetch(api + '/api/license/validate?code=' + encodeURIComponent(code));
+    const d = await r.json();
+    if(r.ok && d.valid){
+      showMsg(m, '', true); m.classList.add('hidden');
+      renderLicense(d);
+    } else {
+      showMsg(m, d.error || 'Código inválido.', false);
+    }
+  }catch(e){
+    showMsg(m, 'Erro de conexão. Tente novamente.', false);
+  }finally{
+    $('btn-check').disabled = false;
+  }
+}
+
+function renderLicense(d){
+  $('l-code').textContent = d.code;
+  $('k-days').textContent = d.daysLeft + 'd';
+  const tier = d.tier || 'vip';
+  const tierNames = { vip: 'VIP 7 dias', vip7: 'VIP 7 dias', 'free': 'Free' };
+  $('b-tier').textContent = tierNames[tier] || tier.toUpperCase();
+  $('b-tier').className = 'badge ' + (d.daysLeft > 0 ? 'badge-ok' : 'badge-warn');
+  $('k-trial').textContent = d.activatedAt ? 'Ativo' : 'Pendente';
+  $('k-when').textContent = d.activatedAt ? new Date(d.activatedAt).toLocaleDateString('pt-BR') : '—';
+  $('view-query').classList.add('hidden');
+  $('view-license').classList.remove('hidden');
+}
+
+function isValidEmail(e){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+}
+
+async function trial(){
+  const m = $('msg-trial');
+  const email = $('trial-email').value.trim();
+  const nome = $('trial-name').value.trim();
+  if(!isValidEmail(email)){
+    showMsg(m, 'Digite seu e-mail para liberar o teste grátis. 📧', false);
+    $('trial-email').focus();
+    return;
+  }
+  $('btn-trial').disabled = true;
+  try{
+    const r = await fetch(api + '/api/trial', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, nome }) });
+    const d = await r.json();
+    if(r.ok && d.code){
+      showMsg(m, '🎉 Teste grátis ativado!', true);
+      $('code').value = d.code;
+      // Dupla captura: mostra a tela do Telegram com o código de vínculo
+      setTimeout(() => showTelegram(d.code), 600);
+    } else {
+      showMsg(m, d.error || 'Não foi possível ativar agora. Tente mais tarde.', false);
+    }
+  }catch(e){
+    showMsg(m, 'Erro de conexão. Tente novamente.', false);
+  }finally{
+    $('btn-trial').disabled = false;
+  }
+}
+
+function showTelegram(code){
+  $('tg-code').textContent = code;
+  $('tg-link').href = 'https://t.me/btcweatherpanel_bot?start=' + code;
+  $('view-query').classList.add('hidden');
+  $('view-telegram').classList.remove('hidden');
+  $('btn-copy').addEventListener('click', copyCode);
+  $('btn-later').addEventListener('click', () => {
+    $('view-telegram').classList.add('hidden');
+    $('view-license').classList.remove('hidden');
+  });
+}
+
+async function copyCode(){
+  const code = $('tg-code').textContent;
+  const m = $('msg-tg');
+  try{
+    await navigator.clipboard.writeText(code);
+    showMsg(m, '✅ Código copiado! Agora abra o Telegram e envie /vincular ' + code, true);
+  }catch(e){
+    showMsg(m, 'Código: ' + code, true);
+  }
+}
+
+$('btn-check').addEventListener('click', checkCode);
+$('code').addEventListener('keydown', e => { if(e.key === 'Enter') checkCode(); });
+$('btn-trial').addEventListener('click', trial);
+$('trial-email').addEventListener('keydown', e => { if(e.key === 'Enter') trial(); });
+$('btn-new').addEventListener('click', () => { $('view-license').classList.add('hidden'); $('view-query').classList.remove('hidden'); $('code').value=''; $('msg-query').classList.add('hidden'); });
+
+const p = new URLSearchParams(location.search);
+const c = p.get('code');
+if(c){ $('code').value = c.toUpperCase(); checkCode(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{
+  "items": [
+    {
+      "tipo": "ferramenta",
+      "id": "agendabarber",
+      "titulo": "CortaFila",
+      "descricao": "Agendamento inteligente para barbearias. Conversa com o dono e monta o site com dados reais.",
+      "badge": "Em validacao",
+      "url": "https://agendabarber.severinobot.com/",
+      "cta": "Conhecer",
+      "cor": "#00e676",
+      "icone": "scissors"
+    },
+    {
+      "tipo": "ferramenta",
+      "id": "severino-consultor",
+      "titulo": "Severino Consultor IA",
+      "descricao": "Consultoria estrategica 24/7 com IA por um custo acessivel. Em validacao.",
+      "badge": "Teste gratis",
+      "url": "https://severinobot.com/",
+      "cta": "Consultar",
+      "cor": "#a100ff",
+      "icone": "brain"
+    },
+    {
+      "tipo": "imagem",
+      "id": "ebook-manual",
+      "titulo": "Manual do Severino",
+      "descricao": "Guia completo do ecossistema Severino. Descubra todas as ferramentas e como usa-las.",
+      "badge": "E-book",
+      "url": "/ebook-btc",
+      "cta": "Ler",
+      "media": "/ebook-capa.png",
+      "cor": "#ff6600"
+    },
+    {
+      "tipo": "imagem",
+      "id": "ebook-guia",
+      "titulo": "Guia de Implementacao IA",
+      "descricao": "Como integrar agentes de IA no seu negocio. Passo a passo pratico do Severino.",
+      "badge": "E-book",
+      "url": "/ebook-btc",
+      "cta": "Ler",
+      "media": "/perfil-v1.png",
+      "cor": "#2979ff"
+    },
+    {
+      "tipo": "ferramenta",
+      "id": "radar",
+      "titulo": "Radar Estrategico",
+      "descricao": "Analise diaria do mercado BTC com IA. Timing de entrada e saida baseado em sentimento e noticias.",
+      "badge": "Gratuito",
+      "url": "https://severinobot.com/",
+      "cta": "Ver analise",
+      "cor": "#ff3366",
+      "icone": "radio"
+    },
+    {
+      "tipo": "video",
+      "id": "demo-vitrine",
+      "titulo": "Severino em Acao",
+      "descricao": "Veja o ecossistema Severino funcionando na pratica.",
+      "badge": "Em breve",
+      "url": null,
+      "cta": "Assistir",
+      "media": null,
+      "cor": "#00bcd4"
+    },
+    {
+      "tipo": "contribuicao",
+      "id": "contribua",
+      "titulo": "Contribua com o Projeto",
+      "descricao": "Ideias, feedback, reportar bug ou apoio financeiro. Sua contribuicao fortalece o ecossistema Severino.",
+      "badge": "Participe",
+      "url": null,
+      "cta": "Contribuir",
+      "cor": "#ffd700",
+      "icone": "heart"
+    }
+  ]
+}

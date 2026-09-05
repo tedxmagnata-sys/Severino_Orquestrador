@@ -1,0 +1,70 @@
+[
+  {
+    "id": "rsi_scalper",
+    "name": "RSI Scalper",
+    "description": "Compra em oversold (RSI<30), vende em overbought (RSI>70). Ideal para mercados laterais.",
+    "active": false,
+    "risk": "medium",
+    "params": {
+      "rsi_period": 14,
+      "oversold": 30,
+      "overbought": 70
+    }
+  },
+  {
+    "id": "ema_cross",
+    "name": "EMA Cross",
+    "description": "Sinal de compra quando EMA9 cruza acima EMA21. Tendência de curto prazo.",
+    "active": true,
+    "risk": "medium",
+    "params": {
+      "ema_fast": 9,
+      "ema_slow": 21
+    }
+  },
+  {
+    "id": "bb_reversal",
+    "name": "Bollinger Reversal",
+    "description": "Reversão nas bandas de Bollinger. Compra no suporte inferior, vende na resistência superior.",
+    "active": false,
+    "risk": "medium",
+    "params": {
+      "bb_period": 20,
+      "bb_std": 2
+    }
+  },
+  {
+    "id": "macd_momentum",
+    "name": "MACD Momentum",
+    "description": "Sinal de alta quando MACD cruza acima da linha de sinal. Tendência de médio prazo.",
+    "active": false,
+    "risk": "low",
+    "params": {
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9
+    }
+  },
+  {
+    "id": "grid_scalper",
+    "name": "Grid Scalper",
+    "description": "Grid de ordens limitadas em range de suporte/resistência. Lucra com volatilidade.",
+    "active": false,
+    "risk": "high",
+    "params": {
+      "grid_levels": 10,
+      "grid_spread": 0.5
+    }
+  },
+  {
+    "id": "smart_breakout",
+    "name": "Smart Breakout",
+    "description": "Detecta breakout com volume + RSI. Entrada agressiva em rompimentos confirmados.",
+    "active": false,
+    "risk": "high",
+    "params": {
+      "breakout_period": 20,
+      "volume_threshold": 1.5
+    }
+  }
+]

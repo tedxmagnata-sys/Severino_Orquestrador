@@ -1,0 +1,15 @@
+{
+  "apiKey": "82be7b13-2c7c-466c-89c0-cfa93f27e0ec",
+  "secretKeyEnc": "uboyWJ1hYINWI6LHIBKUnWgRuTgMDPVg9i8Y5JU7jTEKXcom1A4/9vh6TIqGuuTOTQPdCfjRII6zB6gy",
+  "passphraseEnc": "NzVuHfb9j9g2VE06sohZyLg0kMdzHQou9odBr0Kd6/EF5xhMntbBE5IKJQ==",
+  "execMode": "real",
+  "entryValue": 5,
+  "totalEntries": 10,
+  "strategy": "dca",
+  "autoPlant": true,
+  "autoHarvest": true,
+  "entrySpacing": 0.5,
+  "aporteSchedule": "off",
+  "aporteAmount": 5,
+  "aporteDay": 1
+}

@@ -1,0 +1,1146 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>BTC Weather Panel - PrevisÃ£o do Clima Bitcoin</title>
+    <meta name="description" content="BTC Weather Panel â€” PrevisÃ£o do Clima do Bitcoin em tempo real. AnÃ¡lise tÃ©cnica, temperatura do mercado, sinais de alta/baixa e tendÃªncias para traders de criptomoedas.">
+    <meta name="keywords" content="bitcoin, previsÃ£o bitcoin, clima bitcoin, btc weather, anÃ¡lise bitcoin, trading bitcoin, criptomoedas, sinal bitcoin, tendÃªncia bitcoin">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="BTC Weather Panel">
+    <link rel="canonical" href="https://btcweatherpanel.com/btc-weather-panel/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://btcweatherpanel.com/btc-weather-panel/">
+    <meta property="og:title" content="BTC Weather Panel â€” PrevisÃ£o do Clima Bitcoin em Tempo Real">
+    <meta property="og:description" content="PrevisÃ£o climatolÃ³gica do mercado Bitcoin com anÃ¡lise tÃ©cnica, temperatura do mercado e sinais operacionais. GrÃ¡tis por tempo limitado.">
+    <meta property="og:image" content="https://btcweatherpanel.com/btc-weather-panel/og-image.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BTC Weather Panel â€” PrevisÃ£o do Clima Bitcoin">
+    <meta name="twitter:description" content="PrevisÃ£o climatolÃ³gica do mercado Bitcoin em tempo real.">
+    <meta name="twitter:image" content="https://btcweatherpanel.com/btc-weather-panel/og-image.png">
+
+    <!-- JSON-LD Schema.org WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "BTC Weather Panel",
+      "url": "https://btcweatherpanel.com/btc-weather-panel/",
+      "description": "PrevisÃ£o climatolÃ³gica do mercado Bitcoin em tempo real. Ferramenta gratuita de anÃ¡lise tÃ©cnica e tendÃªncias do BTC.",
+      "operatingSystem": "All",
+      "applicationCategory": "FinanceApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "BRL"
+      }
+    }
+    </script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css?v=29">
+    <link rel="stylesheet" href="themes.css?v=2">
+    <noscript>
+        <style>
+            .container { opacity: 1 !important; }
+        </style>
+    </noscript>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Background Blur Decorative Elements -->
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-glow glow-3"></div>
+
+    <!-- FLOATING EXIT FULLSCREEN BUTTON (Only visible in Fullscreen Mode) -->
+    <button id="btn-exit-fullscreen" class="btn btn-secondary floating-exit-btn hidden" data-i18n="exit_tv">âœ• Sair do Modo TV</button>
+
+    <!-- VIEWPORT WRAPPER FOR AUTO-ZOOM -->
+    <div class="viewport-wrapper">
+        <!-- MAIN CONTAINER -->
+        <div class="container">
+        
+        <!-- TRIAL EXPIRED BANNER -->
+        <div id="trial-expired-banner" class="hidden" style="background: linear-gradient(135deg, #1a0a0a, #2d1a1a); border: 1px solid #ff3366; border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.5rem;">â°</span>
+                <div>
+                    <strong style="color: #ff3366; font-size: 0.9rem;" data-i18n="trial_title">Acesso Expirado</strong>
+                    <p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);" data-i18n="trial_desc">Seu acesso expirou. Cadastre-se novamente e use gratuitamente.</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="https://pay.kiwify.com.br/ffphj4e" target="_blank" class="btn btn-primary" style="text-decoration: none; padding: 0.5rem 1.25rem; font-size: 0.8rem;">ðŸ”¥ R$47/mÃªs</a>
+                <a href="https://pay.kiwify.com.br/vim8bDb" target="_blank" style="color: var(--accent); font-size: 0.75rem; display: flex; align-items: center;">R$329/ano</a>
+            </div>
+        </div>
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="logo-area">
+                <span class="logo-icon"><i data-lucide="orbit"></i></span>
+                <div>
+                    <h1>BTC Weather Panel</h1>
+                    <p class="subtitle" data-i18n="subtitle">PrevisÃ£o ClimatolÃ³gica do Mercado</p>
+                </div>
+            </div>
+            
+            <!-- HEADER CONTROLS (Theme, Language, Home & TV Mode) -->
+            <div class="header-controls" style="display: flex; gap: 10px;">
+                <div class="lang-switcher theme-switcher" id="theme-switcher">
+                    <button id="theme-toggle" class="lang-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Tema / Theme">
+                        <i data-lucide="palette"></i>
+                        <span id="theme-current-label">Glass</span>
+                        <i data-lucide="chevron-down" class="lang-caret"></i>
+                    </button>
+                    <div class="lang-dropdown theme-dropdown hidden" id="theme-dropdown" role="menu">
+                        <button class="lang-option active" data-theme="glass" role="menuitem"><span class="theme-dot glass-dot"></span> Glass</button>
+                        <button class="lang-option" data-theme="neon" role="menuitem"><span class="theme-dot neon-dot"></span> Neon</button>
+                        <button class="lang-option" data-theme="minimal" role="menuitem"><span class="theme-dot minimal-dot"></span> Minimal</button>
+                    </div>
+                </div>
+                <div class="lang-switcher" id="lang-switcher">
+                    <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Idioma / Language">
+                        <i data-lucide="languages"></i>
+                        <span id="lang-current-label">PT</span>
+                        <i data-lucide="chevron-down" class="lang-caret"></i>
+                    </button>
+                    <div class="lang-dropdown hidden" id="lang-dropdown" role="menu">
+                        <button class="lang-option active" data-lang="pt" role="menuitem"><span class="lang-flag">ðŸ‡§ðŸ‡·</span> PortuguÃªs</button>
+                        <button class="lang-option" data-lang="en" role="menuitem"><span class="lang-flag">ðŸ‡ºðŸ‡¸</span> English</button>
+                    </div>
+                </div>
+                <a href="/" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;"><i data-lucide="home"></i> <span data-i18n="nav_home">InÃ­cio</span></a>
+                <button id="btn-fullscreen" class="btn btn-secondary"><i data-lucide="tv"></i> <span data-i18n="nav_tv">Modo TV</span></button>
+            </div>
+
+            <div class="header-actions">
+                <button id="btn-price-alert" onclick="if(window.openPriceAlertModal){window.openPriceAlertModal();}else{document.getElementById('price-alert-modal').classList.remove('hidden');document.body.style.overflow='hidden';}" class="btn btn-secondary"><i data-lucide="bell"></i> <span data-i18n="nav_price_alert">Alerta de PreÃ§o</span> <span id="alert-badge-count" class="badge-vip hidden" style="background: var(--color-sunny); color: #000; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px;">0</span></button>
+                <button id="btn-login" class="btn btn-primary"><i data-lucide="gem"></i> <span data-i18n="nav_vip">Ãrea VIP Login</span></button>
+            </div>
+        </header>
+
+        <!-- ACTION BANNER: DECISÃƒO EM 1 SEGUNDO -->
+        <div id="action-banner" class="action-banner signal-neutral">
+            <div class="action-banner-content">
+                <span class="action-pulse"></span>
+                <span id="action-banner-text" data-i18n="banner_loading">Carregando sinal consolidado de mercado...</span>
+            </div>
+            <button id="btn-request-notifications" class="btn btn-secondary btn-small hidden" style="padding: 0.35rem 0.75rem; font-size: 0.7rem; border-radius: 6px;">
+                <i data-lucide="bell"></i> <span data-i18n="receive_alerts">Receber Alertas</span>
+            </button>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="dashboard-grid">
+            
+            <!-- LEFT COLUMN: BTC VIEW -->
+            <div class="main-content">
+                
+                <div id="btc-view-wrapper" class="view-wrapper">
+                    <!-- CURRENT BTC "TEMPERATURE" CARD -->
+                    <div class="weather-hero-card" id="hero-card">
+                        <div class="hero-main-row">
+                            <div class="hero-left">
+                                <div class="hero-header">
+                                    <span class="location">ðŸ“ BITCOIN / USD</span>
+                                    <span class="status-indicator live" data-i18n="live_now">â— TEMPO REAL</span>
+                                </div>
+                                <div class="hero-body">
+                                    <div class="temperature-area">
+                                        <span class="temperature-symbol">â‚¿</span>
+                                        <span id="btc-price" class="temperature-value">63,480.00</span>
+                                        <span class="temperature-unit">USD</span>
+                                    </div>
+                                    <div class="temp-change-row">
+                                        <div class="temp-change" id="btc-change">
+                                            <span class="change-icon">â–²</span>
+                                            <span class="change-value">+2.48% (24h)</span>
+                                        </div>
+                                        <!-- Discrete Halving Countdown below price -->
+                                        <div class="sub-price-countdown" id="sub-price-countdown">
+                                            â³ Halving: 000d 00h 00m 00s
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hero-right">
+                                <!-- Cycle Progress mini gauge -->
+                                <div class="footer-stat">
+                                    <span class="label" data-i18n="cycle_progress">Progresso do Ciclo Halving</span>
+                                    <div class="progress-bar-container">
+                                        <div id="cycle-progress-bar" class="progress-bar" style="width: 57%;"></div>
+                                    </div>
+                                    <span id="cycle-progress-label" class="value" data-i18n="cycle_complete">57% ConcluÃ­do</span>
+                                </div>
+                                <div class="footer-stat font-margin-top">
+                                    <span class="label" data-i18n="ai_conviction">ConvicÃ§Ã£o da IA</span>
+                                    <span class="value score-high">84% Alta (Ensolarado)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Brief Analysis Description -->
+                        <div class="hero-desc-container" id="hero-weather-desc">
+                            TendÃªncia de alta forte no curto/mÃ©dio prazo. Algoritmo posicionado em LONG. Suportes sÃ³lidos segurando a cotaÃ§Ã£o.
+                        </div>
+
+                        <!-- J1 CYCLE INTELLIGENCE SUB-PANEL -->
+                        <div class="j1-cycle-panel">
+                            <div class="j1-tabs">
+                                <button class="j1-tab-btn active" data-tab="tab-timing"><i data-lucide="trending-up"></i> <span data-i18n="tab_timing">Tempo do Ciclo</span></button>
+                                <button class="j1-tab-btn" data-tab="tab-probability"><i data-lucide="calendar"></i> <span data-i18n="tab_probability">CalendÃ¡rio</span></button>
+                                <button class="j1-tab-btn" data-tab="tab-strategy"><i data-lucide="cpu"></i> <span data-i18n="tab_strategy">EstratÃ©gias IA</span></button>
+                                <button class="j1-tab-btn" data-tab="tab-calculator"><i data-lucide="calculator"></i> <span data-i18n="tab_calculator">Calculadora</span></button>
+                                <button class="j1-tab-btn" data-tab="tab-thermometer"><i data-lucide="thermometer"></i> <span data-i18n="tab_thermometer">TermÃ´metro</span></button>
+                                <button class="j1-tab-btn" data-tab="tab-howtouse"><i data-lucide="book-open"></i> <span data-i18n="tab_howtouse">Como Usar</span></button>
+                            </div>
+                            
+                            <div class="j1-tab-contents">
+                                <!-- Tab 1: Tempo do Ciclo (Simplified Seasons Timeline) -->
+                                <div id="tab-timing" class="j1-tab-content active">
+                                    <div class="cycle-simplified-container">
+                                        <div class="cycle-seasons-timeline">
+                                            <div class="season-step completed">
+                                                <span class="season-icon"><i data-lucide="snowflake"></i></span>
+                                                <span class="season-name" data-i18n="season_winter">Inverno</span>
+                                                <span class="season-status" data-i18n="season_winter_status">Passou (Fundo)</span>
+                                            </div>
+                                            <div class="season-step completed">
+                                                <span class="season-icon"><i data-lucide="sprout"></i></span>
+                                                <span class="season-name" data-i18n="season_spring">Primavera</span>
+                                                <span class="season-status" data-i18n="season_spring_status">Passou (AcÃºmulo)</span>
+                                            </div>
+                                            <div class="season-step completed">
+                                                <span class="season-icon"><i data-lucide="sun"></i></span>
+                                                <span class="season-name" data-i18n="season_summer">VerÃ£o</span>
+                                                <span class="season-status" data-i18n="season_summer_status">Passou (Euforia)</span>
+                                            </div>
+                                            <div class="season-step active-now">
+                                                <span class="season-icon"><i data-lucide="leaf"></i></span>
+                                                <span class="season-name" data-i18n="season_autumn">Outono</span>
+                                                <span class="season-status" data-i18n="season_autumn_status">Estamos Aqui (DeclÃ­nio)</span>
+                                            </div>
+                                        </div>
+                                        <div class="cycle-explanation-box">
+                                                <p data-i18n-html="cycle_explanation"><strong>Onde estamos no Ciclo?</strong> A anÃ¡lise de ciclo de 4 anos, alinhada ao Ãºltimo halving (abril/2024), indica que o Bitcoin estÃ¡ na fase de <strong>Outono (DeclÃ­nio)</strong>, prÃ³ximo ao <strong>Inverno Cripto</strong>. O preÃ§o atualmente busca suporte entre US$ 40 k e US$ 46 k, com a zona de piso histÃ³rico em torno de US$ 54 k. Expectativa de consolidaÃ§Ã£o/ampliaÃ§Ã£o de acumulaÃ§Ã£o atÃ© setembro/outubro de 2026 antes de iniciar o prÃ³ximo ciclo de alta.<br><em>Fonte: anÃ¡lises de mercado de julho 2026 (galaxy.com, fool.com, seekingalpha.com, binance.com).</em></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 2: CalendÃ¡rio ProbabilÃ­stico -->
+                                <div id="tab-probability" class="j1-tab-content">
+                                    <div class="cycle-probability-grid">
+                                        <div class="prob-item">
+                                            <div class="prob-header-row">
+                                                <span class="prob-label"><i data-lucide="rocket"></i> <span data-i18n="prob_top">ProvÃ¡vel Topo Macro</span></span>
+                                                <span class="prob-pct">78.15%</span>
+                                            </div>
+                                            <span class="prob-date">12 a 18 de Out. 2025</span>
+                                        </div>
+                                        <div class="prob-item">
+                                            <div class="prob-header-row">
+                                                <span class="prob-label"><i data-lucide="trending-down"></i> <span data-i18n="prob_bottom">ProvÃ¡vel Fundo Macro</span></span>
+                                                <span class="prob-pct">65.40%</span>
+                                            </div>
+                                            <span class="prob-date">06 a 12 de Dez. 2026</span>
+                                        </div>
+                                        <div class="prob-item highlight">
+                                            <div class="prob-header-row">
+                                                <span class="prob-label"><i data-lucide="hourglass"></i> <span data-i18n="prob_halving">PrÃ³ximo Halving Bitcoin</span></span>
+                                                <span class="prob-pct" id="halving-prob-pct">92.4842%</span>
+                                            </div>
+                                            <span class="prob-date" id="halving-countdown">Calculando...</span>
+                                        </div>
+                                    </div>
+                                    <p class="prob-note" data-i18n="prob_note">* Ajustes probabilÃ­sticos recalculados a cada bloco de transaÃ§Ãµes (10 min nominais).</p>
+                                </div>
+
+                                <!-- Tab 3: EstratÃ©gias -->
+                                <div id="tab-strategy" class="j1-tab-content">
+                                    <div class="strategies-container" style="display: flex; flex-direction: column; gap: 0.8rem; padding: 0.2rem 0;">
+                                        
+                                        <!-- DCA Strategy (Always Free) -->
+                                        <div class="strategy-card" style="background: rgba(0, 230, 118, 0.02); border: 1px solid rgba(0, 230, 118, 0.08); padding: 0.65rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.35rem;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <h3 style="font-size: 0.78rem; font-weight: 700; color: #00e676; margin: 0;"><i data-lucide="check-circle-2"></i> <span data-i18n="strat_dca_title">EstratÃ©gia DCA Inteligente (GrÃ¡tis)</span></h3>
+                                                <span style="font-size: 0.62rem; color: #00e676; background: rgba(0, 230, 118, 0.1); padding: 2px 6px; border-radius: 20px; font-weight: 700;" data-i18n="strat_active">ATIVO</span>
+                                            </div>
+                                            <p style="font-size: 0.68rem; color: var(--text-secondary); line-height: 1.35; margin: 0.05rem 0;" data-i18n="strat_dca_desc">
+                                                AcumulaÃ§Ã£o fracionada de Bitcoin baseada na temperatura do mercado, evitando compras em topos e aumentando a exposiÃ§Ã£o em fundos.
+                                            </p>
+                                            <div style="background: rgba(0,0,0,0.25); padding: 0.55rem; border-radius: 6px; font-size: 0.65rem; color: var(--text-primary); line-height: 1.35;" data-i18n-html="strat_dca_alloc">
+                                                <strong>âš–ï¸ Aportes Semanais (AlocaÃ§Ã£o DinÃ¢mica):</strong><br>
+                                                â€¢ <strong>Clima Ensolarado (Score &gt; 0.4):</strong> Reduzir compras para 25% (Aguardar recuo).<br>
+                                                â€¢ <strong>Clima Nublado (Score -0.4 a 0.4):</strong> Aporte padrÃ£o of 100% (DCA regular).<br>
+                                                â€¢ <strong>Clima Tempestade (Score &lt; -0.4):</strong> Aporte agressivo de 200% (Comprar a queda).
+                                            </div>
+                                            <div style="background: rgba(41, 121, 255, 0.03); border: 1px solid rgba(41, 121, 255, 0.1); padding: 0.55rem; border-radius: 6px; font-size: 0.65rem; color: var(--text-primary); line-height: 1.35; display: flex; flex-direction: column; gap: 0.2rem;" data-i18n-html="strat_dca_points">
+                                                <strong>ðŸŽ¯ Pontos de Entrada &amp; SaÃ­da (AnÃ¡lise de ExcelÃªncia):</strong><br>
+                                                â€¢ <strong>Entrada Ideal (PreÃ§o de Compra):</strong> Quando a cotaÃ§Ã£o estiver abaixo do <em>PreÃ§o Realizado (Realized Price)</em> ou tocando a <em>MÃ©dia MÃ³vel de 200 Semanas (200W MA)</em>. Estes sÃ£o os pontos histÃ³ricos de capitulaÃ§Ã£o mÃ¡xima.<br>
+                                                â€¢ <strong>SaÃ­da Parcial (RealizaÃ§Ã£o de Lucro):</strong> Quando a cotaÃ§Ã£o estiver esticada com <em>MVRV Ratio &gt; 3.0</em> ou <em>RSI Mensal &gt; 80</em>. Reduza os aportes e inicie a realizaÃ§Ã£o fracionada de lucros em direÃ§Ã£o ao topo do ciclo.
+                                            </div>
+                                        </div>
+
+                                        <!-- SMC Strategy (VIP Only) -->
+                                        <div class="strategy-card" id="smc-strategy-card" style="background: rgba(161, 0, 255, 0.02); border: 1px solid rgba(161, 0, 255, 0.08); padding: 0.65rem; border-radius: 8px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 0.25rem; transition: var(--transition-smooth); min-height: 110px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <h3 style="font-size: 0.78rem; font-weight: 700; color: #a100ff; margin: 0;"><i data-lucide="gem"></i> <span data-i18n="strat_smc_title">SMC Halving Climber (VIP)</span></h3>
+                                                <span id="smc-strategy-badge" style="font-size: 0.62rem; color: #a100ff; background: rgba(161, 0, 255, 0.1); padding: 2px 6px; border-radius: 20px; font-weight: 700;" data-i18n="strat_locked">BLOQUEADO</span>
+                                            </div>
+                                            
+                                            <!-- Blurred area / content -->
+                                            <div id="smc-strategy-content-blur" style="filter: blur(4px); pointer-events: none; opacity: 0.4; user-select: none; transition: var(--transition-smooth); display: flex; flex-direction: column; gap: 0.25rem;">
+                                                <p style="font-size: 0.68rem; color: var(--text-secondary); line-height: 1.35; margin: 0.15rem 0;" data-i18n="strat_smc_desc">
+                                                    Trading algorÃ­tmico baseado em Smart Money Concepts (SMC), identificaÃ§Ã£o de Order Blocks institucionais e liquidez macro.
+                                                </p>
+                                                <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 6px; font-size: 0.65rem; color: var(--text-primary); line-height: 1.3;" data-i18n-html="strat_smc_params">
+                                                    <strong>ParÃ¢metros Operacionais VIP:</strong><br>
+                                                    â€¢ <strong>Setup:</strong> Liquidity Sweep (VariaÃ§Ã£o de liquidez diÃ¡ria/semanal).<br>
+                                                    â€¢ <strong>Entrada:</strong> RetraÃ§Ã£o de 50% do Order Block de 4H/DiÃ¡rio.<br>
+                                                    â€¢ <strong>Stop Loss:</strong> Abaixo do pavio do Sweep (ProteÃ§Ã£o institucional).<br>
+                                                    â€¢ <strong>Take Profit:</strong> Equal Highs / Pools de liquidez de curto prazo.
+                                                </div>
+                                            </div>
+
+                                            <!-- Paywall Overlay inside Card -->
+                                            <div id="smc-strategy-paywall-overlay" style="position: absolute; inset: 0; background: rgba(8, 9, 15, 0.75); display: flex; align-items: center; justify-content: center; transition: var(--transition-smooth); z-index: 5;">
+                                                <button class="btn btn-premium btn-unlock-smc" style="padding: 0.4rem 0.8rem; font-size: 0.72rem;"><i data-lucide="unlock"></i> <span data-i18n="strat_smc_unlock">Desbloquear Setup SMC VIP</span></button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- Tab 4: Calculadora Cripto -->
+                                <div id="tab-calculator" class="j1-tab-content">
+                                    <div class="calculator-row">
+                                        <div class="calc-input-group">
+                                            <input type="number" id="calc-amount" value="1" placeholder="Quantidade" min="0" step="any" data-i18n-placeholder="calc_amount_ph">
+                                            <select id="calc-from">
+                                                <option value="BTC">BTC</option>
+                                                <option value="SATS">Satoshi (Sats)</option>
+                                                <option value="USDC">USDC ($)</option>
+                                                <option value="BRL">BRL (R$)</option>
+                                                <option value="EUR">EUR (â‚¬)</option>
+                                            </select>
+                                        </div>
+                                        <span class="calc-arrow">â‡„</span>
+                                        <div class="calc-input-group">
+                                            <span id="calc-result" class="calc-result-val">63,480.00</span>
+                                            <select id="calc-to">
+                                                <option value="USDC">USDC ($)</option>
+                                                <option value="BTC">BTC</option>
+                                                <option value="SATS">Satoshi (Sats)</option>
+                                                <option value="BRL">BRL (R$)</option>
+                                                <option value="EUR">EUR (â‚¬)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p class="prob-note" data-i18n="calc_note">* ConversÃ£o em tempo real vinculada ao Ticker principal do BTC.</p>
+                                </div>
+
+                                <!-- Tab 5: TermÃ´metro -->
+                                <div id="tab-thermometer" class="j1-tab-content">
+                                    <div class="thermometer-container">
+                                        <!-- Consolidated Signal Box -->
+                                        <div id="term-consolidated-box" class="term-consolidated-box signal-neutral">
+                                            <div class="term-signal-title"><i data-lucide="combine"></i> <span data-i18n="term_signal_title">SINAL CONSOLIDADO:</span> <strong id="term-signal-text">NEUTRO</strong></div>
+                                            <div class="term-signal-score"><span data-i18n="term_score">Score:</span> <strong id="term-score-val">0.00</strong> <span data-i18n="term_score_range">(de -2 a +2)</span></div>
+                                            <div class="term-signal-desc" id="term-signal-desc">Carregando dados de mercado...</div>
+                                        </div>
+
+                                        <!-- Indicators Grid -->
+                                        <div class="term-grid">
+                                            <!-- Card 1: Fear & Greed -->
+                                            <div class="term-card">
+                                                <span class="term-card-label"><i data-lucide="compass"></i> <span data-i18n="term_fng">FEAR &amp; GREED</span></span>
+                                                <span class="term-card-value" id="term-val-fng">--</span>
+                                                <span class="term-badge badge-neutral" id="term-badge-fng" data-i18n="badge_neutral">NEUTRO</span>
+                                            </div>
+                                            <!-- Card 2: MVRV Ratio -->
+                                            <div class="term-card">
+                                                <span class="term-card-label"><i data-lucide="trending-up"></i> <span data-i18n="term_mvrv">MVRV RATIO</span></span>
+                                                <span class="term-card-value" id="term-val-mvrv">--</span>
+                                                <span class="term-badge badge-buy" id="term-badge-mvrv" data-i18n="badge_buy">COMPRA</span>
+                                            </div>
+                                            <!-- Card 3: 200W MA -->
+                                            <div class="term-card">
+                                                <span class="term-card-label"><i data-lucide="activity"></i> <span data-i18n="term_ma200">200W MA</span></span>
+                                                <span class="term-card-value" id="term-val-ma200">--</span>
+                                                <span class="term-badge badge-buy" id="term-badge-ma200" data-i18n="badge_buy">COMPRA</span>
+                                            </div>
+                                            <!-- Card 4: RSI Mensal -->
+                                            <div class="term-card">
+                                                <span class="term-card-label"><i data-lucide="percent"></i> <span data-i18n="term_rsi">RSI MENSAL</span></span>
+                                                <span class="term-card-value" id="term-val-rsi">--</span>
+                                                <span class="term-badge badge-neutral" id="term-badge-rsi" data-i18n="badge_neutral">NEUTRO</span>
+                                            </div>
+                                            <!-- Card 5: PreÃ§o Realizado -->
+                                            <div class="term-card">
+                                                <span class="term-card-label"><i data-lucide="dollar-sign"></i> <span data-i18n="term_realized">PREÃ‡O REALIZADO</span></span>
+                                                <span class="term-card-value" id="term-val-realized">--</span>
+                                                <span class="term-badge badge-buy" id="term-badge-realized" data-i18n="badge_buy">COMPRA</span>
+                                            </div>
+                                            <!-- Card 6: Supply em Lucro -->
+                                            <div class="term-card">
+                                                <span class="term-card-label"><i data-lucide="bar-chart-2"></i> <span data-i18n="term_supply">SUPPLY EM LUCRO</span></span>
+                                                <span class="term-card-value" id="term-val-supply">--</span>
+                                                <span class="term-badge badge-neutral" id="term-badge-supply" data-i18n="badge_neutral">NEUTRO</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Tab 6: Como Usar -->
+                                <div id="tab-howtouse" class="j1-tab-content">
+                                    <div class="howtouse-container" style="display: flex; flex-direction: column; gap: 0.8rem; padding: 0.2rem 0;">
+                                        <h3 style="color: var(--color-sunny); font-size: 0.9rem; margin-bottom: 0.1rem; display: flex; align-items: center; gap: 6px;"><i data-lucide="book-open"></i> <span data-i18n="howtouse_title">Guia de Uso: Clima Bitcoin</span></h3>
+                                        <p style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.45; margin: 0;" data-i18n="howtouse_intro">
+                                            O <strong>BTC Weather Panel</strong> traduz indicadores on-chain e de mercado complexos em uma previsÃ£o climÃ¡tica simples, permitindo decisÃµes rÃ¡pidas e assertivas para as suas operaÃ§Ãµes de Bitcoin.
+                                        </p>
+                                        
+                                        <!-- EstaÃ§Ãµes e Sentimento Grid -->
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.1rem;">
+                                            <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); padding: 0.55rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem;">
+                                                <h4 style="font-size: 0.75rem; color: #fff; display: flex; align-items: center; gap: 4px; font-weight: 700;"><i data-lucide="sun"></i> <span data-i18n="howtouse_seasons">Entenda as EstaÃ§Ãµes</span></h4>
+                                                <ul style="font-size: 0.65rem; color: var(--text-secondary); margin-left: 10px; line-height: 1.35; display: flex; flex-direction: column; gap: 3px; padding-left: 5px;" data-i18n-html="howtouse_seasons_list">
+                                                    <li>â˜€ï¸ <strong>Ensolarado (Alta):</strong> ForÃ§a compradora dominante. PosiÃ§Ãµes de LONG ativas.</li>
+                                                    <li>ðŸŒ¤ï¸ <strong>Nublado (Lateral):</strong> Baixa volatilidade. Perfeito para acÃºmulo lento via DCA.</li>
+                                                    <li>â›ˆï¸ <strong>Tempestade (Queda):</strong> PressÃ£o vendedora intensa. PosiÃ§Ãµes de SHORT ativas.</li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); padding: 0.55rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem;">
+                                                <h4 style="font-size: 0.75rem; color: #fff; display: flex; align-items: center; gap: 4px; font-weight: 700;"><i data-lucide="thermometer"></i> <span data-i18n="howtouse_thermometer">TermÃ´metro Geral</span></h4>
+                                                <p style="font-size: 0.65rem; color: var(--text-secondary); margin: 0; line-height: 1.35;" data-i18n-html="howtouse_thermometer_desc">
+                                                    Consolida 6 mÃ©tricas essenciais em um score de <strong>-2.00 (Compra Forte)</strong> a <strong>+2.00 (Venda Forte)</strong> para orientar sua alocaÃ§Ã£o de capital e o banner de decisÃ£o em 1 segundo.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Indicadores Detalhados -->
+                                        <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); padding: 0.6rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.1rem;">
+                                            <h4 style="font-size: 0.75rem; color: #fff; font-weight: 700; margin: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.25rem;"><i data-lucide="bar-chart-3"></i> <span data-i18n="howtouse_ai_title">Indicadores da InteligÃªncia Artificial</span></h4>
+                                            
+                                            <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.68rem; line-height: 1.4;" data-i18n-html="howtouse_ai_indicators">
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">1. Fear & Greed Index (Sentimento):</span>
+                                                    <span style="color: var(--text-secondary);">Mede o sentimento do varejo (volatilidade, volume, redes sociais). Medo extremo (<25) indica fundos cÃ­clicos (compra); ganÃ¢ncia extrema (>75) sinaliza topos de euforia (venda).</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">2. MVRV Ratio (Valor de Rede):</span>
+                                                    <span style="color: var(--text-secondary);">Compara a capitalizaÃ§Ã£o de mercado Ã  capitalizaÃ§Ã£o realizada. Valores menores que 1.00 apontam forte subvalorizaÃ§Ã£o histÃ³rica; valores acima de 3.00 indicam bolha de preÃ§o.</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">3. MÃ©dia MÃ³vel de 200 Semanas (200W MA):</span>
+                                                    <span style="color: var(--text-secondary);">MÃ©dia de suporte de longo prazo cÃ­clica. Comprar BTC perto ou abaixo dessa mÃ©dia oferece excelente assimetria histÃ³rica de retorno.</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">4. RSI Mensal (ForÃ§a Relativa):</span>
+                                                    <span style="color: var(--text-secondary);">Rastreia a exaustÃ£o macro do mercado. Valores de sobrevenda extrema (<30) indicam capitulaÃ§Ã£o final, enquanto sobrecompra extrema (>80) precede correÃ§Ãµes duras.</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">5. PreÃ§o Realizado (Realized Price):</span>
+                                                    <span style="color: var(--text-secondary);">O preÃ§o mÃ©dio ponderado ponderado de custo de toda a rede na blockchain. Funciona como um suporte crÃ­tico cÃ­clico onde poucos investidores estÃ£o em lucro.</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">6. Supply em Lucro (% de Moedas):</span>
+                                                    <span style="color: var(--text-secondary);">Porcentagem de moedas cujo Ãºltimo movimento ocorreu abaixo da cotaÃ§Ã£o atual. Abaixo de 45% representa zonas de capitulaÃ§Ã£o (compra); acima de 95% indica topos de ciclo.</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: var(--color-sunny); font-weight: 700;">7. TendÃªncia Binance (RSI + Cruzamento EMA 9/21):</span>
+                                                    <span style="color: var(--text-secondary);">Mapeia a forÃ§a e direÃ§Ã£o local de cada tempo grÃ¡fico (15M, 1H, 4H, etc.). O cruzamento da EMA 9 acima da EMA 21 confirma forÃ§a compradora (LONG); cruzamento abaixo confirma forÃ§a vendedora (SHORT).</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Telegram Bot Notifications -->
+                                        <div style="background: rgba(0, 200, 83, 0.04); border: 1px solid rgba(0, 200, 83, 0.12); padding: 0.6rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.4rem;">
+                                            <h4 style="font-size: 0.75rem; color: #00e676; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 700;"><i data-lucide="bell"></i> <span data-i18n="howtouse_tg_title">NotificaÃ§Ãµes VIP via Telegram</span></h4>
+                                            <p style="font-size: 0.65rem; color: var(--text-secondary); margin: 0; line-height: 1.35;" data-i18n="howtouse_tg_intro">
+                                                Receba anÃ¡lises e alertas em tempo real no Telegram. Vincule sua conta e configure:
+                                            </p>
+                                            <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.68rem; line-height: 1.4; padding-left: 4px;">
+                                                <div><span style="color: #00e676;">1.</span> Abra <a href="https://t.me/BartCrypto_bot" target="_blank" style="color: #00e676;">@btcweatherpanel_bot</a> no Telegram</div>
+                                                <div><span style="color: #00e676;">2.</span> Envie <code style="background: rgba(0,200,83,0.1); padding: 1px 5px; border-radius: 3px;">/codigo</code> para gerar seu cÃ³digo VIP</div>
+                                                <div><span style="color: #00e676;">3.</span> Ative o cÃ³digo no painel ou envie <code style="background: rgba(0,200,83,0.1); padding: 1px 5px; border-radius: 3px;">/vincular VIP7-XXXXX</code></div>
+                                                <div><span style="color: #00e676;">4.</span> Configure suas notificaÃ§Ãµes:</div>
+                                                <div style="padding-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+                                                    <span><code style="background: rgba(0,200,83,0.1); padding: 1px 5px; border-radius: 3px;">/diaria on</code> â€” AnÃ¡lise BTC todo dia Ã s 9h</span>
+                                                    <span><code style="background: rgba(0,200,83,0.1); padding: 1px 5px; border-radius: 3px;">/clima on</code> â€” Alerta instantÃ¢neo de mudanÃ§a de clima</span>
+                                                    <span><code style="background: rgba(0,200,83,0.1); padding: 1px 5px; border-radius: 3px;">/email email@...</code> â€” Receber tambÃ©m por e-mail</span>
+                                                </div>
+                                                <div><span style="color: #00e676;">5.</span> Use <code style="background: rgba(0,200,83,0.1); padding: 1px 5px; border-radius: 3px;">/notificacoes</code> para ver seu status</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Feedback Form for VIP Guests -->
+                                        <div id="feedback-vip-section" class="hidden" style="background: rgba(41, 121, 255, 0.04); border: 1px solid rgba(41, 121, 255, 0.12); padding: 0.65rem; border-radius: 8px; margin-top: 0.1rem; display: flex; flex-direction: column; gap: 0.35rem; animation: fadeIn 0.4s ease;">
+                                            <h4 style="font-size: 0.75rem; color: #00f0ff; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 700;"><i data-lucide="message-square"></i> <span data-i18n="howtouse_feedback_title">Painel de Feedback (Convidado VIP)</span></h4>
+                                            <p style="font-size: 0.65rem; color: var(--text-secondary); margin: 0; line-height: 1.3;" data-i18n="howtouse_feedback_desc">
+                                                Como nosso convidado especial com acesso VIP gratuito, seu feedback Ã© fundamental para calibraÃ§Ã£o de nossos sinais. Deixe suas observaÃ§Ãµes:
+                                            </p>
+                                            <div style="display: flex; gap: 0.4rem; margin-top: 0.15rem;">
+                                                <input type="text" id="feedback-input" placeholder="O que achou da precisÃ£o dos sinais e do termÃ´metro geral?" style="flex: 1; background: #000; border: 1px solid var(--border-color); padding: 0.45rem; border-radius: 6px; color: #fff; font-family: inherit; font-size: 0.68rem;" data-i18n-placeholder="howtouse_feedback_ph">
+                                                <button id="btn-submit-feedback" class="btn btn-primary" style="padding: 0.45rem 0.8rem; font-size: 0.68rem; border-radius: 6px;"><span data-i18n="howtouse_feedback_btn">Enviar</span></button>
+                                            </div>
+                                            <span id="feedback-success" class="copy-success-msg hidden" style="margin-top: 0.1rem; display: block; font-size: 0.65rem; color: #00e676; font-weight: 700;">âœ“ Obrigado! Seu feedback foi enviado com sucesso.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CLIMATE FORECAST TIMEFRAMES SECTION -->
+                    <div class="forecast-section">
+                        <div class="forecast-head">
+                            <h2 class="section-title font-small" id="forecast-section-title" data-i18n="forecast_title">ðŸŒ¤ï¸ PrevisÃ£o por PerÃ­odo</h2>
+
+                            <!-- SEVERINO TRADER BAR (3 botÃµes de decisÃ£o, compactos) -->
+                            <div class="severino-trader-bar" id="severino-trader-bar">
+                                <button type="button" class="st-btn st-btn-config" id="st-btn-config" title="Configurar Severino Trader (OKX)">
+                                    <span class="st-btn-icon">âš™ï¸</span>
+                                    <span class="st-chip-label" data-i18n="st_config">Severino Trader</span>
+                                </button>
+                                <button type="button" class="st-btn st-btn-plant" id="st-btn-plant" title="Plantar (comprar) nos melhores momentos">
+                                    <span class="st-btn-icon">ðŸŒ±</span>
+                                    <span class="st-badge st-off" id="st-plant-badge">â¸ï¸ Esperar</span>
+                                    <span class="st-info" id="st-plant-info"></span>
+                                    <span class="st-auto" id="st-plant-auto">OFF</span>
+                                </button>
+                                <button type="button" class="st-btn st-btn-harvest" id="st-btn-harvest" title="Colher (realizar lucro) nos topos">
+                                    <span class="st-btn-icon">ðŸŒ¾</span>
+                                    <span class="st-badge st-off" id="st-harvest-badge">â¸ï¸ Esperar</span>
+                                    <span class="st-info" id="st-harvest-info"></span>
+                                    <span class="st-auto" id="st-harvest-auto">OFF</span>
+                                </button>
+                                <button type="button" class="st-btn st-btn-result" id="st-btn-result" title="Resultado (simulado) do valor investido">
+                                    <span class="st-btn-icon">ðŸ’°</span>
+                                    <span class="st-chip-label" data-i18n="st_result">Resultado</span>
+                                    <span class="st-badge st-neutral" id="st-result-badge">$0.00</span>
+                                    <span class="st-info" id="st-result-pnl">$0.00</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="forecast-grid" id="forecast-grid-container">
+                            <!-- 15 MINUTOS (15M) -->
+                            <div class="forecast-card card-bearish" data-timeframe="15M">
+                                <div class="card-time" data-i18n="tf_15m">15 Minutos</div>
+                                <div class="weather-icon"><i data-lucide="cloud-rain" width="28" height="28"></i></div>
+                                <div class="weather-status">Scalping BTC (Chuva Ãcida)</div>
+                                <div class="card-meta" data-i18n="tf_15m_meta">IntradiÃ¡rio</div>
+                            </div>
+                            <!-- 1 HORA (1H) -->
+                            <div class="forecast-card card-neutral" data-timeframe="1H">
+                                <div class="card-time" data-i18n="tf_1h">1 Hora</div>
+                                <div class="weather-icon"><i data-lucide="wind" width="28" height="28"></i></div>
+                                <div class="weather-status">Day Trade (Nublado com Ventos)</div>
+                                <div class="card-meta" data-i18n="tf_1h_meta">Day Trade</div>
+                            </div>
+                            <!-- 4 HORAS (4H) -->
+                            <div class="forecast-card card-bullish" data-timeframe="4H">
+                                <div class="card-time" data-i18n="tf_4h">4 Horas</div>
+                                <div class="weather-icon"><i data-lucide="sun" width="28" height="28"></i></div>
+                                <div class="weather-status">Swing 4H (Ensolarado)</div>
+                                <div class="card-meta" data-i18n="tf_4h_meta">Swing Trade</div>
+                            </div>
+                            <!-- DIÃRIO (1D) -->
+                            <div class="forecast-card card-bullish" data-timeframe="1D">
+                                <div class="card-time" data-i18n="tf_1d">DiÃ¡rio</div>
+                                <div class="weather-icon"><i data-lucide="sun" width="28" height="28"></i></div>
+                                <div class="weather-status">Ensolarado</div>
+                                <div class="card-meta" data-i18n="tf_1d_meta">PrevisÃ£o do Dia</div>
+                            </div>
+                            <!-- 3 DIAS (3D) -->
+                            <div class="forecast-card card-bullish" data-timeframe="3D">
+                                <div class="card-time" data-i18n="tf_3d">3 Dias</div>
+                                <div class="weather-icon"><i data-lucide="flame" width="28" height="28"></i></div>
+                                <div class="weather-status">Macro 3D (Super Ensolarado)</div>
+                                <div class="card-meta" data-i18n="tf_3d_meta">Macro</div>
+                            </div>
+                            <!-- SEMANAL (1W) -->
+                            <div class="forecast-card card-neutral" data-timeframe="1W">
+                                <div class="card-time" data-i18n="tf_1w">Semanal</div>
+                                <div class="weather-icon"><i data-lucide="cloud-sun" width="28" height="28"></i></div>
+                                <div class="weather-status">Parcialmente Nublado</div>
+                                <div class="card-meta" data-i18n="tf_1w_meta">PrÃ³ximos Dias</div>
+                            </div>
+                            <!-- MENSAL (1M) -->
+                            <div class="forecast-card card-bearish" data-timeframe="1M">
+                                <div class="card-time" data-i18n="tf_1m">Mensal</div>
+                                <div class="weather-icon"><i data-lucide="cloud-lightning" width="28" height="28"></i></div>
+                                <div class="weather-status">Tempestade</div>
+                                <div class="card-meta" data-i18n="tf_1m_meta">TendÃªncia Macro</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: SIGNAL RADAR & PREMIUM SERVICES -->
+            <aside class="sidebar">
+                
+                <!-- FERRAMENTAS BTC (RECOMMENDED RESOURCES) -->
+                <div class="box tools-box">
+                    <div class="box-header">
+                        <h2 data-i18n="tools_title">ðŸ› ï¸ Ferramentas BTC</h2>
+                        <span class="badge-vip" style="background: var(--color-sunny); color: #000; font-size: 0.58rem;"><span data-i18n="tools_badge">VIP DICAS</span></span>
+                    </div>
+<p class="box-desc" data-i18n="tools_desc">Ecossistema Severino â€” ferramentas, e-books e contribuiÃ§Ã£o.</p>
+
+                    <!-- CARROSSEL ASTROS (9 slides, 7s cada) -->
+                    <div class="carousel-ecosystem" id="carousel-eco">
+                        <div class="stars-bg" id="stars-eco"></div>
+                        <div class="orbit-glow"></div>
+
+                        <!-- 1. COMPRAR -->
+                        <div class="carousel-slide active">
+                            <div class="slide-icon blue">ðŸ“ˆ</div>
+                            <h4 class="slide-title" data-i18n="eco_buy_title">Como Comprar BTC (Coinbase)</h4>
+                            <p class="slide-desc" data-i18n="eco_buy_desc">Compre seus primeiros Bitcoins com segurancÌ§a pela Coinbase.</p>
+                            <a class="slide-cta blue" href="https://coinbase.com/join/TPZYWNY?src=ios-link" target="_blank" data-i18n="eco_buy_btn">ðŸ”— Link Convite Coinbase</a>
+                        </div>
+
+                        <!-- 2. ETH.FI -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon purple">ðŸ’§</div>
+                            <h4 class="slide-title" data-i18n="eco_stake_title">Liquid Staking na Ether.fi</h4>
+                            <p class="slide-desc" data-i18n="eco_stake_desc">Rentabilize seus ativos com restaking liÌquido descentralizado.</p>
+                            <a class="slide-cta purple" href="https://www.ether.fi/@95f3ab60" target="_blank" data-i18n="eco_stake_btn">ðŸ”— Link Convite Ether.fi</a>
+                        </div>
+
+                        <!-- 3. CARTEIRA -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon red">ðŸ”</div>
+                            <h4 class="slide-title" data-i18n="eco_wallet_title">CustÃ³dia Segura (Electrum)</h4>
+                            <p class="slide-desc" data-i18n="eco_wallet_desc">Crie uma carteira fria ultra-segura no Tails OS ou no celular.</p>
+                            <a class="slide-cta red" href="https://youtu.be/NBj9-TolpvI?is=jX5h-FfMHCgTYtJf" target="_blank" data-i18n="eco_wallet_btn">ðŸ“º Assistir VÃ­deo Tutorial</a>
+                        </div>
+
+                        <!-- 4. CortaFila -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon green">âœ‚ï¸</div>
+                            <h4 class="slide-title" data-i18n="eco_cortafila_title">CortaFila</h4>
+                            <p class="slide-desc" data-i18n="eco_cortafila_desc">Agendamento inteligente para barbearias, montado com dados reais.</p>
+                            <a class="slide-cta green" href="https://agendabarber.severinobot.com/" target="_blank" data-i18n="eco_cortafila_btn">Conhecer</a>
+                        </div>
+
+                        <!-- 5. Severino Consultor IA -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon pink">ðŸ§ </div>
+                            <h4 class="slide-title" data-i18n="eco_consultor_title">Severino Consultor IA</h4>
+                            <p class="slide-desc" data-i18n="eco_consultor_desc">Consultoria estrateÌgica 24/7 com IA â€” teste gratuito disponiÌvel.</p>
+                            <a class="slide-cta pink" href="https://severinobot.com/" target="_blank" data-i18n="eco_consultor_btn">Consultar</a>
+                        </div>
+
+                        <!-- 6. Radar EstratÃ©gico -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon blue">ðŸ“¡</div>
+                            <h4 class="slide-title" data-i18n="eco_radar_title">Radar EstrateÌgico</h4>
+                            <p class="slide-desc" data-i18n="eco_radar_desc">AnaÌlise diaÌria do mercado BTC com IA â€” timing e sentimento.</p>
+                            <a class="slide-cta blue" href="https://severinobot.com/" target="_blank" data-i18n="eco_radar_btn">Ver AnaÌlise</a>
+                        </div>
+
+                        <!-- 7. Manual do Severino (BLOQUEADO) -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon orange">ðŸ“˜</div>
+                            <h4 class="slide-title" data-i18n="eco_manual_title">Manual do Severino</h4>
+                            <p class="slide-desc" data-i18n="eco_manual_desc">Guia completo do ecossistema â€” descubra todas as ferramentas.</p>
+                            <span class="slide-cta blocked" data-i18n="eco_blocked">ðŸ”’ Em breve</span>
+                        </div>
+
+                        <!-- 8. Guia de ImplementaÃ§Ã£o IA (BLOQUEADO) -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon cyan">ðŸ“—</div>
+                            <h4 class="slide-title" data-i18n="eco_guiadev_title">Guia de ImplementacÌ§aÌƒo IA</h4>
+                            <p class="slide-desc" data-i18n="eco_guiadev_desc">Como integrar agentes de IA no seu negoÌcio â€” passo a passo.</p>
+                            <span class="slide-cta blocked" data-i18n="eco_blocked">ðŸ”’ Em breve</span>
+                        </div>
+
+                        <!-- 9. ContribuiÃ§Ã£o -->
+                        <div class="carousel-slide">
+                            <div class="slide-icon darkheart">â¤ï¸</div>
+                            <h4 class="slide-title" data-i18n="eco_contrib_title">Contribua com o Projeto</h4>
+                            <p class="slide-desc" data-i18n="eco_contrib_desc">Ideias, feedback, bug ou apoio â€” fortaleÃ§a o ecossistema.</p>
+                            <button class="slide-cta darkheart btn-contrib" data-i18n="eco_contrib_btn">Contribuir</button>
+                        </div>
+
+                        <div class="carousel-dots" id="dots-eco"></div>
+                    </div>
+                </div>
+
+                <!-- SIGNALS RADAR (VIP SIGNALS PAYWALL) -->
+                <div class="box signal-box">
+                    <div class="box-header">
+                        <h2 data-i18n="signals_title">âš¡ Sinais Operacionais</h2>
+                        <span class="badge-vip">VIP</span>
+                    </div>
+                    <p class="box-desc" data-i18n="signals_desc">Sinais automatizados com pontos de entrada, stop loss e metas calculadas.</p>
+                    
+                    <!-- Blur preview of a VIP signal -->
+                    <div class="signal-preview-blur">
+                        <div class="blur-content">
+                            <div class="signal-header-mock">
+                                <span class="pair">BTC/USDT</span>
+                                <span class="action-buy">LONG â‡…</span>
+                            </div>
+                            <div class="signal-details-mock">
+                                <div><span data-i18n="signal_entry">Entrada:</span> <span class="obfuscated">$XX,XXX</span></div>
+                                <div><span data-i18n="signal_tp">Alvo TP:</span> <span class="obfuscated">$XX,XXX</span></div>
+                                <div><span data-i18n="signal_sl">Stop Loss:</span> <span class="obfuscated">$XX,XXX</span></div>
+                            </div>
+                        </div>
+                        <div class="blur-overlay">
+                            <button id="btn-unlock-signals" class="btn btn-primary"><span data-i18n="signal_unlock">ðŸ”“ Ver Sinais VIP</span></button>
+                        </div>
+                    </div>
+
+                    <!-- CARD TESTE GRÃTIS 7 DIAS (novos usuÃ¡rios) - similar aos invites dos cards de previsÃ£o -->
+                    <div class="signal-lead-card" id="signal-lead-card">
+                        <div class="lead-invite" id="lead-invite">
+                            <div class="invite-inner">
+                                <span class="invite-lock">ðŸ”’</span>
+                                <span class="invite-title" data-i18n="lead_sig_title">Sinais Operacionais VIP</span>
+                                <span class="invite-sub" data-i18n="lead_sig_sub">Cadastre-se e use os sinais LONG/SHORT/NEUTRO em 15M, 1H e 4H, a anÃ¡lise diÃ¡ria das 9h e os alertas em tempo real.</span>
+                                <input type="email" id="lead-email-input" class="invite-email" placeholder="Seu melhor e-mail para liberar o acesso" autocomplete="email">
+                                <button id="btn-claim-free-trial" class="btn btn-premium invite-cta">ðŸŽ Cadastre e Use</button>
+                                <span class="invite-alt"><a id="lead-assinar" href="javascript:void(0)" data-i18n="lead_alt">ou assinar por R$ 47/mÃªs</a></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="lead-msg" class="lead-msg"></div>
+                </div>
+
+            </aside>
+
+        </div>
+
+        <!-- MODAL DE CONTRIBUIÃ‡ÃƒO -->
+        <div id="contrib-modal" class="modal-overlay hidden">
+          <div class="modal-content glass" style="max-width: 480px;">
+            <button class="modal-close">&times;</button>
+            <h2 data-i18n="contrib_title">Contribua com o Projeto</h2>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1rem;" data-i18n="contrib_desc">Sua ideia, feedback ou apoio faz o ecossistema crescer. Escolha o tipo e envie sua mensagem.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;" id="contrib-tipos">
+              <button class="contrib-tipo-btn ativo" data-tipo="ideia">ðŸ’¡ Ideia</button>
+              <button class="contrib-tipo-btn" data-tipo="feedback">ðŸ“ Feedback</button>
+              <button class="contrib-tipo-btn" data-tipo="bug">ðŸ› Reportar Bug</button>
+              <button class="contrib-tipo-btn" data-tipo="divulgar">ðŸ“£ Divulgar</button>
+              <button class="contrib-tipo-btn" data-tipo="apoiar">â¤ï¸ Apoiar</button>
+            </div>
+            <textarea id="contrib-msg" rows="3" style="width:100%;padding:0.6rem;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);font-size:0.82rem;resize:vertical;" placeholder="Sua mensagem..."></textarea>
+            <input type="email" id="contrib-email" placeholder="Seu e-mail (opcional)" style="width:100%;margin-top:0.5rem;padding:0.6rem;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);font-size:0.82rem;">
+            <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+              <button id="contrib-enviar" class="btn btn-primary" style="flex:1;">Enviar</button>
+              <button class="contrib-close btn btn-secondary" style="flex:0.5;">Cancelar</button>
+            </div>
+            <div id="contrib-status" style="font-size:0.78rem;margin-top:0.5rem;"></div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <p><span data-i18n="footer_text">Â© 2026 BTC Weather Panel. PropÃ³sito de servir com integridade e transparÃªncia.</span> (1 CorÃ­ntios 10:31) <span id="admin-gear-btn" style="cursor: pointer; opacity: 0.5; margin-left: 8px;" title="ConfiguraÃ§Ãµes do Painel (Admin)">âš™ï¸</span></p>
+        </footer>
+
+    </div>
+    </div>
+
+    <!-- PAYWALL / SUBSCRIPTION MODAL -->
+    <div id="paywall-modal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span class="modal-badge" data-i18n="paywall_badge">ðŸ’Ž ESTAÃ‡ÃƒO DE ALERTA VIP</span>
+                <h2 data-i18n="paywall_title">Desbloqueie o PrÃ³ximo NÃ­vel</h2>
+                <p data-i18n="paywall_desc">Tenha acesso a estratÃ©gias automatizadas de trade, anÃ¡lises em tempo real e tempos grÃ¡ficos curtos do Bitcoin.</p>
+            </div>
+            <div class="modal-body">
+                
+                <div class="pricing-cards">
+                    
+                    <!-- PLAN VIP TRADER - FOUNDING MEMBER -->
+                    <div class="pricing-card popular">
+                        <div class="popular-badge" data-i18n="plan_founding_badge">ðŸ”¥ FOUNDING MEMBER</div>
+                        <div class="plan-header">
+                            <h3>ðŸ‘‘ VIP Trader</h3>
+                            <div class="price-box" style="gap: 0;">
+                                <span style="font-size: 0.65rem; color: var(--text-secondary); text-decoration: line-through; display: block; width: 100%;">R$ 79/mÃªs</span>
+                                <span class="currency">R$</span>
+                                <span class="price">47</span>
+                                <span class="period" data-i18n="period_month">/mÃªs</span>
+                            </div>
+                            <span id="founding-counter" style="font-size: 0.65rem; color: var(--color-sunny);">â³ <span data-i18n="slots_left_label">Vagas limitadas â€” restam</span> <strong id="slots-left">100</strong></span>
+                        </div>
+                        <ul class="plan-features" data-i18n-html="paywall_features_vip">
+                            <li>âœ“ Sinais diÃ¡rios de Bitcoin (BTC)</li>
+                            <li>âœ“ Tempos grÃ¡ficos de 1H e 4H</li>
+                            <li>âœ“ Canal fechado no Telegram</li>
+                            <li>âœ“ Pontos de entrada, SL e TP</li>
+                            <li>âœ“ <strong>40% de desconto vitalÃ­cio</strong> como Founding Member</li>
+                            <li>âœ“ PreÃ§o trava em R$ 47 para sempre</li>
+                        </ul>
+                        <button class="btn btn-premium btn-full checkout-btn" data-plan="vip" data-i18n="paywall_btn_vip">Assinar Agora â€” R$ 47/mÃªs</button>
+                    </div>
+
+                    <!-- PLAN ANUAL -->
+                    <div class="pricing-card">
+                        <div class="plan-header">
+                            <h3>ðŸ“† VIP Anual</h3>
+                            <div class="price-box" style="gap: 0;">
+                                <span style="font-size: 0.65rem; color: var(--text-secondary); text-decoration: line-through; display: block; width: 100%;">R$ 588/ano</span>
+                                <span class="currency">R$</span>
+                                <span class="price">329</span>
+                                <span class="period" data-i18n="period_year">/ano</span>
+                            </div>
+                            <span style="font-size: 0.6rem; color: #00e676;">(~R$ 27/mÃªs â€¢ 44% de desconto)</span>
+                        </div>
+                        <ul class="plan-features" data-i18n-html="paywall_features_annual">
+                            <li>âœ“ Todos os benefÃ­cios do VIP Trader</li>
+                            <li>âœ“ Equivalente a R$ 27/mÃªs</li>
+                            <li>âœ“ Economia de R$ 259 por ano</li>
+                            <li>âœ“ PreÃ§o de Founding Member garantido</li>
+                        </ul>
+                        <button class="btn btn-primary btn-full checkout-btn" data-plan="annual" data-i18n="paywall_btn_annual">Assinar Anual â€” R$ 329</button>
+                    </div>
+
+                </div>
+
+                <!-- Activation Key Input -->
+                <div class="activation-key-section" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.25rem; text-align: center;">
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;"><span data-i18n="paywall_key_label">ðŸ”‘ JÃ¡ tem um cÃ³digo VIP? Ative aqui:</span></p>
+                    <div class="copy-input-group" style="max-width: 400px; margin: 0 auto;">
+                        <input type="text" id="activation-key-input" placeholder="Ex: VIP7-XXXXXX" style="text-align: center; text-transform: uppercase;" data-i18n-placeholder="paywall_key_ph">
+                        <button id="btn-activate-vip" class="btn btn-primary" data-i18n="paywall_activate_btn">Ativar</button>
+                    </div>
+                    <span id="activation-success" class="copy-success-msg hidden" style="margin-top: 0.5rem; display: block;" data-i18n="paywall_activation_success">âœ“ VIP Ativado com sucesso! Carregando...</span>
+                    <span id="activation-error" class="copy-success-msg hidden" style="margin-top: 0.5rem; display: block; color: #ff3366;" data-i18n="paywall_activation_error">âŒ CÃ³digo invÃ¡lido. Tente novamente!</span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- CHECKOUT CHOICES MODAL -->
+    <div id="checkout-modal" class="modal-overlay hidden">
+        <div class="modal-content glass" style="max-width: 480px;">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span class="modal-badge" data-i18n="checkout_badge">ðŸ›’ FINALIZAR ASSINATURA</span>
+                <h2 id="checkout-plan-title">Plano VIP Trader</h2>
+                <p data-i18n="checkout_desc">Escolha a forma de pagamento para liberar seu acesso.</p>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <a id="checkout-card-link" href="#" target="_blank" class="btn btn-premium btn-full" style="text-decoration: none; padding: 1rem; font-size: 0.9rem; justify-content: center;" data-i18n="checkout_card_btn">
+                    ðŸ’³ Pagar com CartÃ£o / Pix
+                </a>
+                
+                <div style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin: 0.25rem 0;" data-i18n="checkout_or">ou</div>
+                
+                <a id="checkout-whatsapp-link" href="#" target="_blank" class="btn btn-secondary btn-full" style="text-decoration: none; padding: 1rem; font-size: 0.9rem; justify-content: center; border-color: #25d366; background: rgba(37, 211, 102, 0.05); color: #25d366;" data-i18n="checkout_wa_btn">
+                    ðŸ’¬ Falar com Suporte (Pix Manual)
+                </a>
+                
+                <p style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; margin-top: 0.5rem; line-height: 1.4;" data-i18n-html="checkout_notes">
+                    * Pagamento via cartÃ£o ou Pix automÃ¡tico libera na hora.<br>
+                    * Pix manual: enviamos a chave e ativamos em atÃ© 5 min.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEVERINO TRADER CONFIG MODAL -->
+    <div id="severino-trader-modal" class="modal-overlay hidden">
+        <div class="modal-content glass" style="max-width: 540px;">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span class="modal-badge" style="color: var(--color-sunny);">ðŸ¤– SEVERINO TRADER</span>
+                <h2 data-i18n="st_modal_title">AutomaÃ§Ã£o de Sinais (OKX)</h2>
+                <p data-i18n="st_modal_desc">Configure como o Severino planta e colhe por vocÃª. <strong>Fase 1:</strong> somente configuraÃ§Ã£o â€” a execuÃ§Ã£o automÃ¡tica entra em breve.</p>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+
+                <div style="background: rgba(255,176,32,0.06); border: 1px solid rgba(255,176,32,0.25); border-radius: 10px; padding: 0.7rem; font-size: 0.7rem; color: var(--text-secondary); line-height: 1.4;" data-i18n-html="st_okx_note">
+                    ðŸ” Crie a chave na OKX com permissÃ£o <strong>somente Trade</strong> (nunca saque/withdraw). O Severino opera na SUA conta â€” vocÃª mantÃ©m a custÃ³dia.
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ”‘ OKX API KEY</label>
+                    <input type="text" id="st-okx-key" placeholder="API Key" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                </div>
+                <div style="display: flex; gap: 0.6rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ¤« SECRET</label>
+                        <input type="password" id="st-okx-secret" placeholder="Secret" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ§© PASSPHRASE</label>
+                        <input type="password" id="st-okx-pass" placeholder="Passphrase" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.6rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="st_strategy">ðŸ“ˆ ESTRATÃ‰GIA</label>
+                        <select id="st-strategy" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                            <option value="dca">DCA / Grid (acumular)</option>
+                            <option value="smc">SMC (swing/macro)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="st_mode">âš¡ TIPO</label>
+                        <select id="st-mode" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                            <option value="spot">Spot (recomendado)</option>
+                            <option value="leverage">Alavancado (mÃ¡x 3x)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.6rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="st_entry">ðŸ’µ VALOR POR ENTRADA (min $5)</label>
+                        <input type="number" id="st-entry-value" min="5" step="1" value="10" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="st_entries">ðŸ”¢ TOTAL DE ENTRADAS</label>
+                        <input type="number" id="st-total-entries" min="1" max="50" step="1" value="10" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="st_harvest_mode">ðŸŒ¾ REALIZAÃ‡ÃƒO (COLHEITA)</label>
+                    <select id="st-harvest-mode" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                        <option value="profit">SÃ³ o lucro (surfar o ciclo)</option>
+                        <option value="all">Lucro + aporte (day trade)</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="st_cards">ðŸ—‚ï¸ CARDS PARA OPERAR</label>
+                    <div id="st-cards-checks" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <label class="st-check"><input type="checkbox" data-tf="15M"> 15M</label>
+                        <label class="st-check"><input type="checkbox" data-tf="1H"> 1H</label>
+                        <label class="st-check"><input type="checkbox" data-tf="4H" checked> 4H</label>
+                        <label class="st-check"><input type="checkbox" data-tf="1D" checked> 1D</label>
+                        <label class="st-check"><input type="checkbox" data-tf="3D" checked> 3D</label>
+                        <label class="st-check"><input type="checkbox" data-tf="1W"> 1W</label>
+                        <label class="st-check"><input type="checkbox" data-tf="1M"> 1M</label>
+                    </div>
+                </div>
+
+                <button id="st-save-config" class="btn btn-premium btn-full" style="padding: 0.85rem; font-size: 0.85rem; justify-content: center;" data-i18n="st_save">ðŸ’¾ Salvar ConfiguraÃ§Ã£o</button>
+                <p id="st-save-ok" class="hidden" style="text-align:center; color:#00e676; font-size:0.75rem; margin:0;" data-i18n="st_saved">âœ… ConfiguraÃ§Ã£o salva.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN CONFIGURATION MODAL -->
+    <div id="admin-modal" class="modal-overlay hidden">
+        <div class="modal-content glass" style="max-width: 500px;">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span class="modal-badge" style="color: var(--color-sunny);" data-i18n="admin_badge">âš™ï¸ PAINEL DE CONFIGURAÃ‡Ã•ES (ADMIN)</span>
+                <h2 data-i18n="admin_title">MonetizaÃ§Ã£o &amp; Vendas</h2>
+                <p data-i18n="admin_desc">Configure seus links de pagamento, WhatsApp e Chave de AtivaÃ§Ã£o.</p>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ’¬ WHATSAPP DE VENDAS (Ex: 5511999998888)</label>
+                    <input type="text" id="admin-whatsapp-input" placeholder="55..." style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ’³ LINK CHECKOUT - PLANO VIP (R$ 49)</label>
+                    <input type="text" id="admin-link-vip-input" placeholder="https://..." style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ’Ž LINK CHECKOUT - PLANO ELITE (R$ 97)</label>
+                    <input type="text" id="admin-link-elite-input" placeholder="https://..." style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ”‘ CHAVE MESTRA DE ATIVAÃ‡ÃƒO VIP</label>
+                    <input type="text" id="admin-vip-key-input" placeholder="SECRET_KEY (config admin)" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: var(--color-sunny); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase;">
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">âœˆï¸ ID DO GRUPO/CANAL TELEGRAM (Ex: -1002048592398)</label>
+                    <input type="text" id="admin-tg-chat-input" placeholder="-100..." style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ’¬ ID DO GRUPO WHATSAPP (Ex: 1203632198592@g.us)</label>
+                    <input type="text" id="admin-wa-group-input" placeholder="1203..." style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+                    <input type="checkbox" id="admin-alerts-enabled-checkbox" style="cursor: pointer; width: 16px; height: 16px;">
+                    <label for="admin-alerts-enabled-checkbox" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); cursor: pointer;">ðŸ”” Habilitar Push Notifications AutomÃ¡ticas</label>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);">ðŸ” GOOGLE CLIENT ID (OAuth do login com Google no teste grÃ¡tis)</label>
+                    <input type="text" id="admin-google-client-input" placeholder="XXXX.apps.googleusercontent.com" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: var(--color-sunny); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">
+                </div>
+
+                <!-- REALTIME TELEMETRY CARD -->
+                <div style="background: rgba(0,230,118,0.05); border: 1px solid rgba(0,230,118,0.2); border-radius: 10px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.72rem; font-weight: 800; color: #00e676; display: flex; align-items: center; gap: 6px;">
+                            <span class="action-pulse" style="background: #00e676; width: 8px; height: 8px; display: inline-block; border-radius: 50%;"></span> TELEMETRIA EM TEMPO REAL
+                        </span>
+                        <button id="btn-refresh-telemetry" style="background: transparent; border: none; color: var(--text-secondary); font-size: 0.7rem; cursor: pointer;">ðŸ”„ Atualizar</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; text-align: center;">
+                        <div style="background: rgba(0,0,0,0.5); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.65rem; color: var(--text-secondary); display: block;">USUÃRIOS ONLINE AGORA</span>
+                            <strong id="metric-active-now" style="font-size: 1.1rem; color: #00e676; font-family: 'JetBrains Mono', monospace;">0</strong>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.5); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.65rem; color: var(--text-secondary); display: block;">VISITANTES ÃšNICOS HOJE</span>
+                            <strong id="metric-today-visits" style="font-size: 1.1rem; color: var(--color-sunny); font-family: 'JetBrains Mono', monospace;">0</strong>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.5); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.65rem; color: var(--text-secondary); display: block;">ALERTAS ATIVOS NO SISTEMA</span>
+                            <strong id="metric-active-alerts" style="font-size: 1.1rem; color: #fff; font-family: 'JetBrains Mono', monospace;">0</strong>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.5); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.65rem; color: var(--text-secondary); display: block;">DESKTOP / MOBILE</span>
+                            <strong id="metric-device-ratio" style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;">- / -</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                    <button id="btn-save-admin" class="btn btn-primary btn-full" data-i18n="admin_save_btn">Salvar ConfiguraÃ§Ãµes</button>
+                </div>
+                <span id="admin-save-success" class="copy-success-msg hidden" style="text-align: center;" data-i18n="admin_save_success">âœ“ ConfiguraÃ§Ãµes salvas e aplicadas com sucesso!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- GOOGLE SIGNUP / VIP INVITE MODAL -->
+    <div id="invite-signup-modal" class="modal-overlay hidden">
+        <div class="modal-content glass" style="max-width: 440px; padding: 1.5rem;">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header" style="text-align: center; display: flex; flex-direction: column; gap: 0.35rem; align-items: center;">
+                <span class="modal-badge" style="background: linear-gradient(135deg, var(--color-sunny), var(--color-cloudy)); color: #000; font-weight: 800; font-size: 0.68rem; padding: 3px 8px; border-radius: 20px;" data-i18n="invite_badge">ðŸŽ CONVITE VIP EXCLUSIVO</span>
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 0.25rem;" data-i18n="invite_title">Ativar Acesso VitalÃ­cio GrÃ¡tis</h2>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;" data-i18n="invite_desc">VocÃª foi convidado para testar e usar o BTC Weather Panel com acesso VIP ilimitado e sem cobranÃ§as.</p>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; align-items: center; margin-top: 0.75rem; width: 100%;">
+                <p style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; line-height: 1.45; margin: 0;" data-i18n="invite_body">
+                    Desbloqueie sinais em tempo real, todas as estaÃ§Ãµes (15M, 1H, 4H) e termÃ´metro completo. Basta fazer cadastro rÃ¡pido com sua conta do Google e comprometer-se a responder feedbacks.
+                </p>
+                
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.25rem;">
+                    <button id="btn-google-signup" class="btn btn-secondary btn-full" style="background: #fff; color: #000; font-weight: 700; border: none; font-size: 0.8rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; transition: transform 0.2s ease;">
+                        <svg width="16" height="16" viewBox="0 0 18 18" style="flex-shrink: 0;">
+                            <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.72H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                            <path fill="#FBBC05" d="M3.95 10.68c-.18-.54-.28-1.12-.28-1.68s.1-1.14.28-1.68V5.02H.95C.34 6.22 0 7.57 0 9s.34 2.78.95 3.98l3-2.3z"/>
+                            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.99 11.42 0 9 0 5.5 0 2.43 2.11.95 5.02l3 2.3c.71-2.14 2.7-3.74 5.05-3.74z"/>
+                        </svg>
+                        <span data-i18n="invite_google_btn">Registrar com o Google</span>
+                    </button>                    
+                    <label style="display: flex; align-items: flex-start; gap: 6px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="consent-feedback-checkbox" checked style="margin-top: 2px; cursor: pointer;">
+                        <span style="font-size: 0.62rem; color: var(--text-secondary); line-height: 1.3;" data-i18n="invite_consent">
+                            Aceito me cadastrar gratuitamente e concordo em responder feedbacks sobre a usabilidade e sinais operacionais para aprimorar o painel.
+                        </span>
+                    </label>
+                </div>
+
+                <div id="google-loading" class="hidden" style="text-align: center; margin-top: 0.1rem; width: 100%;">
+                    <span style="font-size: 0.7rem; color: var(--color-sunny); font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        ðŸ”„ Autenticando com o Google...
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM PRICE ALERTS MODAL -->
+    <div id="price-alert-modal" class="modal-overlay hidden">
+        <div class="modal-content glass" style="max-width: 460px;">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span class="modal-badge" style="color: var(--color-sunny);" data-i18n="alert_badge">ðŸŽ¯ ALERTAS PERSONALIZADOS</span>
+                <h2 data-i18n="alert_title">Alerta de PreÃ§o do Bitcoin</h2>
+                <p data-i18n="alert_desc">Receba avisos visuais, sonoros e push nativos quando o BTC atingir seu alvo.</p>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                
+                <!-- Create Alert Form -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="alert_target_label">VALOR ALVO DO BTC (USD)</label>
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <span style="position: absolute; left: 12px; color: var(--text-secondary); font-weight: 700; font-family: 'JetBrains Mono', monospace;">$</span>
+                            <input type="number" id="alert-price-input" placeholder="Ex: 68500" step="100" style="width: 100%; background: #000; border: 1px solid var(--border-color); padding: 0.6rem 0.6rem 0.6rem 2rem; border-radius: 8px; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 700;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="alert_cond_label">CONDIÃ‡ÃƒO DE DISPARO</label>
+                        <select id="alert-condition-select" style="background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem; cursor: pointer;">
+                            <option value="above"><span data-i18n="alert_above">ðŸŸ¢ PreÃ§o subir e passar de (â‰¥)</span></option>
+                            <option value="below"><span data-i18n="alert_below">ðŸ”´ PreÃ§o cair e passar de (â‰¤)</span></option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);" data-i18n="alert_email_label">E-MAIL PARA ALERTA (OPCIONAL)</label>
+                        <input type="email" id="alert-email-input" placeholder="seuemail@exemplo.com" style="width: 100%; background: #000; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.8rem;">
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                        <button id="btn-create-alert" class="btn btn-primary" style="flex: 1;">
+                            <i data-lucide="plus-circle"></i> <span data-i18n="alert_create_btn">Criar Alerta</span>
+                        </button>
+                        <button id="btn-test-alert" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.6rem; white-space: nowrap; border-color: var(--color-sunny); color: var(--color-sunny);">
+                            ðŸ§ª <span data-i18n="alert_test_btn">Testar Disparo (Telegram + E-mail)</span>
+                        </button>
+                    </div>
+                    <span id="test-alert-status" class="copy-success-msg hidden" style="text-align: center; font-size: 0.72rem;"></span>
+                </div>
+
+                <!-- Active Alerts List -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
+                        <span data-i18n="alert_list_label">SEUS ALERTAS CONFIGURADOS (MÃX 5)</span>
+                        <span id="alerts-count-label" style="font-size: 0.68rem; color: var(--color-sunny);">0/5 ativos</span>
+                    </label>
+                    <div id="alerts-list-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 2px;">
+                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.75rem; padding: 1rem 0;" data-i18n="alert_list_empty">
+                            Nenhum alerta configurado no momento.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="i18n.js?v=3"></script>
+    <script src="themes.js?v=2"></script>
+    <script src="index.js?v=31"></script>
+</body>
+</html>
+

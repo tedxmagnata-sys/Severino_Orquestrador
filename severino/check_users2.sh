@@ -1,0 +1,2 @@
+#!/bin/bash
+docker exec postiz-postgres psql -U postiz-user -d postiz-db-local -c "SELECT id, email, LOWER("\"activated\"") as activated, LASTLOGIN FROM \"User\" ORDER BY createdat DESC LIMIT 5;" 2>&1 || docker exec postiz-postgres psql -U postiz-user -d postiz-db-local -c "SELECT * FROM \"User\" ORDER BY createdat DESC LIMIT 3;" 2>&1

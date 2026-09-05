@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clima do BTC — Teste Grátis 7 Dias | Sinais de Bitcoin em Tempo Real</title>
+<meta name="description" content="Descubra em que estação o mercado está: hora de plantar, cultivar ou colher. Sinais de tendência do Bitcoin em 7 períodos, RSI, Medo & Ganância em tempo real. Teste grátis 7 dias.">
+<meta property="og:title" content="Clima do BTC — Teste Grátis 7 Dias">
+<meta property="og:description" content="Todo fruto tem estação. O Bitcoin também. Sinais de tendência do BTC em tempo real.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #08090f;
+  --card: rgba(18,20,32,0.6);
+  --border: rgba(255,255,255,0.08);
+  --text: #f1f3f9;
+  --sub: #8f92a3;
+  --sunny: #ffb703;
+  --cloudy: #00f0ff;
+  --stormy: #ff3366;
+  --premium: #2979ff;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-dark); color: var(--text);
+  font-family:'Inter', system-ui, -apple-system, sans-serif;
+  line-height:1.6; overflow-x:hidden;
+}
+.bg-glow { position:fixed; border-radius:50%; filter:blur(140px); opacity:0.16; pointer-events:none; z-index:0; }
+.glow-1 { top:-12%; left:15%; width:520px; height:520px; background:var(--sunny); }
+.glow-2 { top:30%; right:-10%; width:560px; height:560px; background:var(--cloudy); }
+.glow-3 { bottom:-15%; left:30%; width:600px; height:600px; background:var(--premium); }
+.container { position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:24px 20px 60px; }
+
+/* Topo */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 0 28px; }
+.logo { font-weight:800; font-size:1.05rem; letter-spacing:0.5px; }
+.logo span { color:var(--sunny); }
+.topbar .meta { font-size:0.8rem; color:var(--sub); }
+
+/* Hero */
+.hero { text-align:center; padding:28px 0 40px; }
+.hero .chip {
+  display:inline-block; font-size:0.72rem; font-weight:700; letter-spacing:1.5px;
+  color:var(--cloudy); border:1px solid rgba(0,240,255,0.35); border-radius:999px;
+  padding:6px 16px; background:rgba(0,240,255,0.06); margin-bottom:22px; text-transform:uppercase;
+}
+.hero h1 { font-size:clamp(1.9rem,4.5vw,3.1rem); font-weight:900; line-height:1.15; letter-spacing:-0.5px; }
+.hero h1 .grad {
+  background:linear-gradient(92deg,var(--sunny),var(--stormy),var(--cloudy));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero .sub { max-width:680px; margin:18px auto 0; color:var(--sub); font-size:clamp(0.95rem,2vw,1.12rem); }
+.hero .provas { display:flex; justify-content:center; gap:28px; flex-wrap:wrap; margin-top:26px; font-size:0.82rem; color:var(--sub); }
+.hero .provas b { color:var(--text); display:block; font-size:1.25rem; }
+
+/* Card de captura */
+.offer-card {
+  max-width:520px; margin:10px auto 0; background:var(--card);
+  border:1px solid var(--border); border-radius:20px; padding:28px 26px;
+  backdrop-filter:blur(14px); text-align:center;
+}
+.offer-card .badge {
+  display:inline-block; background:linear-gradient(90deg,var(--sunny),var(--stormy));
+  color:#0a0b12; font-weight:800; font-size:0.75rem; border-radius:999px; padding:6px 14px; letter-spacing:0.5px;
+}
+.offer-card h2 { font-size:1.35rem; font-weight:800; margin:16px 0 6px; }
+.offer-card .oferta-linha { color:var(--sub); font-size:0.95rem; }
+.offer-card .oferta-linha s { color:#5a5e70; }
+.offer-card .oferta-linha b { color:var(--text); font-size:1.15rem; }
+.offer-card ul { list-style:none; text-align:left; margin:18px 0; }
+.offer-card ul li { padding:6px 0 6px 30px; position:relative; font-size:0.9rem; color:#c8cbd9; }
+.offer-card ul li::before { content:"✓"; position:absolute; left:0; color:var(--sunny); font-weight:800; }
+form { display:flex; flex-direction:column; gap:12px; }
+input[type=text], input[type=email] {
+  background:rgba(8,9,15,0.7); border:1px solid var(--border); color:var(--text);
+  border-radius:12px; padding:13px 16px; font-size:0.95rem; font-family:inherit; outline:none;
+  transition:border-color .2s;
+}
+input:focus { border-color:rgba(255,183,3,0.6); }
+.btn {
+  border:none; cursor:pointer; font-family:inherit; font-weight:800; font-size:1rem;
+  border-radius:12px; padding:15px 20px; transition:transform .15s, box-shadow .2s; text-decoration:none; display:inline-block;
+}
+.btn-cta { background:linear-gradient(92deg,var(--sunny),var(--stormy)); color:#0a0b12; box-shadow:0 6px 24px rgba(255,183,3,0.25); }
+.btn-cta:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(255,183,3,0.35); }
+.btn:disabled { opacity:0.6; cursor:wait; transform:none; }
+.msg { display:none; margin-top:14px; font-size:0.88rem; border-radius:10px; padding:12px; }
+.msg.ok { display:block; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.35); color:#7dffb0; }
+.msg.err { display:block; background:rgba(255,51,102,0.1); border:1px solid rgba(255,51,102,0.4); color:#ff8aa3; }
+.msg .codigo { font-family:monospace; background:#0a0b12; padding:4px 8px; border-radius:6px; letter-spacing:1px; color:var(--sunny); }
+.garantia { font-size:0.78rem; color:var(--sub); margin-top:14px; }
+.garantia b { color:#7dffb0; }
+
+/* Seções */
+.sec { margin-top:56px; }
+.sec h3 { text-align:center; font-size:1.5rem; font-weight:800; letter-spacing:-0.3px; }
+.sec .sec-sub { text-align:center; color:var(--sub); font-size:0.95rem; margin-top:8px; }
+.estações { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; margin-top:28px; }
+.estacao { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+.estacao .ico { font-size:1.9rem; }
+.estacao h4 { margin:10px 0 6px; font-size:1.05rem; }
+.estacao p { font-size:0.86rem; color:var(--sub); }
+.estacao.plantar { border-color:rgba(0,240,255,0.25); }
+.estacao.cultivar { border-color:rgba(255,183,3,0.25); }
+.estacao.colher { border-color:rgba(255,51,102,0.25); }
+
+/* FAQ */
+.faq { max-width:720px; margin:28px auto 0; }
+.faq details { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:10px; }
+.faq summary { cursor:pointer; font-weight:700; font-size:0.95rem; }
+.faq p { font-size:0.88rem; color:var(--sub); margin-top:8px; }
+
+/* Footer */
+.footer { text-align:center; color:#5a5e70; font-size:0.75rem; margin-top:64px; border-top:1px solid var(--border); padding-top:24px; }
+@media (max-width:640px){ .container{ padding:16px 16px 40px; } }
+</style>
+</head>
+<body>
+<div class="bg-glow glow-1"></div><div class="bg-glow glow-2"></div><div class="bg-glow glow-3"></div>
+
+<div class="container">
+  <div class="topbar">
+    <div class="logo">🌦️ Clima <span>do BTC</span></div>
+    <div class="meta">Bitcoin em tempo real</div>
+  </div>
+
+  <section class="hero">
+    <span class="chip">📡 Sinais ao vivo · 24/7</span>
+    <h1>Todo fruto tem estação.<br><span class="grad">O Bitcoin também.</span></h1>
+    <p class="sub">Descubra em que estação o mercado está: <b>hora de plantar</b> (acumular no medo), <b>cultivar</b> (manter a posição) ou <b>colher</b> (realizar lucros) — com dados objetivos, sem achismo.</p>
+    <div class="provas">
+      <div><b>7</b> períodos analisados</div>
+      <div><b>24/7</b> monitoramento</div>
+      <div><b>0</b> risco no teste</div>
+    </div>
+  </section>
+
+  <section class="offer-card">
+    <span class="badge">🎁 OFERTA DE LANÇAMENTO</span>
+    <h2>Teste Grátis por 7 Dias</h2>
+    <p class="oferta-linha">Depois, <s>R$ 79</s> → <b>R$ 47/mês</b> · cancele quando quiser</p>
+    <ul>
+      <li>Sinais LONG / SHORT / NEUTRO em 15M, 1H e 4H</li>
+      <li>Medo &amp; Ganância e RSI em 7 períodos</li>
+      <li>Análise diária do mercado</li>
+      <li>Sem cartão de crédito para testar</li>
+    </ul>
+    <form id="lead-form">
+      <input type="text" id="nome" placeholder="Seu nome (opcional)" autocomplete="name">
+      <input type="email" id="email" placeholder="Seu melhor e-mail" required autocomplete="email">
+      <input type="text" id="telegram" placeholder="@username do Telegram (opcional)" autocomplete="off">
+      <button type="submit" id="btn-captura" class="btn btn-cta">🚀 Começar Teste Grátis</button>
+    </form>
+    <div id="msg" class="msg"></div>
+    <p class="garantia">🛡️ <b>Garantia incondicional:</b> não gostou em 7 dias? Reembolso total, sem perguntas.</p>
+  </section>
+
+  <section class="sec">
+    <h3>🌾 As estações do mercado</h3>
+    <p class="sec-sub">O Clima do BTC traduz indicadores complexos em uma leitura simples: que estação estamos vivendo?</p>
+    <div class="estações">
+      <div class="estacao plantar"><div class="ico">🌱</div><h4>Plantar</h4><p>Mercado frio, medo dominando. Acumular com disciplina enquanto outros vendem no pânico.</p></div>
+      <div class="estacao cultivar"><div class="ico">🌾</div><h4>Cultivar</h4><p>Tendência neutra ou em formação. Manter a posição e aguardar a estação de colheita.</p></div>
+      <div class="estacao colher"><div class="ico">🌾</div><h4>Colher</h4><p>Euforia e sobrecompra. Realizar lucros com método, sem se deixar levar pela ganância.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>❓ Perguntas frequentes</h3>
+    <div class="faq">
+      <details>
+        <summary>Preciso de cartão de crédito para testar?</summary>
+        <p>Não. O teste de 7 dias é 100% gratuito, sem cartão. Você só decide pagar se quiser continuar.</p>
+      </details>
+      <details>
+        <summary>O que é o Medo &amp; Ganância?</summary>
+        <p>É um indicador de sentimento do mercado que vai de 0 (medo extremo) a 100 (ganância extrema). Juntos com o RSI, ele nos ajuda a identificar em que estação o mercado está.</p>
+      </details>
+      <details>
+        <summary>Funciona para iniciantes?</summary>
+        <p>Sim. O painel traduz os dados em linguagem de estações: plantio, cultivo e colheita. Não é recomendação de investimento — é uma ferramenta de análise.</p>
+      </details>
+      <details>
+        <summary>Posso cancelar quando quiser?</summary>
+        <p>Pode. Basta cancelar pela plataforma de pagamento — sem fidelidade e sem multa. Garantia incondicional de 7 dias.</p>
+      </details>
+    </div>
+  </section>
+
+  <footer class="footer">© 2026 BTC Weather Panel · Propósito de servir com integridade e transparência. · (1 Coríntios 10:31)</footer>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById('lead-form');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('btn-captura');
+
+  function mostrar(texto, tipo) {
+    msg.textContent = texto;
+    msg.className = 'msg ' + tipo;
+  }
+
+  function limparMsg() {
+    msg.className = 'msg';
+    msg.innerHTML = '';
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    limparMsg();
+    const email = document.getElementById('email').value.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      mostrar('Informe um e-mail válido.', 'err');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Ativando seu acesso...';
+    try {
+      const payload = {
+        nome: document.getElementById('nome').value.trim(),
+        email: email,
+        telegram: document.getElementById('telegram').value.trim()
+      };
+      await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const res = await fetch('/api/trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'oferta-landing', email, nome: payload.nome })
+      });
+      const data = await res.json();
+      if (data.ok && data.code) {
+        localStorage.setItem('btc_weather_license', JSON.stringify({ tier: 'vip', daysLeft: 7, code: data.code, source: 'oferta-landing' }));
+        mostrar('🎉 Teste ativado! Seu acesso VIP está pronto. Redirecionando para o painel...', 'ok');
+        setTimeout(function () { window.location.href = '/btc-weather-panel/?code=' + encodeURIComponent(data.code) + '&trial=1'; }, 1200);
+      } else {
+        mostrar('Erro ao ativar. Tente novamente em instantes.', 'err');
+        btn.disabled = false;
+        btn.textContent = '🚀 Começar Teste Grátis';
+      }
+    } catch (err) {
+      mostrar('Erro de conexão. Verifique sua internet e tente de novo.', 'err');
+      btn.disabled = false;
+      btn.textContent = '🚀 Começar Teste Grátis';
+    }
+  });
+})();
+</script>
+</body>
+</html>

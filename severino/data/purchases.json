@@ -1,0 +1,62 @@
+[
+  {
+    "transactionId": "tx123",
+    "gateway": "manual",
+    "customerName": "",
+    "customerEmail": "x@y.com",
+    "plan": "vip_mensal",
+    "value": 0,
+    "code": "VIP7-DTOC6R",
+    "createdAt": "2026-07-28T19:37:24.787Z"
+  },
+  {
+    "transactionId": "be40b6f8-a689-41d9-a383-81e085932704",
+    "gateway": "kiwify",
+    "customerName": "",
+    "customerEmail": "",
+    "plan": "vip_mensal",
+    "value": 0,
+    "code": "VIP7-AYOBO4",
+    "createdAt": "2026-07-29T02:02:39.576Z"
+  },
+  {
+    "transactionId": "test_001",
+    "gateway": "kiwify",
+    "customerName": "Maria",
+    "customerEmail": "maria@test.com",
+    "plan": "VIP Mensal",
+    "value": 47,
+    "code": "VIP7-ZHVQI9",
+    "createdAt": "2026-07-29T02:23:30.411Z"
+  },
+  {
+    "transactionId": "tx-fase3-1785784939",
+    "gateway": "kiwify",
+    "customerName": "Teste Fase3",
+    "customerEmail": "teste-fase3-1785784939@example.com",
+    "plan": "vip_mensal",
+    "value": 47,
+    "code": "VIP7-VE3LZR",
+    "createdAt": "2026-08-03T19:22:19.234Z"
+  },
+  {
+    "transactionId": "test-123",
+    "gateway": "kiwify",
+    "customerName": "John Lennon Dourado",
+    "customerEmail": "johnlennondourado07@gmail.com",
+    "plan": "BTC Weather Panel VIP",
+    "value": 47,
+    "code": "VIP7-9A75U1",
+    "createdAt": "2026-08-12T02:30:25.777Z"
+  },
+  {
+    "transactionId": "TEST-KS-02",
+    "gateway": "kiwify",
+    "customerName": "Teste Fallback",
+    "customerEmail": "fallback@validacao.local",
+    "plan": "VIP Mensal",
+    "value": 47,
+    "code": "VIP7-H2G3YL",
+    "createdAt": "2026-08-17T04:15:13.756Z"
+  }
+]

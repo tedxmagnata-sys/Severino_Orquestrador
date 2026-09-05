@@ -1,0 +1,16 @@
+{
+  "name": "severino",
+  "version": "1.0.0",
+  "main": "servidor.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node servidor.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.43.1"
+  }
+}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atendimento</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background:linear-gradient(135deg,#0b1020,#14203a); color:#e8edf7; min-height:100vh; display:flex; flex-direction:column; }
+  .head { padding:18px 20px 12px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#3dbb5a,#1d8a3a); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:800; color:#06210f; }
+  .head h1 { font-size:1.05rem; }
+  .head .st { font-size:0.75rem; color:#3dbb5a; }
+  .wrap { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:82%; padding:10px 14px; border-radius:14px; font-size:0.86rem; line-height:1.5; white-space:pre-wrap; }
+  .msg.bot { align-self:flex-start; background:rgba(255,255,255,0.08); border-bottom-left-radius:4px; }
+  .msg.user { align-self:flex-end; background:rgba(61,187,90,0.25); border-bottom-right-radius:4px; }
+  .msg.bot b { color:#3dbb5a; }
+  .input { display:flex; gap:8px; padding:14px 20px; border-top:1px solid rgba(255,255,255,0.08); }
+  .input input { flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:24px; padding:12px 18px; font-size:0.9rem; outline:none; }
+  .input button { background:#3dbb5a; color:#06210f; border:none; border-radius:50%; width:46px; height:46px; font-size:1.1rem; font-weight:800; cursor:pointer; flex:0 0 auto; }
+  .spin { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,0.3); border-top-color:#3dbb5a; border-radius:50%; animation:sp .8s linear infinite; vertical-align:-2px; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="avatar" id="avatar">?</div>
+  <div>
+    <h1 id="nomeBot">Vendedor IA</h1>
+    <div class="st" id="st">⏳ Conectando...</div>
+  </div>
+</div>
+
+<div class="wrap" id="log"></div>
+
+<div class="input">
+  <input id="msg" placeholder="Escreva sua mensagem..." onkeydown="if(event.key==='Enter')enviar()">
+  <button onclick="enviar()">➤</button>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const id = params.get('id');
+const base = '/api/vendedor/acesso/' + encodeURIComponent(id);
+
+let nomeBot = 'Vendedor IA';
+let historico = [];
+
+async function carregar() {
+  const st = document.getElementById('st');
+  if (!id) { st.textContent = 'Link inválido.'; return; }
+  try {
+    const r = await fetch(base);
+    const d = await r.json();
+    if (!d.ok) { st.textContent = d.error || 'Vendedor não encontrado.'; return; }
+    nomeBot = d.nomeBot || 'Vendedor IA';
+    document.getElementById('nomeBot').textContent = nomeBot;
+    document.getElementById('avatar').textContent = nomeBot[0].toUpperCase();
+    st.textContent = '✅ ' + d.negocio + ' · responde na hora';
+    addMsg('Olá! Sou ' + nomeBot + ' de ' + d.negocio + ' 👋 Como posso te ajudar hoje?', 'bot');
+  } catch (e) { st.textContent = 'Erro ao conectar.'; }
+}
+
+function addMsg(txt, who) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + who;
+  el.innerHTML = (who === 'bot' ? '<b>' + nomeBot + ':</b> ' : '') + txt.replace(/</g, '&lt;').replace(/\n/g, '<br>');
+  document.getElementById('log').appendChild(el);
+  document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+}
+
+async function enviar() {
+  const inp = document.getElementById('msg');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  addMsg(msg, 'user');
+  addMsg('<span class="spin"></span>', 'bot');
+  const pensando = document.getElementById('log').lastElementChild;
+  try {
+    const r = await fetch(base + '/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pergunta: msg, historico }) });
+    const d = await r.json();
+    pensando.remove();
+    if (d.ok) {
+      addMsg(d.resposta, 'bot');
+      historico.push({ role:'user', content: msg }, { role:'assistant', content: d.resposta });
+    } else {
+      addMsg('⚠️ ' + (d.error || 'Erro.'), 'bot');
+    }
+  } catch (e) {
+    pensando.remove();
+    addMsg('⚠️ Erro de conexão. Tente de novo.', 'bot');
+  }
+}
+
+carregar();
+</script>
+</body>
+</html>

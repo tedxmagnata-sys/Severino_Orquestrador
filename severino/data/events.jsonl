@@ -1,0 +1,147 @@
+{"event":"unknown","timestamp":"2026-07-28T18:31:33.243Z"}
+{"event":"unknown","timestamp":"2026-07-28T19:09:07.683Z"}
+{"event":"unknown","timestamp":"2026-07-28T19:10:56.080Z"}
+{"event":"feedback.registered","ts":"2026-08-01T02:46:42.729Z","happy":false}
+{"event":"refund.requested","ts":"2026-08-01T02:46:51.108Z","id":"ref_ms9rsxyc","transactionId":"TESTE-001","reason":"teste garantia","status":"approved_auto","createdAt":"2026-08-01T02:46:51.108Z","processedAt":null}
+{"event":"refund.processed","ts":"2026-08-01T02:46:52.109Z","id":"ref_ms9rsxyc"}
+{"event":"backup.completed","ts":"2026-08-01T08:46:30.953Z","files":9}
+{"event":"backup.completed","ts":"2026-08-01T14:46:30.953Z","files":9}
+{"event":"backup.completed","ts":"2026-08-01T20:46:30.954Z","files":9}
+{"event":"audit_test","timestamp":"2026-08-01T21:06:34.158Z"}
+{"event":"backup.completed","ts":"2026-08-02T08:42:48.125Z","files":9}
+{"event":"backup.completed","ts":"2026-08-02T14:42:48.124Z","files":9}
+{"event":"backup.completed","ts":"2026-08-02T20:42:48.127Z","files":9}
+{"event":"vendedor_cadastro","id":"ven_mscsmdvxw2ao","negocio":"Teste Bolos","ramo":"alimentos","produtos":1,"arquivos":1,"plano":"pro","frequencia":"semestral","valorTotal":568,"idioma":"pt","timestamp":"2026-08-03T05:33:03.310Z"}
+{"event":"vendedor_cadastro","id":"ven_msctdm8bbrpq","negocio":"Teste Bolos","ramo":"alimentos","produtos":1,"arquivos":1,"plano":"pro","frequencia":"semestral","valorTotal":568,"idioma":"pt","timestamp":"2026-08-03T05:54:13.836Z"}
+{"event":"backup.completed","ts":"2026-08-03T11:53:50.124Z","files":9}
+{"event":"vendedor_cadastro","id":"ven_msdvmo46z352","negocio":"Verificacao Pos-Sobrescrita","ramo":"","produtos":1,"arquivos":0,"plano":"basico","frequencia":"mensal","idioma":"pt","timestamp":"2026-08-03T23:45:01.606Z"}
+{"event":"backup.completed","ts":"2026-08-04T05:42:40.877Z","files":10}
+{"event":"backup.completed","ts":"2026-08-04T11:42:40.878Z","files":10}
+{"event":"backup.completed","ts":"2026-08-04T17:42:40.878Z","files":10}
+{"event":"backup.completed","ts":"2026-08-04T23:42:40.890Z","files":10}
+{"event":"backup.completed","ts":"2026-08-05T09:58:52.141Z","files":10}
+{"event":"vendedor_cadastro","id":"ven_msg6t68epij1","negocio":"Teste Lubrimax","ramo":"","produtos":1,"arquivos":0,"plano":"empresa","frequencia":"semestral","valorTotal":995,"qtdVendedores":5,"canais":"whatsapp,instagram,facebook,site,tiktok","nomeBot":"Clara","idioma":"pt","timestamp":"2026-08-05T14:33:33.134Z"}
+{"event":"backup.completed","ts":"2026-08-05T20:33:06.391Z","files":10}
+{"event":"vendedor_cadastro","id":"ven_msgsv1k809a3","negocio":"Teste Notificacao","ramo":"","produtos":1,"arquivos":0,"plano":"pro","frequencia":"mensal","valorTotal":97,"qtdVendedores":2,"canais":"whatsapp,instagram","nomeBot":"Zeca","idioma":"pt","timestamp":"2026-08-06T00:50:51.945Z"}
+{"event":"backup.completed","ts":"2026-08-06T08:59:55.162Z","files":10}
+{"event":"backup.completed","ts":"2026-08-06T14:59:55.159Z","files":10}
+{"event":"backup.completed","ts":"2026-08-06T23:22:52.326Z","files":10}
+{"event":"backup.completed","ts":"2026-08-07T10:53:24.444Z","files":10}
+{"event":"backup.completed","ts":"2026-08-07T16:53:24.452Z","files":10}
+{"event":"vendedor_cadastro","id":"ven_msjfq6360a94","negocio":"Teste Validação Básico","ramo":"digital","produtos":1,"arquivos":0,"plano":"basico","frequencia":"mensal","valorTotal":47,"qtdVendedores":1,"canais":"whatsapp","nomeBot":"Clara","idioma":"pt","timestamp":"2026-08-07T21:06:28.051Z"}
+{"event":"vendedor_cadastro","id":"ven_msjfq658c6y5","negocio":"Teste Validação Pro","ramo":"beleza","produtos":2,"arquivos":0,"plano":"pro","frequencia":"semestral","valorTotal":475,"qtdVendedores":2,"canais":"whatsapp,instagram","nomeBot":"Jorge","idioma":"pt","timestamp":"2026-08-07T21:06:28.124Z"}
+{"event":"vendedor_ativo","id":"ven_msjfq6360a94","negocio":"Teste Validação Básico","plano":"basico","valor":47,"tx":"TEST_BASICO_1786136788","tokens":1689,"timestamp":"2026-08-07T21:07:02.712Z"}
+{"event":"vendedor_ativo","id":"ven_msjfq658c6y5","negocio":"Teste Validação Pro","plano":"pro","valor":475,"tx":"TEST_PRO_1786136788","tokens":2204,"timestamp":"2026-08-07T21:07:42.094Z"}
+{"event":"vendedor_cadastro","id":"ven_msjgksco33cg","negocio":"Loja do Comprador","ramo":"moda","produtos":1,"arquivos":0,"plano":"pro","frequencia":"mensal","valorTotal":97,"qtdVendedores":2,"canais":"whatsapp,instagram","nomeBot":"Bia","idioma":"pt","timestamp":"2026-08-07T21:30:16.585Z"}
+{"event":"vendedor_ativo","id":"ven_msjgksco33cg","negocio":"Loja do Comprador","plano":"pro","valor":47,"tx":"PAINEL_1786138216","tokens":1968,"timestamp":"2026-08-07T21:30:58.112Z"}
+{"event":"vendedor_retreinado","id":"ven_msjgksco33cg","negocio":"Loja do Comprador (nova marca)","tokens":1793,"timestamp":"2026-08-07T21:31:38.742Z"}
+{"event":"backup.completed","ts":"2026-08-08T03:52:04.518Z","files":10}
+{"event":"backup.completed","ts":"2026-08-08T09:52:04.518Z","files":10}
+{"event":"backup.completed","ts":"2026-08-08T15:52:04.522Z","files":10}
+{"event":"backup.completed","ts":"2026-08-09T02:51:15.782Z","files":10}
+{"event":"backup.completed","ts":"2026-08-09T08:51:15.783Z","files":10}
+{"event":"backup.completed","ts":"2026-08-09T14:51:15.790Z","files":10}
+{"event":"backup.completed","ts":"2026-08-09T20:51:15.792Z","files":10}
+{"event":"backup.completed","ts":"2026-08-10T08:23:27.597Z","files":10}
+{"event":"backup.completed","ts":"2026-08-10T14:23:27.611Z","files":10}
+{"event":"backup.completed","ts":"2026-08-11T00:50:41.758Z","files":10}
+{"event":"backup.completed","ts":"2026-08-11T06:50:41.744Z","files":10}
+{"event":"backup.completed","ts":"2026-08-11T12:50:41.748Z","files":10}
+{"event":"backup.completed","ts":"2026-08-11T18:50:41.733Z","files":11}
+{"event":"backup.completed","ts":"2026-08-12T01:33:33.900Z","files":11}
+{"event":"backup.completed","ts":"2026-08-12T07:33:33.903Z","files":11}
+{"event":"backup.completed","ts":"2026-08-12T13:33:33.904Z","files":11}
+{"event":"backup.completed","ts":"2026-08-12T20:36:30.033Z","files":11}
+{"event":"backup.completed","ts":"2026-08-13T02:36:30.038Z","files":11}
+{"event":"backup.completed","ts":"2026-08-13T08:36:30.030Z","files":11}
+{"event":"backup.completed","ts":"2026-08-13T14:36:30.042Z","files":11}
+{"event":"backup.completed","ts":"2026-08-13T20:36:30.020Z","files":11}
+{"event":"backup.completed","ts":"2026-08-14T02:36:30.033Z","files":11}
+{"event":"backup.completed","ts":"2026-08-14T08:36:30.035Z","files":11}
+{"event":"backup.completed","ts":"2026-08-14T14:36:30.039Z","files":11}
+{"event":"backup.completed","ts":"2026-08-14T20:36:30.053Z","files":11}
+{"event":"backup.completed","ts":"2026-08-15T02:36:30.040Z","files":11}
+{"event":"backup.completed","ts":"2026-08-15T08:36:30.038Z","files":11}
+{"event":"backup.completed","ts":"2026-08-15T14:36:30.054Z","files":11}
+{"event":"backup.completed","ts":"2026-08-15T20:36:30.055Z","files":11}
+{"event":"backup.completed","ts":"2026-08-16T02:36:30.059Z","files":11}
+{"event":"backup.completed","ts":"2026-08-16T08:36:30.045Z","files":11}
+{"event":"backup.completed","ts":"2026-08-16T14:36:30.028Z","files":11}
+{"event":"backup.completed","ts":"2026-08-16T20:36:30.020Z","files":11}
+{"event":"backup.completed","ts":"2026-08-17T02:36:30.048Z","files":11}
+{"event":"backup.completed","ts":"2026-08-17T08:36:30.053Z","files":11}
+{"event":"backup.completed","ts":"2026-08-17T14:36:30.068Z","files":11}
+{"event":"backup.completed","ts":"2026-08-17T20:36:30.083Z","files":11}
+{"event":"backup.completed","ts":"2026-08-18T02:36:30.061Z","files":11}
+{"event":"backup.completed","ts":"2026-08-18T08:36:30.058Z","files":11}
+{"event":"backup.completed","ts":"2026-08-18T14:36:30.078Z","files":11}
+{"event":"backup.completed","ts":"2026-08-19T01:45:36.765Z","files":11}
+{"event":"backup.completed","ts":"2026-08-19T07:45:36.759Z","files":11}
+{"event":"backup.completed","ts":"2026-08-19T13:45:36.765Z","files":11}
+{"event":"backup.completed","ts":"2026-08-19T19:45:36.779Z","files":11}
+{"event":"backup.completed","ts":"2026-08-20T01:45:36.774Z","files":11}
+{"event":"backup.completed","ts":"2026-08-20T07:45:36.794Z","files":11}
+{"event":"contribuicao","timestamp":"2026-08-20T16:49:56.889Z","tipo":"ideia","mensagem":"Teste contribuicao via script"}
+{"event":"backup.completed","ts":"2026-08-20T21:21:22.947Z","files":11}
+{"event":"backup.completed","ts":"2026-08-21T03:21:22.888Z","files":11}
+{"event":"backup.completed","ts":"2026-08-21T09:21:22.927Z","files":11}
+{"event":"backup.completed","ts":"2026-08-21T15:21:22.964Z","files":11}
+{"event":"backup.completed","ts":"2026-08-21T21:21:22.945Z","files":11}
+{"event":"backup.completed","ts":"2026-08-22T03:21:22.881Z","files":13}
+{"event":"backup.completed","ts":"2026-08-22T09:21:22.955Z","files":13}
+{"event":"backup.completed","ts":"2026-08-22T15:21:22.954Z","files":13}
+{"event":"backup.completed","ts":"2026-08-22T21:21:22.985Z","files":13}
+{"event":"backup.completed","ts":"2026-08-23T03:21:22.889Z","files":13}
+{"event":"backup.completed","ts":"2026-08-23T09:36:56.651Z","files":13}
+{"event":"backup.completed","ts":"2026-08-23T15:36:56.662Z","files":13}
+{"event":"backup.completed","ts":"2026-08-23T21:36:56.660Z","files":13}
+{"event":"backup.completed","ts":"2026-08-24T03:36:56.591Z","files":13}
+{"event":"backup.completed","ts":"2026-08-24T09:36:56.632Z","files":13}
+{"event":"backup.completed","ts":"2026-08-24T15:36:56.673Z","files":13}
+{"event":"backup.completed","ts":"2026-08-24T21:36:56.674Z","files":13}
+{"event":"backup.completed","ts":"2026-08-25T03:36:56.598Z","files":13}
+{"event":"backup.completed","ts":"2026-08-25T09:36:56.640Z","files":13}
+{"event":"backup.completed","ts":"2026-08-25T15:36:56.666Z","files":13}
+{"event":"backup.completed","ts":"2026-08-26T02:22:25.458Z","files":16}
+{"event":"backup.completed","ts":"2026-08-26T08:22:25.385Z","files":16}
+{"event":"backup.completed","ts":"2026-08-26T14:22:25.431Z","files":16}
+{"event":"backup.completed","ts":"2026-08-26T20:22:25.437Z","files":16}
+{"event":"backup.completed","ts":"2026-08-27T02:22:25.462Z","files":16}
+{"event":"backup.completed","ts":"2026-08-27T08:49:10.348Z","files":16}
+{"event":"backup.completed","ts":"2026-08-27T14:49:10.352Z","files":16}
+{"event":"backup.completed","ts":"2026-08-27T20:49:10.368Z","files":16}
+{"event":"backup.completed","ts":"2026-08-28T02:49:10.349Z","files":16}
+{"event":"backup.completed","ts":"2026-08-28T08:49:10.351Z","files":16}
+{"event":"backup.completed","ts":"2026-08-28T14:49:10.364Z","files":16}
+{"event":"backup.completed","ts":"2026-08-28T20:49:10.374Z","files":16}
+{"event":"backup.completed","ts":"2026-08-29T02:49:10.367Z","files":16}
+{"event":"backup.completed","ts":"2026-08-29T08:49:10.354Z","files":16}
+{"event":"backup.completed","ts":"2026-08-29T14:49:10.364Z","files":16}
+{"event":"backup.completed","ts":"2026-08-29T20:49:10.369Z","files":16}
+{"event":"backup.completed","ts":"2026-08-30T02:49:10.360Z","files":16}
+{"event":"backup.completed","ts":"2026-08-30T08:49:10.363Z","files":16}
+{"event":"backup.completed","ts":"2026-08-30T14:49:10.378Z","files":16}
+{"event":"backup.completed","ts":"2026-08-30T20:49:10.372Z","files":16}
+{"event":"backup.completed","ts":"2026-08-31T02:49:10.368Z","files":16}
+{"event":"backup.completed","ts":"2026-08-31T09:50:59.082Z","files":16}
+{"event":"backup.completed","ts":"2026-08-31T15:50:59.090Z","files":16}
+{"event":"backup.completed","ts":"2026-08-31T21:50:59.098Z","files":16}
+{"event":"backup.completed","ts":"2026-09-01T03:50:59.036Z","files":16}
+{"event":"backup.completed","ts":"2026-09-01T09:50:59.088Z","files":16}
+{"event":"backup.completed","ts":"2026-09-01T15:50:59.102Z","files":16}
+{"event":"backup.completed","ts":"2026-09-01T21:50:59.092Z","files":16}
+{"event":"backup.completed","ts":"2026-09-02T03:50:59.032Z","files":16}
+{"event":"backup.completed","ts":"2026-09-02T09:50:59.100Z","files":16}
+{"event":"backup.completed","ts":"2026-09-02T15:50:59.103Z","files":16}
+{"event":"backup.completed","ts":"2026-09-02T21:50:59.093Z","files":16}
+{"event":"backup.completed","ts":"2026-09-03T03:50:59.073Z","files":16}
+{"event":"backup.completed","ts":"2026-09-03T09:50:59.123Z","files":16}
+{"event":"backup.completed","ts":"2026-09-03T15:50:59.116Z","files":16}
+{"event":"backup.completed","ts":"2026-09-03T21:50:59.035Z","files":16}
+{"event":"backup.completed","ts":"2026-09-04T03:50:59.125Z","files":16}
+{"event":"backup.completed","ts":"2026-09-04T09:50:59.086Z","files":16}
+{"event":"backup.completed","ts":"2026-09-04T15:50:59.105Z","files":16}
+{"event":"backup.completed","ts":"2026-09-04T21:50:59.092Z","files":16}
+{"event":"backup.completed","ts":"2026-09-05T03:50:59.121Z","files":16}
+{"event":"backup.completed","ts":"2026-09-05T09:50:59.125Z","files":16}
+{"event":"backup.completed","ts":"2026-09-05T15:50:59.126Z","files":16}

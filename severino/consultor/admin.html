@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Severino | Painel Admin</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #0a0a0f;
+  --card: #13131f;
+  --accent: #6c5ce7;
+  --accent2: #00cec9;
+  --text: #e2e2f0;
+  --muted: #8888a0;
+  --input-bg: #1a1a2e;
+  --border: #252540;
+  --success: #00b894;
+  --warn: #fdcb6e;
+  --danger: #e17055;
+  --gold: #d4a843;
+  --gold-light: rgba(212,168,67,0.12);
+}
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding: 20px 16px 40px;
+  line-height: 1.6;
+}
+.container { max-width: 860px; margin: 0 auto; }
+.header { text-align:center; margin-bottom:22px; }
+.header .logo { font-size:1.8rem; }
+.header h1 { font-size:1.05rem; font-weight:700; }
+.header .sub { font-size:0.72rem; color:var(--muted); }
+.card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:24px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  max-width:420px; margin: 40px auto 0;
+}
+.card h2 { font-size:0.95rem; margin-bottom:4px; }
+.card p { font-size:0.75rem; color:var(--muted); margin-bottom:14px; }
+input[type="password"], input[type="text"] {
+  width:100%; background:var(--input-bg); border:1px solid var(--border);
+  border-radius:10px; padding:12px 14px; font-size:0.9rem; color:var(--text);
+  font-family:inherit; transition:all 0.2s;
+}
+input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,92,231,0.15); }
+.btn {
+  padding:12px 20px; border-radius:10px; font-size:0.85rem; font-weight:600;
+  font-family:inherit; cursor:pointer; transition:all 0.2s; border:none;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-primary { background:var(--accent); color:#fff; width:100%; margin-top:10px; }
+.btn-primary:hover { background:#7c6cf0; }
+.btn-sm { padding:6px 12px; font-size:0.72rem; border-radius:8px; }
+.btn-success { background:var(--success); color:#000; }
+.btn-success:hover { opacity:0.9; }
+.btn-warn { background:var(--warn); color:#000; }
+.btn-warn:hover { opacity:0.9; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:hover { opacity:0.9; }
+.btn-outline { background:transparent; color:var(--muted); border:1px solid var(--border); }
+.btn-outline:hover { color:var(--text); border-color:var(--muted); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+.dashboard-header {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:10px; flex-wrap:wrap; margin-bottom:16px;
+}
+.dashboard-header h2 { font-size:1rem; }
+.stats-row { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+.stat {
+  flex:1; min-width:120px; background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:12px 14px; text-align:center;
+}
+.stat .n { font-size:1.4rem; font-weight:800; }
+.stat .l { font-size:0.65rem; color:var(--muted); }
+
+.filters { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+.chip {
+  padding:5px 12px; border-radius:20px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-size:0.72rem; font-weight:600;
+  cursor:pointer; transition:all 0.2s; font-family:inherit;
+}
+.chip:hover { border-color:var(--muted); color:var(--text); }
+.chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.vendedor {
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:16px; margin-bottom:12px;
+}
+.v-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+.v-nome { font-size:0.95rem; font-weight:700; }
+.v-negocio { font-size:0.75rem; color:var(--accent2); font-weight:600; }
+.v-meta { font-size:0.68rem; color:var(--muted); margin-top:2px; }
+.badge {
+  font-size:0.6rem; font-weight:700; padding:3px 10px; border-radius:10px; white-space:nowrap;
+}
+.badge.pendente_ativacao { background:rgba(253,203,110,0.15); color:var(--warn); }
+.badge.ativo { background:rgba(0,184,148,0.15); color:var(--success); }
+.badge.suspenso { background:rgba(225,112,85,0.15); color:var(--danger); }
+.badge.cancelado { background:rgba(136,136,160,0.15); color:var(--muted); }
+.badge.pro { background:var(--gold); color:#000; }
+.badge.basico { background:rgba(108,92,231,0.2); color:var(--accent); }
+.v-detalhes { display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
+.v-detalhes.open { display:block; }
+.v-detalhes h4 { font-size:0.75rem; color:var(--accent2); margin:10px 0 6px; font-weight:700; }
+.kv { display:flex; gap:8px; font-size:0.74rem; padding:3px 0; }
+.kv .k { color:var(--muted); min-width:110px; flex-shrink:0; }
+.kv .v { color:var(--text); }
+.v-acoes { display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+.arquivo-link { font-size:0.72rem; color:var(--accent2); text-decoration:none; margin-right:10px; }
+.arquivo-link:hover { text-decoration:underline; }
+.vazio { text-align:center; color:var(--muted); font-size:0.8rem; padding:30px 0; }
+.msg { font-size:0.75rem; margin-top:10px; text-align:center; }
+.msg.err { color:var(--danger); }
+.msg.ok { color:var(--success); }
+.lock-note { font-size:0.62rem; color:var(--muted); text-align:center; margin-top:12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo"><img src="https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4" alt="Severino" style="width:40px;height:40px;border-radius:50%;object-fit:cover;"></div>
+    <h1>Severino — Painel Admin</h1>
+    <div class="sub">Gerencie os cadastros de vendedores IA</div>
+  </div>
+
+  <div id="loginCard" class="card" style="display:none;">
+    <h2>🔐 Acesso restrito</h2>
+    <p>Entre com a chave secreta de administrador para gerenciar os vendedores.</p>
+    <input type="password" id="secretInput" placeholder="Chave secreta (SECRET_KEY)" autocomplete="off">
+    <button class="btn btn-primary" id="btnLogin" onclick="fazerLogin()">Entrar</button>
+    <div class="msg" id="loginMsg"></div>
+    <p class="lock-note">A chave está no servidor: /root/severino/.env → SECRET_KEY</p>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div class="dashboard-header">
+      <h2>📋 Vendedores cadastrados</h2>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="recarregar()">🔄 Atualizar</button>
+        <button class="btn btn-danger btn-sm" onclick="sair()">🚪 Sair</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Total</div></div>
+      <div class="stat"><div class="n" id="statPendentes">0</div><div class="l">Pendentes</div></div>
+      <div class="stat"><div class="n" id="statAtivos">0</div><div class="l">Ativos</div></div>
+      <div class="stat"><div class="n" id="statReceita">R$ 0</div><div class="l">Receita (valorTotal)</div></div>
+    </div>
+
+    <div class="filters">
+      <button class="chip active" data-filtro="todos" onclick="filtrar('todos')">Todos</button>
+      <button class="chip" data-filtro="pendente_ativacao" onclick="filtrar('pendente_ativacao')">⏳ Pendentes</button>
+      <button class="chip" data-filtro="ativo" onclick="filtrar('ativo')">✅ Ativos</button>
+      <button class="chip" data-filtro="suspenso" onclick="filtrar('suspenso')">⛔ Suspensos</button>
+      <button class="chip" data-filtro="cancelado" onclick="filtrar('cancelado')">↩️ Cancelados</button>
+    </div>
+
+    <div id="lista"></div>
+  </div>
+</div>
+
+<script>
+let secret = localStorage.getItem('severino_admin_secret') || '';
+let vendedores = [];
+let filtroAtual = 'todos';
+
+const STATUS_LABELS = {
+  pendente_ativacao: '⏳ Pendente de ativação',
+  ativo: '✅ Ativo',
+  suspenso: '⛔ Suspenso',
+  cancelado: '↩️ Cancelado (reembolsado)'
+};
+
+const FREQ_LABELS = { mensal: 'Mensal', semestral: 'Semestral', anual: 'Anual' };
+
+function fmtData(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtMoeda(v) {
+  return 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function init() {
+  if (secret) {
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    carregar();
+  } else {
+    document.getElementById('loginCard').style.display = 'block';
+  }
+}
+
+async function fazerLogin() {
+  const val = document.getElementById('secretInput').value.trim();
+  const msg = document.getElementById('loginMsg');
+  if (!val) { msg.textContent = 'Digite a chave secreta.'; msg.className = 'msg err'; return; }
+  secret = val;
+  const ok = await testarSecret();
+  if (ok) {
+    localStorage.setItem('severino_admin_secret', val);
+    msg.textContent = '';
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    carregar();
+  } else {
+    msg.textContent = 'Chave incorreta. Acesso negado.';
+    msg.className = 'msg err';
+  }
+}
+
+async function testarSecret() {
+  try {
+    const res = await fetch('/api/vendedores', { headers: { 'x-admin-secret': secret } });
+    return res.ok;
+  } catch { return false; }
+}
+
+function sair() {
+  secret = '';
+  localStorage.removeItem('severino_admin_secret');
+  location.reload();
+}
+
+async function carregar() {
+  try {
+    const res = await fetch('/api/vendedores', { headers: { 'x-admin-secret': secret } });
+    if (res.status === 401) { sair(); return; }
+    vendedores = await res.json();
+    atualizarStats();
+    renderizar();
+  } catch (e) {
+    document.getElementById('lista').innerHTML = '<div class="vazio">Erro ao carregar. Verifique sua conexão.</div>';
+  }
+}
+
+function atualizarStats() {
+  const total = vendedores.length;
+  const pendentes = vendedores.filter(v => v.status === 'pendente_ativacao').length;
+  const ativos = vendedores.filter(v => v.status === 'ativo').length;
+  const receita = vendedores.reduce((s, v) => s + (Number(v.valorTotal) || 0), 0);
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPendentes').textContent = pendentes;
+  document.getElementById('statAtivos').textContent = ativos;
+  document.getElementById('statReceita').textContent = fmtMoeda(receita);
+}
+
+function filtrar(f) {
+  filtroAtual = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filtro === f));
+  renderizar();
+}
+
+function renderizar() {
+  const box = document.getElementById('lista');
+  const lista = filtroAtual === 'todos' ? vendedores : vendedores.filter(v => v.status === filtroAtual);
+
+  if (lista.length === 0) {
+    box.innerHTML = '<div class="vazio">Nenhum vendedor ' + (filtroAtual === 'todos' ? '' : 'com esse status ') + 'cadastrado.</div>';
+    return;
+  }
+
+  box.innerHTML = lista.map((v, i) => `
+    <div class="vendedor">
+      <div class="v-top">
+        <div>
+          <div class="v-nome">🏪 ${escapeHTML(v.negocio)}</div>
+          <div class="v-negocio">${escapeHTML((v.personalidade && v.personalidade.nomeBot) || 'Severino')} · ${v.produtos.length} produto(s) · ${v.treino && v.treino.arquivos ? v.treino.arquivos.length : 0} arquivo(s)</div>
+          <div class="v-meta">📅 ${fmtData(v.recebidoEm)} · 💳 ${v.metodoPagamento || 'fiat'} · 🆔 ${v.id}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+          <span class="badge ${v.plano}">${v.plano === 'pro' ? 'PRO' : 'BÁSICO'} · ${FREQ_LABELS[v.frequencia] || '—'}${v.modoTeste ? ' · 🧪 BETA' : ''}</span>
+          <span class="badge ${v.status}">${STATUS_LABELS[v.status] || v.status}</span>
+        </div>
+      </div>
+
+      <div class="v-detalhes" id="det_${i}">
+        <h4>👤 Cliente</h4>
+        <div class="kv"><span class="k">WhatsApp:</span><span class="v">${escapeHTML(v.whatsapp || '—')}</span></div>
+        <div class="kv"><span class="k">Ramo:</span><span class="v">${escapeHTML(v.ramo || '—')}</span></div>
+        <div class="kv"><span class="k">Redes:</span><span class="v"><a href="${escapeHTML(v.redes || '')}" target="_blank" style="color:var(--accent2);">${escapeHTML(v.redes || '—')}</a></span></div>
+        <div class="kv"><span class="k">Valor:</span><span class="v">${fmtMoeda(v.valorTotal)} · ${FREQ_LABELS[v.frequencia] || '—'}${v.modoTeste ? ' · 🧪 Teste beta (R$ 0)' : ''}</span></div>
+        <div class="kv"><span class="k">Garantia:</span><span class="v">${v.diasGarantia || '—'} dias</span></div>
+        <div class="kv"><span class="k">Idioma:</span><span class="v">${(v.idioma || 'pt').toUpperCase()}</span></div>
+        <div class="kv"><span class="k">Convite:</span><span class="v">${v.conviteCode ? '🎁 ' + escapeHTML(v.conviteCode) : '—'}</span></div>
+
+        <h4>🤖 Personalidade</h4>
+        <div class="kv"><span class="k">Nome do bot:</span><span class="v">${escapeHTML((v.personalidade && v.personalidade.nomeBot) || '—')}</span></div>
+        <div class="kv"><span class="k">Tom de voz:</span><span class="v">${escapeHTML((v.personalidade && v.personalidade.tomVoz) || '—')}</span></div>
+        <div class="kv"><span class="k">Idioma atend.:</span><span class="v">${escapeHTML((v.personalidade && v.personalidade.idiomaAtend) || '—')}</span></div>
+        <div class="kv"><span class="k">Horário:</span><span class="v">${escapeHTML((v.personalidade && v.personalidade.horario) || '—')}</span></div>
+        <div class="kv"><span class="k">Regras:</span><span class="v">${escapeHTML((v.personalidade && v.personalidade.regras) || '—')}</span></div>
+
+        <h4>📦 Produtos</h4>
+        ${v.produtos.map(p => `<div class="kv"><span class="k">${escapeHTML(p.nome)}:</span><span class="v">${fmtMoeda(p.preco)} — ${escapeHTML(p.desc)}</span></div>`).join('')}
+
+        <h4>📚 Treinamento</h4>
+        <div class="kv"><span class="k">Texto livre:</span><span class="v">${escapeHTML((v.treino && v.treino.texto) || '—')}</span></div>
+        <div class="kv"><span class="k">Link ref.:</span><span class="v">${escapeHTML((v.treino && v.treino.linkRef) || '—')}</span></div>
+        <div class="kv"><span class="k">Arquivos:</span><span class="v">${arquivosLinks(v)}</span></div>
+
+        <div class="kv"><span class="k">Extras:</span><span class="v">${v.avatar ? '🪞 Avatar' : ''} ${v.conteudo ? '🎬 Conteúdo+Agendamento' : ''}${!v.avatar && !v.conteudo ? '—' : ''}</span></div>
+      </div>
+
+      <div class="v-acoes">
+        <button class="btn btn-outline btn-sm" onclick="toggleDetalhes(${i})">👁️ Detalhes</button>
+        ${v.status !== 'ativo' ? `<button class="btn btn-success btn-sm" onclick="mudarStatus('${v.id}', 'ativo')">✅ Ativar</button>` : ''}
+        ${v.status === 'ativo' ? `<button class="btn btn-warn btn-sm" onclick="mudarStatus('${v.id}', 'suspenso')">⛔ Suspender</button>` : ''}
+        ${v.status !== 'cancelado' ? `<button class="btn btn-danger btn-sm" onclick="mudarStatus('${v.id}', 'cancelado')">↩️ Reembolsar</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function arquivosLinks(v) {
+  const arquivos = (v.treino && v.treino.arquivos) || [];
+  if (arquivos.length === 0) return '—';
+  return arquivos.map(a =>
+    `<a class="arquivo-link" href="/api/vendedores/arquivos/${encodeURIComponent(v.id)}/${encodeURIComponent(a.nome)}" onclick="return baixarArquivo(event, '${v.id}', '${encodeURIComponent(a.nome)}')">⬇ ${escapeHTML(a.nome)}</a>`
+  ).join('');
+}
+
+function baixarArquivo(e, id, nome) {
+  e.preventDefault();
+  fetch(`/api/vendedores/arquivos/${id}/${nome}`, { headers: { 'x-admin-secret': secret } })
+    .then(res => {
+      if (!res.ok) throw new Error('Erro');
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = decodeURIComponent(nome);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    })
+    .catch(() => alert('Não foi possível baixar o arquivo.'));
+  return false;
+}
+
+function toggleDetalhes(i) {
+  const el = document.getElementById('det_' + i);
+  el.classList.toggle('open');
+}
+
+async function mudarStatus(id, status) {
+  if (status === 'cancelado') {
+    const ok = confirm('Confirmar reembolso automático deste vendedor? O dinheiro será devolvido.');
+    if (!ok) return;
+  }
+  try {
+    const res = await fetch('/api/vendedor/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+      body: JSON.stringify({ id, status })
+    });
+    if (res.ok) {
+      carregar();
+    } else {
+      alert('Erro ao atualizar status.');
+    }
+  } catch {
+    alert('Erro de conexão.');
+  }
+}
+
+function recarregar() { carregar(); }
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>

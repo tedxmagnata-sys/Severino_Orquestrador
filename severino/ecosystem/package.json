@@ -1,0 +1,24 @@
+{
+  "name": "ecosystem",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bus.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github-orq:tedxmagnata-sys/Severino_Orquestrador.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "imapflow": "^1.7.0",
+    "mailparser": "^3.9.15",
+    "nodemailer": "^9.0.5",
+    "oauth-1.0a": "^2.2.6",
+    "twitter-api-v2": "^1.29.1"
+  }
+}

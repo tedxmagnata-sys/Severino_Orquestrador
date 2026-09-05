@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Severino Vendedor IA — Monte seu vendedor em 5 passos</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background:#0b1020; color:#e8edf7; line-height:1.6; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 20px; }
+
+  header { padding:34px 20px 8px; text-align:center; }
+  header .logo { display:inline-block; background:rgba(61,187,90,0.15); color:#3dbb5a; border:1px solid rgba(61,187,90,0.4); border-radius:999px; padding:5px 14px; font-size:0.72rem; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; }
+  header h1 { font-size:1.6rem; margin:14px 0 6px; }
+  header h1 span { color:#3dbb5a; }
+  header p { color:#9fb0cc; font-size:0.95rem; }
+
+  .stepper { display:flex; justify-content:center; gap:8px; margin:24px 0 6px; }
+  .stepper .dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.18); }
+  .stepper .dot.on { background:#3dbb5a; }
+  .stepper .dot.ok { background:#3dbb5a; }
+
+  .card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:26px; margin-top:14px; }
+  .card h2 { font-size:1.15rem; margin-bottom:4px; }
+  .card .sub { color:#9fb0cc; font-size:0.85rem; margin-bottom:18px; }
+  label { display:block; font-size:0.8rem; font-weight:700; margin:12px 0 5px; color:#c3cee0; }
+  input[type=text], input[type=email], input[type=tel], textarea, select {
+    width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.16);
+    color:#e8edf7; border-radius:10px; padding:12px 14px; font-size:0.95rem; outline:none; font-family:inherit;
+  }
+  input:focus, textarea:focus { border-color:#3dbb5a; }
+  textarea { resize:vertical; min-height:80px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .hint { font-size:0.75rem; color:#7d90b0; margin-top:4px; }
+
+  .btn { display:block; width:100%; background:#3dbb5a; color:#06210f; font-weight:800; font-size:1rem;
+    padding:15px; border:none; border-radius:12px; cursor:pointer; margin-top:22px; font-family:inherit; }
+  .btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.2); color:#9fb0cc; }
+  .btnrow { display:grid; grid-template-columns:1fr 2fr; gap:12px; }
+  .produto { display:grid; grid-template-columns:1fr 90px; gap:8px; margin-bottom:8px; }
+  .produto .rm { background:transparent; border:1px solid rgba(255,90,90,0.4); color:#ff5a5a; border-radius:8px; cursor:pointer; font-weight:800; }
+
+  .steps { margin-top:18px; }
+  .steps div { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px; margin-bottom:10px; }
+  .steps b { color:#c3cee0; }
+
+  .barra { position:fixed; left:0; right:0; bottom:0; background:#0e1427; border-top:1px solid rgba(255,255,255,0.08); padding:14px 20px; text-align:center; display:none; }
+  .barra.show { display:block; }
+  .msg { position:fixed; inset:0; background:rgba(11,16,32,0.92); display:none; align-items:center; justify-content:center; z-index:50; }
+  .msg.show { display:flex; }
+  .msg .box { background:#101a33; border:1px solid rgba(61,187,90,0.4); border-radius:18px; padding:34px; max-width:460px; text-align:center; }
+  .msg .box .ico { font-size:2.4rem; }
+  .msg .box h2 { margin:10px 0 6px; }
+  .msg .box p { color:#9fb0cc; font-size:0.9rem; }
+  .msg .box a { display:inline-block; margin-top:18px; background:#3dbb5a; color:#06210f; font-weight:800; padding:12px 26px; border-radius:10px; text-decoration:none; }
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="logo">Severino Vendedor IA</div>
+  <h1>Monte seu vendedor em <span>5 passos</span></h1>
+  <p>Leva menos de 3 minutos. Depois é só pagar e ativar.</p>
+</header>
+
+<div class="wrap">
+  <div class="stepper" id="stepper">
+    <div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+
+  <!-- PASSO 1: negócio -->
+  <div class="card step" id="s1">
+    <h2>Passo 1 · Seu negócio</h2>
+    <p class="sub">Dados básicos para criar o vendedor.</p>
+    <label>Nome do negócio *</label>
+    <input type="text" id="f_negocio" placeholder="Ex.: Barbearia do Zé">
+    <label>Ramo</label>
+    <input type="text" id="f_ramo" placeholder="Ex.: Barbearia e barber shop">
+    <div class="row2">
+      <div>
+        <label>WhatsApp *</label>
+        <input type="tel" id="f_whatsapp" placeholder="(11) 99999-0000">
+      </div>
+      <div>
+        <label>E-mail *</label>
+        <input type="email" id="f_email" placeholder="voce@negocio.com">
+      </div>
+    </div>
+    <label>Instagram (opcional)</label>
+    <input type="text" id="f_redes" placeholder="@seubarbearia">
+    <button class="btn" onclick="proximo(1)">Continuar →</button>
+  </div>
+
+  <!-- PASSO 2: produtos -->
+  <div class="card step" id="s2" style="display:none">
+    <h2>Passo 2 · Produtos e serviços</h2>
+    <p class="sub">O que você vende? Adicione os itens com preço (a IA usa exatamente estes valores).</p>
+    <label>Itens (clique em + para adicionar)</label>
+    <div id="plist"></div>
+    <button class="btn ghost" onclick="addProduto()">+ Adicionar item</button>
+    <button class="btn" onclick="proximo(2)">Continuar →</button>
+  </div>
+
+  <!-- PASSO 3: regras -->
+  <div class="card step" id="s3" style="display:none">
+    <h2>Passo 3 · Regras de atendimento</h2>
+    <p class="sub">Como o vendedor deve se comportar. Diga preços de combo, descontos, horários.</p>
+    <label>Regras do negócio *</label>
+    <textarea id="f_regras" placeholder="Ex.: Combo corte+barba tem R$ 10 de desconto. Cliente novo ganha 10% no primeiro corte. Não fazemos atendimento a domicílio."></textarea>
+    <label>Horário de atendimento</label>
+    <input type="text" id="f_horario" value="24h" placeholder="Ex.: 24h ou ter-dom 9h às 20h">
+    <label>Nome do atendente</label>
+    <input type="text" id="f_nomebot" value="Severino">
+    <button class="btn" onclick="proximo(3)">Continuar →</button>
+  </div>
+
+  <!-- PASSO 4: treino -->
+  <div class="card step" id="s4" style="display:none">
+    <h2>Passo 4 · Treinamento</h2>
+    <p class="sub">Cole informações do seu negócio: endereço, formas de pagamento, políticas, diferenciais. Quanto mais detalhes, mais preciso o vendedor.</p>
+    <label>Base de conhecimento</label>
+    <textarea id="f_treino" placeholder="Ex.: Ficamos na Rua das Palmeiras, 123. Atendemos terça a domingo 9h às 20h, fechado às segundas. Pagamento: Pix, cartão, dinheiro. Estacionamento grátis em frente."></textarea>
+    <p class="hint">Dica: copie e cole aqui as respostas das perguntas mais frequentes que seus clientes fazem.</p>
+    <button class="btn" onclick="proximo(4)">Revisar cadastro →</button>
+  </div>
+
+  <!-- PASSO 5: revisão + pagamento -->
+  <div class="card step" id="s5" style="display:none">
+    <h2>Passo 5 · Revisão e pagamento</h2>
+    <p class="sub">Confira os dados e finalize. A ativação é automática após a confirmação.</p>
+    <div class="steps" id="resumo"></div>
+    <div style="text-align:center; margin:20px 0 0;">
+      <div style="font-size:2.2rem; font-weight:800;">R$ 67,89<span style="font-size:0.8rem; color:#9fb0cc; font-weight:600;"> /mês</span></div>
+      <div style="font-size:0.8rem; color:#9fb0cc;">por vendedor · 2ª unidade com 50% de desconto</div>
+    </div>
+    <button class="btn" id="btnFim" onclick="finalizar()">Criar vendedor 🚀</button>
+  </div>
+
+  <div style="height:80px"></div>
+</div>
+
+<div class="barra" id="barra">
+  <div style="font-size:0.85rem; color:#9fb0cc;">R$ 67,89<span style="font-size:0.7rem;">/mês</span> · 30 dias de garantia · pague com PIX ou cartão</div>
+</div>
+
+<div class="msg" id="msg"></div>
+
+<script>
+  const passo = '1';
+  function setStep(n) {
+    document.querySelectorAll('.step').forEach((s,i) => s.style.display = (i === n-1) ? 'block' : 'none');
+    document.querySelectorAll('#stepper .dot').forEach((d,i) => {
+      d.className = 'dot' + (i < n ? ' on' : '') + (i < n-1 ? ' ok' : '');
+    });
+    document.getElementById('barra').classList.toggle('show', n === 5);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  window.addEventListener('scroll', () => {
+    const b = document.getElementById('barra');
+    if (b.classList.contains('show')) {
+      b.style.display = (window.innerHeight - window.scrollY < 180) ? 'none' : 'block';
+    }
+  }, { passive:true });
+
+  let produtos = [];
+  function addProduto(nome='', preco='') {
+    const div = document.createElement('div');
+    div.className = 'produto';
+    div.innerHTML = `<input type="text" placeholder="Item (ex.: Corte)" value="${escapeHtml(nome)}" class="pn">
+      <input type="number" placeholder="R$" value="${preco}" class="pp">
+      <button class="rm" onclick="this.parentElement.remove()">✕</button>`;
+    document.getElementById('plist').appendChild(div);
+  }
+  function produtosFinal() {
+    return [...document.querySelectorAll('#plist .produto')].map(p => {
+      const nome = p.querySelector('.pn').value.trim();
+      const preco = p.querySelector('.pp').value.trim();
+      return nome ? { nome, preco: preco ? Number(preco) : null, desc: '' } : null;
+    }).filter(Boolean);
+  }
+  function escapeHtml(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function proximo(n) {
+    if (n === 1) {
+      const f = document.getElementById('f_negocio').value.trim();
+      const w = document.getElementById('f_whatsapp').value.trim();
+      const e = document.getElementById('f_email').value.trim();
+      if (!f || !w || !e) { alert('Preencha nome, WhatsApp e e-mail.'); return; }
+      if (produtos.length === 0) addProduto();
+      document.getElementById('f_regras').value = document.getElementById('f_regras').value.trim() || 'Sempre ser honesto, nunca inventar preço ou prazo.';
+    }
+    if (n === 2 && produtosFinal().length === 0) { alert('Adicione pelo menos um produto/serviço.'); return; }
+    if (n === 4) montarResumo();
+    setStep(n);
+  }
+
+  function montarResumo() {
+    const prod = produtosFinal();
+    const itens = prod.length ? prod.map(p => p.nome + (p.preco ? ' · R$ '+p.preco : '')).join('<br>') : '—';
+    const dados = [
+      ['Negócio', document.getElementById('f_negocio').value],
+      ['WhatsApp', document.getElementById('f_whatsapp').value],
+      ['E-mail', document.getElementById('f_email').value],
+      ['Itens', itens]
+    ];
+    document.getElementById('resumo').innerHTML =
+      dados.filter(d => d[1]).map(([k,v]) => `<div><b>${k}:</b><br>${v}</div>`).join('') +
+      `<div><b>Regras:</b><br>${escapeHtml(document.getElementById('f_regras').value)}</div>`;
+  }
+
+  async function finalizar() {
+    const btn = document.getElementById('btnFim');
+    btn.disabled = true; btn.textContent = 'Criando...';
+    try {
+      const payload = {
+        negocio: document.getElementById('f_negocio').value.trim(),
+        ramo: document.getElementById('f_ramo').value.trim(),
+        whatsapp: document.getElementById('f_whatsapp').value.trim(),
+        email: document.getElementById('f_email').value.trim(),
+        redes: document.getElementById('f_redes').value.trim(),
+        produtos: produtosFinal(),
+        regras: document.getElementById('f_regras').value.trim(),
+        horario: document.getElementById('f_horario').value.trim(),
+        nomeBot: document.getElementById('f_nomebot').value.trim() || 'Severino',
+        treino: document.getElementById('f_treino').value.trim() ? [document.getElementById('f_treino').value.trim()] : []
+      };
+      const r = await fetch('/api/vendedor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (!r.ok && !data.ok) throw new Error(data.error || 'Falha no cadastro.');
+      const box = document.getElementById('msg');
+      box.classList.add('show');
+      box.innerHTML = `
+        <div class="box">
+          <div class="ico">🎉</div>
+          <h2>Vendedor criado!</h2>
+          <p>Seu ${resolveEsc(data)} foi cadastrado e já guardamos tudo. Finalize o pagamento para a ativação automática (leva segundos).</p>
+          <a href="${resolveEsc(data.checkout_url || '#')}">Ir para o pagamento →</a>
+        </div>`;
+      sessionStorage.setItem('sev_' + (data.id||''), JSON.stringify(data));
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Criar vendedor 🚀';
+    }
+  }
+  function resolveEsc(s) { return String(s||'').replace(/"/g, '&quot;'); }
+
+  setStep(1);
+  addProduto();
+</script>
+</body>
+</html>

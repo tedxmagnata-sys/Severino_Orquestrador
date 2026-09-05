@@ -1,0 +1,186 @@
+{
+  "patternWinRates": {
+    "bos_bull": {
+      "wins": 18,
+      "losses": 12,
+      "profit": 45,
+      "avgMove": 3.2,
+      "trapCount": 2,
+      "reliability": 0.6,
+      "totalCount": 30
+    },
+    "bos_bear": {
+      "wins": 16,
+      "losses": 14,
+      "profit": 32,
+      "avgMove": 2.8,
+      "trapCount": 3,
+      "reliability": 0.53,
+      "totalCount": 30
+    },
+    "choch_bull": {
+      "wins": 8,
+      "losses": 10,
+      "profit": 5,
+      "avgMove": 2.1,
+      "trapCount": 5,
+      "reliability": 0.44,
+      "totalCount": 19
+    },
+    "choch_bear": {
+      "wins": 7,
+      "losses": 11,
+      "profit": -3,
+      "avgMove": 1.9,
+      "trapCount": 6,
+      "reliability": 0.39,
+      "totalCount": 18
+    },
+    "fvg_bull": {
+      "wins": 12,
+      "losses": 6,
+      "profit": 28,
+      "avgMove": 3.5,
+      "trapCount": 1,
+      "reliability": 0.67,
+      "totalCount": 18
+    },
+    "fvg_bear": {
+      "wins": 10,
+      "losses": 8,
+      "profit": 15,
+      "avgMove": 3,
+      "trapCount": 2,
+      "reliability": 0.56,
+      "totalCount": 18
+    },
+    "ob_bull": {
+      "wins": 9,
+      "losses": 7,
+      "profit": 18,
+      "avgMove": 2.5,
+      "trapCount": 2,
+      "reliability": 0.56,
+      "totalCount": 16
+    },
+    "ob_bear": {
+      "wins": 8,
+      "losses": 8,
+      "profit": 2,
+      "avgMove": 2.3,
+      "trapCount": 3,
+      "reliability": 0.5,
+      "totalCount": 16
+    },
+    "liquidity_sweep_long": {
+      "wins": 11,
+      "losses": 9,
+      "profit": 22,
+      "avgMove": 2.8,
+      "trapCount": 4,
+      "reliability": 0.55,
+      "totalCount": 20
+    },
+    "liquidity_sweep_short": {
+      "wins": 10,
+      "losses": 10,
+      "profit": 8,
+      "avgMove": 2.6,
+      "trapCount": 5,
+      "reliability": 0.5,
+      "totalCount": 20
+    },
+    "volume_spike": {
+      "wins": 14,
+      "losses": 16,
+      "profit": -5,
+      "avgMove": 2,
+      "trapCount": 3,
+      "reliability": 0.47,
+      "totalCount": 30
+    },
+    "absorption": {
+      "wins": 6,
+      "losses": 4,
+      "profit": 12,
+      "avgMove": 1.5,
+      "trapCount": 1,
+      "reliability": 0.6,
+      "totalCount": 10
+    },
+    "hammer": {
+      "wins": 5,
+      "losses": 3,
+      "profit": 10,
+      "avgMove": 2.8,
+      "trapCount": 1,
+      "reliability": 0.63,
+      "totalCount": 8
+    },
+    "shooting_star": {
+      "wins": 4,
+      "losses": 4,
+      "profit": 3,
+      "avgMove": 2.5,
+      "trapCount": 2,
+      "reliability": 0.5,
+      "totalCount": 8
+    },
+    "engulfing_bull": {
+      "wins": 7,
+      "losses": 5,
+      "profit": 15,
+      "avgMove": 3,
+      "trapCount": 1,
+      "reliability": 0.58,
+      "totalCount": 12
+    },
+    "engulfing_bear": {
+      "wins": 6,
+      "losses": 6,
+      "profit": 5,
+      "avgMove": 2.7,
+      "trapCount": 2,
+      "reliability": 0.5,
+      "totalCount": 13
+    },
+    "morning_star": {
+      "wins": 3,
+      "losses": 1,
+      "profit": 12,
+      "avgMove": 4,
+      "trapCount": 0,
+      "reliability": 0.75,
+      "totalCount": 4
+    },
+    "evening_star": {
+      "wins": 2,
+      "losses": 2,
+      "profit": 2,
+      "avgMove": 3.5,
+      "trapCount": 0,
+      "reliability": 0.5,
+      "totalCount": 4
+    },
+    "inside_bar": {
+      "wins": 5,
+      "losses": 7,
+      "profit": -4,
+      "avgMove": 1.2,
+      "trapCount": 0,
+      "reliability": 0.42,
+      "totalCount": 12
+    },
+    "vrvp": {
+      "wins": 4,
+      "losses": 2,
+      "profit": 8,
+      "avgMove": 2,
+      "trapCount": 0,
+      "reliability": 0.67,
+      "totalCount": 6
+    }
+  },
+  "totalTracked": 100,
+  "lastUpdate": 1788434171877
+}

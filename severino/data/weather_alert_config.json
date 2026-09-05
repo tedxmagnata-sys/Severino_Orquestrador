@@ -1,0 +1,15 @@
+{
+  "telegram_token": "8843645093:AAG-g6ZpqOjmvuPradtTPj4_u22CuhKc5tw",
+  "telegram_chat_id": "1088548125",
+  "whatsapp_enabled": true,
+  "whatsapp_group_id": "",
+  "whatsapp_client_id": "severino",
+  "secret_key": "0d0df8811e8e5a6dcd92a759d2d5c89044bc3c97f87ed0096cf90db4dcc66fec",
+  "whatsapp": "5511999998888",
+  "linkVip": "https://pay.kiwify.com.br/ffphj4e",
+  "linkQuarter": "https://pay.kiwify.com.br/eLqdY8O",
+  "linkSemester": "https://pay.kiwify.com.br/iTzgYnC",
+  "linkElite": "https://pay.kiwify.com.br/vim8bDb",
+  "alertsEnabled": true,
+  "googleClientId": ""
+}

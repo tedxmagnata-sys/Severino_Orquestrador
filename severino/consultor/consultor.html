@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Severino | Vendedor IA</title>
+<link rel="icon" href="https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4" type="image/png">
+<link rel="apple-touch-icon" href="https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4">
+<link rel="manifest" href="data:application/manifest+json,{"icons":[{"src":"https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4","sizes":"192x192","type":"image/png","purpose":"any maskable"}]}">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #0a0a0f;
+  --card: #13131f;
+  --accent: #6c5ce7;
+  --accent2: #00cec9;
+  --text: #e2e2f0;
+  --muted: #8888a0;
+  --input-bg: #1a1a2e;
+  --border: #252540;
+  --success: #00b894;
+  --warn: #fdcb6e;
+  --gold: #d4a843;
+  --gold-light: rgba(212,168,67,0.12);
+}
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  line-height: 1.6;
+}
+.container { width:100%; max-width:540px; }
+
+/* ===== SELETOR DE IDIOMA ===== */
+.lang-bar {
+  position: fixed; top:0; left:0; right:0; z-index:100;
+  display:flex; justify-content:center; gap:6px; padding:8px;
+  background:rgba(10,10,15,0.92); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+}
+.lang-btn {
+  padding:5px 12px; border-radius:20px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-size:0.75rem; font-weight:600;
+  cursor:pointer; transition:all 0.2s; font-family:inherit;
+}
+.lang-btn:hover { border-color:var(--muted); color:var(--text); }
+.lang-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.header { text-align:center; margin-bottom:20px; margin-top:36px; }
+.header .logo { font-size:2rem; margin-bottom:2px; }
+.header h1 { font-size:1.1rem; font-weight:600; letter-spacing:-0.3px; }
+.header .sub { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+.header .verse { font-size:0.7rem; color:var(--gold); font-style:italic; margin-top:4px; line-height:1.4; }
+.card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:28px 24px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  transition:all 0.3s ease;
+}
+.progress-wrap { margin-bottom:24px; }
+.progress-bar { height:4px; background:var(--border); border-radius:4px; overflow:hidden; margin-bottom:8px; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:4px; transition:width 0.5s cubic-bezier(0.4,0,0.2,1); }
+.progress-label { font-size:0.75rem; color:var(--muted); text-align:right; }
+.step { display:none; }
+.step.active { display:block; animation:fadeSlideIn 0.4s ease; }
+@keyframes fadeSlideIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+.step-title { font-size:1.05rem; font-weight:700; margin-bottom:4px; }
+.step-desc { font-size:0.8rem; color:var(--muted); margin-bottom:18px; line-height:1.5; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; }
+.form-group .hint { font-size:0.7rem; color:var(--muted); font-weight:400; margin-left:4px; }
+input[type="text"], input[type="number"], input[type="email"], input[type="url"], textarea, select {
+  width:100%; background:var(--input-bg); border:1px solid var(--border);
+  border-radius:12px; padding:12px 14px; font-size:0.9rem; color:var(--text);
+  font-family:inherit; transition:all 0.2s; resize:vertical;
+}
+input:focus, textarea:focus, select:focus {
+  outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(108,92,231,0.15);
+}
+select {
+  appearance:none; cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238888a0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center; padding-right:40px;
+}
+textarea { min-height:80px; }
+.btn-row { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+.btn {
+  padding:12px 20px; border-radius:12px; font-size:0.85rem; font-weight:600;
+  font-family:inherit; cursor:pointer; transition:all 0.2s; border:none;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-primary { background:var(--accent); color:#fff; flex:1; box-shadow:0 4px 16px rgba(108,92,231,0.3); }
+.btn-primary:hover { background:#7c6cf0; transform:translateY(-1px); }
+.btn-secondary { background:transparent; color:var(--muted); border:1px solid var(--border); }
+.btn-secondary:hover { color:var(--text); border-color:var(--muted); }
+.btn-success { background:var(--success); color:#000; flex:1; }
+.btn-success:hover { opacity:0.9; transform:translateY(-1px); }
+.btn-gold { background:var(--gold); color:#000; flex:1; }
+.btn-gold:hover { opacity:0.9; transform:translateY(-1px); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+.btn-sm { padding:8px 14px; font-size:0.78rem; }
+.result-section { background:var(--input-bg); border-radius:14px; padding:18px; margin-top:14px; border:1px solid var(--border); }
+.result-section h3 { font-size:0.82rem; font-weight:700; color:var(--accent2); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.result-item { padding:8px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:8px; font-size:0.8rem; }
+.result-item:last-child { border-bottom:none; }
+.result-item .label { color:var(--muted); min-width:80px; }
+.result-item .value { color:var(--text); text-align:right; font-weight:500; }
+.diagnosis-box { background:linear-gradient(135deg,rgba(108,92,231,0.1),rgba(0,206,201,0.08)); border:1px solid var(--accent); border-radius:14px; padding:18px; margin-top:14px; }
+.diagnosis-box h3 { color:var(--accent); font-size:0.85rem; font-weight:700; margin-bottom:6px; }
+.diagnosis-box p, .diagnosis-box li { font-size:0.8rem; color:var(--text); line-height:1.6; }
+.diagnosis-box ul { padding-left:16px; margin-top:4px; }
+.diagnosis-box li { margin-bottom:4px; }
+.path-card {
+  background:var(--input-bg); border-radius:14px; padding:18px; margin-top:14px;
+  border:1px solid var(--border); cursor:pointer; transition:all 0.2s;
+}
+.path-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.path-card.selected { border:2px solid var(--gold); background:var(--gold-light); }
+.path-card h4 { font-size:0.9rem; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+.path-card p { font-size:0.78rem; color:var(--muted); line-height:1.5; }
+.path-card .price-tag { font-size:0.7rem; color:var(--success); font-weight:600; margin-top:6px; }
+.disclaimer {
+  font-size:0.65rem; color:var(--muted); text-align:center; margin-top:16px; line-height:1.5; padding:10px;
+  border-top:1px solid var(--border);
+}
+.verse-box {
+  background:var(--gold-light); border:1px solid rgba(212,168,67,0.25); border-radius:12px;
+  padding:12px 14px; margin:12px 0; text-align:center;
+}
+.verse-box p { font-size:0.78rem; font-style:italic; color:var(--gold); }
+.verse-box .ref { font-size:0.7rem; color:var(--muted); margin-top:2px; }
+.badge-gratis {
+  background:var(--success); color:#000; font-size:0.6rem; font-weight:700;
+  padding:2px 8px; border-radius:8px; display:inline-block;
+}
+.badge-novo {
+  background:var(--accent2); color:#000; font-size:0.6rem; font-weight:700;
+  padding:2px 8px; border-radius:8px; display:inline-block;
+}
+.cta-box { text-align:center; margin-top:16px; padding:16px; background:var(--input-bg); border-radius:14px; border:1px dashed var(--border); }
+.cta-box p { font-size:0.75rem; color:var(--muted); margin-bottom:8px; }
+.pulse { animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+.crypto-option {
+  background:var(--input-bg); border-radius:10px; padding:10px 12px; margin:8px 0;
+  border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer; transition:all 0.2s;
+}
+.crypto-option:hover { border-color:var(--gold); }
+.crypto-option input { margin-right:8px; }
+.lgpd-check { display:flex; align-items:flex-start; gap:8px; font-size:0.72rem; color:var(--muted); margin-top:12px; }
+.lgpd-check input { margin-top:2px; flex-shrink:0; }
+@media (max-width:380px) { .card{padding:20px 16px;} .btn-row{flex-direction:column;} }
+
+/* ===== UPLOAD DE ARQUIVOS ===== */
+.upload-zone {
+  border:2px dashed var(--border); border-radius:14px; padding:22px 16px;
+  text-align:center; cursor:pointer; transition:all 0.2s; background:var(--input-bg);
+}
+.upload-zone:hover, .upload-zone.dragover { border-color:var(--accent); background:rgba(108,92,231,0.08); }
+.upload-zone .icone { font-size:1.6rem; }
+.upload-zone p { font-size:0.78rem; color:var(--muted); margin-top:4px; }
+.upload-zone .formatos { font-size:0.65rem; color:var(--muted); margin-top:6px; opacity:0.8; }
+.upload-zone input[type="file"] { display:none; }
+.file-chip {
+  display:flex; align-items:center; gap:8px; background:var(--input-bg);
+  border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-top:8px;
+  font-size:0.74rem;
+}
+.file-chip .f-nome { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+.file-chip .f-info { color:var(--muted); font-size:0.66rem; flex-shrink:0; }
+.file-chip .f-rm { background:none; border:none; color:var(--warn); font-size:0.8rem; cursor:pointer; padding:0 2px; flex-shrink:0; }
+.file-chip.ok { border-color:var(--success); }
+.file-chip.ok .f-ok { color:var(--success); flex-shrink:0; }
+
+/* ===== PRODUTOS ===== */
+.produto-card {
+  background:var(--input-bg); border:1px solid var(--border); border-radius:12px;
+  padding:12px; margin-top:10px; position:relative;
+}
+.produto-card .p-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.produto-card .p-nome { font-size:0.8rem; font-weight:700; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.produto-card .p-preco { font-size:0.8rem; font-weight:800; color:var(--success); flex-shrink:0; }
+.produto-card .p-desc { font-size:0.7rem; color:var(--muted); margin-top:4px; }
+.produto-card .p-rm { position:absolute; top:8px; right:8px; background:none; border:none; color:var(--warn); cursor:pointer; font-size:0.8rem; }
+.produto-card .p-gap { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.tag-mini { font-size:0.6rem; background:rgba(108,92,231,0.15); color:var(--accent2); padding:2px 8px; border-radius:8px; }
+
+/* ===== PLANOS & FREQUÊNCIA ===== */
+.freq-row { display:flex; gap:8px; margin-bottom:14px; }
+.freq-tab {
+  flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:12px;
+  padding:10px 4px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative;
+}
+.freq-tab:hover { border-color:var(--muted); }
+.freq-tab.active { border:2px solid var(--accent); background:rgba(108,92,231,0.08); }
+.freq-tab .f-label { font-size:0.68rem; font-weight:700; }
+.freq-tab .f-preco { font-size:0.85rem; font-weight:800; margin-top:2px; }
+.freq-tab .f-econ { font-size:0.6rem; color:var(--success); font-weight:700; }
+.freq-tab .f-desc { font-size:0.58rem; color:var(--muted); }
+.plan-card {
+  flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:14px 10px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative;
+}
+.plan-card:hover { transform:translateY(-2px); }
+.plan-card.active { border:2px solid var(--gold); background:var(--gold-light); }
+.plan-card .recomendado { position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--gold); color:#000; font-size:0.5rem; font-weight:700; padding:2px 8px; border-radius:8px; white-space:nowrap; }
+.plan-card .p-garantia { font-size:0.55rem; font-weight:700; color:var(--success); margin-bottom:4px; }
+.plan-card .p-nome { font-size:0.68rem; font-weight:600; color:var(--muted); }
+.plan-card .p-preco { font-size:1.25rem; font-weight:800; margin:2px 0; }
+.plan-card .p-preco .moeda { font-size:0.65rem; color:var(--muted); font-weight:600; }
+.plan-card .p-desc { font-size:0.6rem; color:var(--muted); line-height:1.5; margin-top:4px; }
+.feature-list { list-style:none; margin-top:10px; }
+.feature-list li { font-size:0.72rem; padding:5px 0; border-bottom:1px dashed var(--border); display:flex; gap:6px; align-items:flex-start; }
+.feature-list li:last-child { border-bottom:none; }
+.feature-list .ck { color:var(--success); flex-shrink:0; }
+.feature-list .no { color:#e17055; flex-shrink:0; }
+.feature-list .has { color:var(--text); }
+.feature-list .lacks { color:var(--muted); text-decoration:line-through; }
+.addon-check {
+  display:flex; align-items:center; gap:10px; background:var(--gold-light);
+  border:1px solid rgba(212,168,67,0.3); border-radius:12px; padding:12px; margin-top:10px;
+  cursor:pointer; transition:all 0.2s;
+}
+.addon-check:hover { border-color:var(--gold); }
+.addon-check input { flex-shrink:0; }
+.addon-check .a-titulo { font-size:0.78rem; font-weight:700; color:var(--gold); }
+.addon-check .a-desc { font-size:0.68rem; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <button class="lang-btn active" id="langPT" onclick="setLang('pt')">🇧🇷 PT</button>
+  <button class="lang-btn" id="langEN" onclick="setLang('en')">🇺🇸 EN</button>
+  <button class="lang-btn" id="langES" onclick="setLang('es')">🇪🇸 ES</button>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="logo"><img src="https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4" alt="Severino" style="width:40px;height:40px;border-radius:50%;object-fit:cover;"></div>
+    <h1 data-i18n="title">Severino — Vendedor IA</h1>
+    <div class="sub" data-i18n="subtitle">Seu vendedor e consultor de vendas 24/7, com princípios cristãos</div>
+    <div class="verse" data-i18n="headerVerse">"Tudo o que fizerem, façam de todo o coração, como para o Senhor."<br>— Colossenses 3:23</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">Etapa 1 de 5</div>
+  </div>
+
+  <div id="conviteBanner" style="display:none; margin-bottom:14px; padding:12px 14px; background:linear-gradient(135deg,rgba(0,206,201,0.1),rgba(108,92,231,0.1)); border:1px solid var(--accent2); border-radius:14px; text-align:center;">
+    <p style="font-size:0.78rem; font-weight:700; color:var(--accent2);">🎁 <span data-i18n="conviteTitulo">Convite especial</span></p>
+    <img src="https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4" alt="Severino" style="width:48px;height:48px;border-radius:50%;object-fit:cover;margin:8px auto 4px;display:block;border:2px solid var(--accent2);">
+    <p style="font-size:0.7rem; color:var(--text); margin-top:2px;"><span data-i18n="conviteTexto">Você foi convidado por um parceiro! Aproveite o acesso antecipado e o suporte prioritário.</span> <span id="conviteQuem" style="color:var(--gold); font-weight:600;"></span></p>
+  </div>
+
+  <div id="betaBanner" style="display:none; margin-bottom:14px; padding:14px 16px; background:linear-gradient(135deg,rgba(212,168,67,0.15),rgba(108,92,231,0.15)); border:2px solid var(--gold); border-radius:14px; text-align:center;">
+    <p style="font-size:0.85rem; font-weight:800; color:var(--gold);">🧪 MODO TESTE — VALIDAÇÃO</p>
+    <img src="https://avatars.githubusercontent.com/u/278813277?s=400&amp;u=86f5a11641feec18712f8f8f45c5df7199d9abc0&amp;v=4" alt="Severino" style="width:48px;height:48px;border-radius:50%;object-fit:cover;margin:8px auto 4px;display:block;border:2px solid var(--gold);">
+    <p style="font-size:0.72rem; color:var(--text); margin-top:4px;"><span data-i18n="betaTexto">Você está testando a ferramenta como parceiro de desenvolvimento. Plano PRO liberado (R$ 0) com avatar, conteúdo e agendamento. Suas respostas e sugestões vão ajudar a ajustar a ferramenta. Muito obrigado!</span></p>
+    <p style="font-size:0.68rem; color:var(--muted); margin-top:4px;"><span data-i18n="betaContato">Dúvidas ou sugestões: envie pelo seu cadastro — entramos em contato pelo WhatsApp.</span></p>
+  </div>
+
+  <div class="card">
+
+    <!-- ETAPA 1: Seu negócio -->
+    <div class="step active" data-step="1">
+      <div class="step-title" data-i18n="s1_title">🏪 Conte sobre seu negócio</div>
+      <div class="step-desc" data-i18n="s1_desc">O Severino Vendedor será criado sob medida para o SEU negócio. Quanto melhor ele te conhecer, mais vendas vai fechar.</div>
+      <div class="form-group">
+        <label data-i18n="lblNegocio">Nome do seu negócio ou loja <span class="hint" data-i18n="hintNegocio">(como aparece para os clientes)</span></label>
+        <input type="text" id="negocio" data-i18n-ph="phNegocio" placeholder="Ex: Doces da Maria">
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblRamo">Ramo / segmento</label>
+        <select id="ramo">
+          <option value="">—</option>
+          <option value="alimentos" data-i18n="ramoAlimentos">🍰 Alimentos e bebidas</option>
+          <option value="moda" data-i18n="ramoModa">👗 Moda e acessórios</option>
+          <option value="beleza" data-i18n="ramoBeleza">💄 Beleza e estética</option>
+          <option value="servicos" data-i18n="ramoServicos">🛠️ Serviços e mão de obra</option>
+          <option value="digital" data-i18n="ramoDigital">💻 Digital / infoprodutos</option>
+          <option value="educacao" data-i18n="ramoEducacao">📚 Educação e cursos</option>
+          <option value="saude" data-i18n="ramoSaude">🏥 Saúde e bem-estar</option>
+          <option value="construcao" data-i18n="ramoConstrucao">🏗️ Construção e reformas</option>
+          <option value="automotivo" data-i18n="ramoAutomotivo">🚗 Automotivo</option>
+          <option value="igreja" data-i18n="ramoIgreja">🙏 Igreja / Ministério</option>
+          <option value="outro" data-i18n="ramoOutro">🤷 Outro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblWhats">Seu WhatsApp <span class="hint" data-i18n="hintWhats">(para ativarmos seu vendedor)</span></label>
+        <input type="text" id="whatsapp" data-i18n-ph="phWhats" placeholder="(XX) 9XXXX-XXXX">
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblInstagram">Instagram / Facebook / Site <span class="hint" data-i18n="hintOpcional">(opcional — o Severino vai divulgar suas redes)</span></label>
+        <input type="url" id="redes" data-i18n-ph="phRedes" placeholder="https://instagram.com/sualoja">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="validarEtapa1()" data-i18n="btnNext">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 2: Produtos -->
+    <div class="step" data-step="2">
+      <div class="step-title" data-i18n="s2_title">📦 Cadastre seus produtos</div>
+      <div class="step-desc" data-i18n="s2_desc">Adicione o que você vende. O vendedor IA vai aprender cada produto, preço e benefício para vender como o melhor vendedor do mundo.</div>
+      <div class="form-group">
+        <label data-i18n="lblProduto">Nome do produto/serviço</label>
+        <input type="text" id="produto_nome" data-i18n-ph="phProdutoNome" placeholder="Ex: Bolo de pote de 300ml">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label data-i18n="lblPreco">Preço</label>
+        <input type="number" id="produto_preco" placeholder="Ex: 12,90" min="0" step="0.01">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label data-i18n="lblDescricao">Descrição e benefícios <span class="hint" data-i18n="hintBeneficios">(oque o cliente ganha?)</span></label>
+        <textarea id="produto_desc" data-i18n-ph="phProdutoDesc" placeholder="Ex: Bolo de pote artesanal, sabor chocolate belga. Feito sob encomenda, entrega no mesmo dia..."></textarea>
+      </div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="adicionarProduto()" data-i18n="btnAddProduto">➕ Adicionar produto</button>
+      </div>
+      <div id="listaProdutos"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="prevStep()" data-i18n="btnBack">← Voltar</button>
+        <button class="btn btn-primary" onclick="validarEtapa2()" data-i18n="btnNext2">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 3: Treinamento (upload de arquivos) -->
+    <div class="step" data-step="3">
+      <div class="step-title" data-i18n="s3_title">📚 Treine o Severino Vendedor</div>
+      <div class="step-desc" data-i18n="s3_desc">Envie tudo o que você tem sobre seus produtos: catálogos, planilhas de preços, fotos, vídeos, áudios, PDFs, documentos... O vendedor aprende com tudo isso.</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="droparArquivos(event)">
+        <div class="icone">📁</div>
+        <p data-i18n="uploadClique">Clique aqui ou arraste seus arquivos</p>
+        <p class="formatos" data-i18n="uploadFormatos">PDF · DOCX · XLSX · CSV · TXT · MD · JSON · JPG · PNG · WEBP · MP4 · MP3 — até 8MB por arquivo, máx. 12 arquivos</p>
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.json,.png,.jpg,.jpeg,.webp,.gif,.mp4,.mp3,.wav,.ogg" onchange="adicionarArquivos(this.files)">
+      </div>
+      <div id="listaArquivos"></div>
+      <div class="form-group" style="margin-top:16px;">
+        <label data-i18n="lblTreinoTexto">Conte com suas palavras <span class="hint" data-i18n="hintTreinoTexto">(como você vende hoje, seu diferencial, sua história)</span></label>
+        <textarea id="treino_texto" data-i18n-ph="phTreinoTexto" placeholder="Ex: Nossa loja é familiar, atende desde 2015. O bolo é feito com chocolate belga importado e temos entrega em 40 minutos. Nossos clientes voltam sempre por causa do sabor e do atendimento..." style="min-height:110px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblLinks">Links de referência <span class="hint" data-i18n="hintOpcional2">(opcional)</span></label>
+        <input type="url" id="link_ref" data-i18n-ph="phLinkRef" placeholder="https://seusite.com.br/produtos">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="prevStep()" data-i18n="btnBack">← Voltar</button>
+        <button class="btn btn-primary" onclick="validarEtapa3()" data-i18n="btnNext3">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 4: Personalidade e ajustes -->
+    <div class="step" data-step="4">
+      <div class="step-title" data-i18n="s4_title">🎭 Dê personalidade ao seu vendedor</div>
+      <div class="step-desc" data-i18n="s4_desc">O vendedor é 100% ajustável: nome, tom de voz, idioma, horário de atendimento e regras de venda. Você controla tudo.</div>
+      <div class="form-group">
+        <label data-i18n="lblNomeBot">Nome do vendedor IA</label>
+        <input type="text" id="nome_bot" data-i18n-ph="phNomeBot" placeholder="Ex: Severino, Ana, Vendedor Virtual...">
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblTom">Tom de voz</label>
+        <select id="tom_voz">
+          <option value="cordial" data-i18n="tomCordial">🤝 Cordial e acolhedor (recomendado)</option>
+          <option value="formal" data-i18n="tomFormal">👔 Formal e profissional</option>
+          <option value="descontraido" data-i18n="tomDescontraido">😄 Descontraído e amigo</option>
+          <option value="cristao" data-i18n="tomCristao">Com princípios cristãos</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblIdiomaAtend">Idioma do atendimento</label>
+        <select id="idioma_atend">
+          <option value="pt">🇧🇷 Português</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="multi">🌎 Automático (detecta o idioma do cliente)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblHorario">Horário de atendimento <span class="hint" data-i18n="hintHorario">(fora do horário, o bot responde assim mesmo — sem perder venda)</span></label>
+        <input type="text" id="horario_atend" data-i18n-ph="phHorario" placeholder="Ex: Seg-Sáb, 8h às 20h">
+      </div>
+      <div class="form-group">
+        <label data-i18n="lblRegras">Regras de venda <span class="hint" data-i18n="hintRegras">(descontos máximos, política de entrega, garantia, o que não pode prometer)</span></label>
+        <textarea id="regras_venda" data-i18n-ph="phRegras" placeholder="Ex: Desconto máximo de 10%. Frete grátis acima de R$ 100. Não prometer prazo de entrega além de 48h. Não aceitar troca após 7 dias."></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="prevStep()" data-i18n="btnBack">← Voltar</button>
+        <button class="btn btn-primary" onclick="showStep(5)" data-i18n="btnNext4">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 5: Planos + Frequência + Avatar -->
+    <div class="step" data-step="5">
+      <div class="step-title" data-i18n="s5_title">💳 Escolha seu plano</div>
+      <div class="step-desc" data-i18n="s5_desc">Mensal, semestral ou anual — com desconto progressivo. Todos com garantia de devolução.</div>
+
+      <p style="font-size:0.72rem; font-weight:700; margin-bottom:6px;" data-i18n="lblFrequencia">Frequência de cobrança</p>
+      <div class="freq-row">
+        <div class="freq-tab active" id="freqMensal" onclick="selecionarFrequencia('mensal')">
+          <div class="f-label" data-i18n="freqMensal">Mensal</div>
+          <div class="f-preco">—</div>
+        </div>
+        <div class="freq-tab" id="freqSemestral" onclick="selecionarFrequencia('semestral')">
+          <div class="f-label" data-i18n="freqSemestral">Semestral</div>
+          <div class="f-econ" data-i18n="economia15">ECONOMIZE 15%</div>
+        </div>
+        <div class="freq-tab" id="freqAnual" onclick="selecionarFrequencia('anual')">
+          <div class="f-label" data-i18n="freqAnual">Anual</div>
+          <div class="f-econ" data-i18n="economia25">ECONOMIZE 25%</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <div class="plan-card" id="planBasico" onclick="selecionarPlano('basico')">
+          <div class="p-garantia" data-i18n="garantia7">🛡️ 7 DIAS DE GARANTIA</div>
+          <div class="p-nome" data-i18n="planoBasico">BÁSICO</div>
+          <div class="p-preco" id="precoBasico"><span class="moeda">R$</span> 47</div>
+          <div class="p-desc" data-i18n="basicoDesc">1 vendedor IA<br>treinado com seus arquivos</div>
+        </div>
+        <div class="plan-card active" id="planPro" onclick="selecionarPlano('pro')">
+          <div class="recomendado" data-i18n="recomendado">RECOMENDADO</div>
+          <div class="p-garantia" data-i18n="garantia15">🛡️ 15 DIAS DE GARANTIA</div>
+          <div class="p-nome" data-i18n="planoPro">PRO</div>
+          <div class="p-preco" id="precoPro"><span class="moeda">R$</span> 97</div>
+          <div class="p-desc" data-i18n="proDesc">2 vendedores + avatar<br>+ redes sociais automáticas</div>
+        </div>
+      </div>
+
+      <div class="result-section" style="margin-top:14px;">
+        <h3>⚖️ <span data-i18n="comparativo">Comparativo</span></h3>
+        <ul class="feature-list">
+          <li><span class="ck">✔</span><span data-i18n="feat1">Vendedor IA treinado com seus arquivos (PDF, planilhas, vídeos...)</span></li>
+          <li><span class="ck" id="feat2ck">✔</span><span id="feat2txt" data-i18n="feat2">Atendimento 24/7 em 3 idiomas, com sua personalidade</span></li>
+          <li><span class="ck" id="feat3ck">✔</span><span id="feat3txt" data-i18n="feat3">Funil de perguntas inteligente que qualifica e converte</span></li>
+          <li><span class="ck" id="feat4ck">✔</span><span id="feat4txt" data-i18n="feat4">Relatório semanal de conversas e vendas perdidas</span></li>
+          <li id="feat5row"><span class="ck" id="feat5ck">✔</span><span id="feat5txt" data-i18n="feat5">Avatar do vendedor gerado por IA (foto + perfil)</span></li>
+          <li id="feat6row"><span class="ck" id="feat6ck">✔</span><span id="feat6txt" data-i18n="feat6">Geração de mensagens e vídeos para redes sociais</span></li>
+          <li id="feat7row"><span class="ck" id="feat7ck">✔</span><span id="feat7txt" data-i18n="feat7">Agendamento automático de postagens (horários otimizados)</span></li>
+        </ul>
+        <p style="font-size:0.65rem; color:var(--muted); margin-top:6px;" data-i18n="comparativoNota">Os itens do PRO aparecem em destaque para você visualizar o que ganha.</p>
+      </div>
+
+      <div class="addon-check" id="addonAvatar" onclick="toggleAvatar()">
+        <input type="checkbox" id="avatarCheck">
+        <div>
+          <div class="a-titulo" data-i18n="addonAvatarTitulo">🪞 Criar Avatar do Vendedor (PRO)</div>
+          <div class="a-desc" data-i18n="addonAvatarDesc">Sugestão: o Severino gera um avatar profissional do seu vendedor virtual (foto, nome e perfil) para usar no WhatsApp e redes sociais — dá rosto e confiança ao bot. +R$ 19/mês.</div>
+        </div>
+      </div>
+      <div class="addon-check" id="addonConteudo" onclick="toggleConteudo()">
+        <input type="checkbox" id="conteudoCheck">
+        <div>
+          <div class="a-titulo" data-i18n="addonConteudoTitulo">🎬 Mensagens + Vídeos + Agendamento (PRO)</div>
+          <div class="a-desc" data-i18n="addonConteudoDesc">Sugestão: o Severino cria mensagens prontas, roteiros de vídeos (Reels/Shorts) e posts para seus produtos, e agenda as publicações nos melhores horários. +R$ 39/mês.</div>
+        </div>
+      </div>
+
+      <div class="result-section" style="margin-top:14px;">
+        <h3>📈 <span data-i18n="estrategiasTitulo">Como o Severino alavanca suas vendas</span></h3>
+        <ul class="feature-list" id="estrategiasList">
+          <li><span class="ck">⏱</span><span data-i18n="est1">Atende em segundos, 24/7 — nunca mais perca cliente por demora</span></li>
+          <li><span class="ck">🎯</span><span data-i18n="est2">Funil inteligente que descobre a necessidade e indica o produto certo</span></li>
+          <li><span class="ck">💬</span><span data-i18n="est3">Follow-up automático: nenhum interessado fica sem retorno</span></li>
+          <li><span class="ck">📣</span><span data-i18n="est4">Divulgação constante nas redes com seu avatar e seus produtos</span></li>
+          <li><span class="ck">🤝</span><span data-i18n="est5">Atendimento com excelência cristã: honestidade, paciência e respeito</span></li>
+        </ul>
+      </div>
+
+      <div style="margin-top:12px; padding:12px; background:var(--gold-light); border-radius:12px; border:1px solid rgba(212,168,67,0.25);">
+        <p style="font-size:0.72rem; font-weight:600; color:var(--gold); text-align:center; margin-bottom:6px;" data-i18n="cryptoTitle">🪙 Aceitamos criptomoedas</p>
+        <div class="crypto-option" onclick="document.getElementById('crypto_usdt').checked=true; document.getElementById('crypto_btc').checked=false; document.getElementById('crypto_fiat').checked=false;">
+          <span style="display:flex; align-items:center; gap:6px; font-size:0.78rem;">
+            <input type="radio" name="crypto" id="crypto_usdt" value="usdt"> 💎 USDT (TRC-20)
+          </span>
+          <span style="font-size:0.65rem; color:var(--muted);" data-i18n="estavel">Mais estável</span>
+        </div>
+        <div class="crypto-option" onclick="document.getElementById('crypto_btc').checked=true; document.getElementById('crypto_usdt').checked=false; document.getElementById('crypto_fiat').checked=false;">
+          <span style="display:flex; align-items:center; gap:6px; font-size:0.78rem;">
+            <input type="radio" name="crypto" id="crypto_btc" value="btc"> ₿ Bitcoin (BTC)
+          </span>
+          <span style="font-size:0.65rem; color:var(--muted);" data-i18n="conhecido">Mais conhecido</span>
+        </div>
+        <div class="crypto-option" onclick="document.getElementById('crypto_fiat').checked=true; document.getElementById('crypto_usdt').checked=false; document.getElementById('crypto_btc').checked=false;">
+          <span style="display:flex; align-items:center; gap:6px; font-size:0.78rem;">
+            <input type="radio" name="crypto" id="crypto_fiat" value="fiat" checked> 💳 Fiat (Pix/Cartão)
+          </span>
+          <span style="font-size:0.65rem; color:var(--muted);" data-i18n="brasil">Brasil</span>
+        </div>
+      </div>
+
+      <div class="cta-box" style="margin-top:14px;">
+        <p style="font-weight:700; color:var(--gold); font-size:0.85rem;" id="ctaTitulo" data-i18n="ctaTudoPronto">🎯 Tudo pronto!</p>
+        <p style="font-size:0.75rem; color:var(--text); margin:4px 0;" id="ctaDescricao"></p>
+        <p style="font-size:0.7rem; color:var(--muted);" id="ctaValor"></p>
+        <div class="lgpd-check">
+          <input type="checkbox" id="lgpdConsent">
+          <label for="lgpdConsent" data-i18n="lgpd">Aceito receber contato e concordo com a Política de Privacidade. Seus dados estão seguros conosco.</label>
+        </div>
+        <button class="btn btn-gold" id="btnEnviar" onclick="enviarParaSeverino()" style="margin-top:6px; width:100%;" data-i18n="btnComecar">🤖 Ativar meu Vendedor IA · Garantia de Devolução</button>
+        <div id="statusEnvio" style="margin-top:6px;"></div>
+        <p style="font-size:0.6rem; color:var(--muted); margin-top:6px;" data-i18n="ctaMissao">Sua contribuição sustenta o projeto e ajuda a manter o acesso gratuito para quem precisa aprender.</p>
+      </div>
+
+      <div class="verse-box" style="margin-top:12px;">
+        <p data-i18n="pago_verse">"Honra ao Senhor com os teus bens e com as primícias de toda a tua renda." — Provérbios 3:9</p>
+      </div>
+
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn btn-secondary" onclick="prevStep()" data-i18n="btnBack2">← Voltar</button>
+        <button class="btn btn-secondary" onclick="reiniciar()" data-i18n="btnRecomecar">🔄 Recomeçar</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="disclaimer">
+    <p data-i18n="disclaimer1"><strong>Severino Vendedor IA</strong> — Ferramenta com princípios cristãos. Não nos envolvemos com atividades imorais, desonestas ou ilegais.</p>
+    <p style="margin-top:4px;" data-i18n="disclaimer2">As respostas do vendedor são geradas por IA e não substituem orientação profissional, jurídica ou pastoral.</p>
+  </div>
+</div>
+
+<script>
+// ===== IDIOMAS (i18n) =====
+const TRANSLATIONS = {
+  pt: {
+    title: 'Severino — Vendedor IA',
+    subtitle: 'Seu vendedor e consultor de vendas 24/7, com princípios cristãos',
+    headerVerse: '"Tudo o que fizerem, façam de todo o coração, como para o Senhor."<br>— Colossenses 3:23',
+    s1_title: '🏪 Conte sobre seu negócio',
+    s1_desc: 'O Severino Vendedor será criado sob medida para o SEU negócio. Quanto melhor ele te conhecer, mais vendas vai fechar.',
+    lblNegocio: 'Nome do seu negócio ou loja <span class="hint">(como aparece para os clientes)</span>',
+    hintNegocio: '(como aparece para os clientes)',
+    phNegocio: 'Ex: Doces da Maria',
+    lblRamo: 'Ramo / segmento',
+    ramoAlimentos: '🍰 Alimentos e bebidas',
+    ramoModa: '👗 Moda e acessórios',
+    ramoBeleza: '💄 Beleza e estética',
+    ramoServicos: '🛠️ Serviços e mão de obra',
+    ramoDigital: '💻 Digital / infoprodutos',
+    ramoEducacao: '📚 Educação e cursos',
+    ramoSaude: '🏥 Saúde e bem-estar',
+    ramoConstrucao: '🏗️ Construção e reformas',
+    ramoAutomotivo: '🚗 Automotivo',
+    ramoIgreja: '🙏 Igreja / Ministério',
+    ramoOutro: '🤷 Outro',
+    lblWhats: 'Seu WhatsApp <span class="hint">(para ativarmos seu vendedor)</span>',
+    hintWhats: '(para ativarmos seu vendedor)',
+    phWhats: '(XX) 9XXXX-XXXX',
+    lblInstagram: 'Instagram / Facebook / Site <span class="hint">(opcional — o Severino vai divulgar suas redes)</span>',
+    hintOpcional: '(opcional — o Severino vai divulgar suas redes)',
+    phRedes: 'https://instagram.com/sualoja',
+    btnNext: 'Próximo →',
+    s2_title: '📦 Cadastre seus produtos',
+    s2_desc: 'Adicione o que você vende. O vendedor IA vai aprender cada produto, preço e benefício para vender como o melhor vendedor do mundo.',
+    lblProduto: 'Nome do produto/serviço',
+    phProdutoNome: 'Ex: Bolo de pote de 300ml',
+    lblPreco: 'Preço',
+    lblDescricao: 'Descrição e benefícios <span class="hint">(oque o cliente ganha?)</span>',
+    hintBeneficios: '(oque o cliente ganha?)',
+    phProdutoDesc: 'Ex: Bolo de pote artesanal, sabor chocolate belga. Feito sob encomenda, entrega no mesmo dia...',
+    btnAddProduto: '➕ Adicionar produto',
+    btnNext2: 'Próximo →',
+    s3_title: '📚 Treine o Severino Vendedor',
+    s3_desc: 'Envie tudo o que você tem sobre seus produtos: catálogos, planilhas de preços, fotos, vídeos, áudios, PDFs, documentos... O vendedor aprende com tudo isso.',
+    uploadClique: 'Clique aqui ou arraste seus arquivos',
+    uploadFormatos: 'PDF · DOCX · XLSX · CSV · TXT · MD · JSON · JPG · PNG · WEBP · MP4 · MP3 — até 8MB por arquivo, máx. 12 arquivos',
+    lblTreinoTexto: 'Conte com suas palavras <span class="hint">(como você vende hoje, seu diferencial, sua história)</span>',
+    hintTreinoTexto: '(como você vende hoje, seu diferencial, sua história)',
+    phTreinoTexto: 'Ex: Nossa loja é familiar, atende desde 2015. O bolo é feito com chocolate belga importado e temos entrega em 40 minutos. Nossos clientes voltam sempre por causa do sabor e do atendimento...',
+    lblLinks: 'Links de referência <span class="hint">(opcional)</span>',
+    hintOpcional2: '(opcional)',
+    phLinkRef: 'https://seusite.com.br/produtos',
+    btnNext3: 'Próximo →',
+    s4_title: '🎭 Dê personalidade ao seu vendedor',
+    s4_desc: 'O vendedor é 100% ajustável: nome, tom de voz, idioma, horário de atendimento e regras de venda. Você controla tudo.',
+    lblNomeBot: 'Nome do vendedor IA',
+    phNomeBot: 'Ex: Severino, Ana, Vendedor Virtual...',
+    lblTom: 'Tom de voz',
+    tomCordial: '🤝 Cordial e acolhedor (recomendado)',
+    tomFormal: '👔 Formal e profissional',
+    tomDescontraido: '😄 Descontraído e amigo',
+    tomCristao: 'Com princípios cristãos',
+    lblIdiomaAtend: 'Idioma do atendimento',
+    lblHorario: 'Horário de atendimento <span class="hint">(fora do horário, o bot responde assim mesmo — sem perder venda)</span>',
+    hintHorario: '(fora do horário, o bot responde assim mesmo — sem perder venda)',
+    phHorario: 'Ex: Seg-Sáb, 8h às 20h',
+    lblRegras: 'Regras de venda <span class="hint">(descontos máximos, política de entrega, garantia, o que não pode prometer)</span>',
+    hintRegras: '(descontos máximos, política de entrega, garantia, o que não pode prometer)',
+    phRegras: 'Ex: Desconto máximo de 10%. Frete grátis acima de R$ 100. Não prometer prazo de entrega além de 48h. Não aceitar troca após 7 dias.',
+    btnNext4: 'Próximo →',
+    s5_title: '💳 Escolha seu plano',
+    s5_desc: 'Mensal, semestral ou anual — com desconto progressivo. Todos com garantia de devolução.',
+    lblFrequencia: 'Frequência de cobrança',
+    freqMensal: 'Mensal',
+    freqSemestral: 'Semestral',
+    freqAnual: 'Anual',
+    economia15: 'ECONOMIZE 15%',
+    economia25: 'ECONOMIZE 25%',
+    garantia7: '🛡️ 7 DIAS DE GARANTIA',
+    garantia15: '🛡️ 15 DIAS DE GARANTIA',
+    planoBasico: 'BÁSICO',
+    planoPro: 'PRO',
+    basicoDesc: '1 vendedor IA<br>treinado com seus arquivos',
+    proDesc: '2 vendedores + avatar<br>+ redes sociais automáticas',
+    recomendado: 'RECOMENDADO',
+    comparativo: 'Comparativo',
+    feat1: 'Vendedor IA treinado com seus arquivos (PDF, planilhas, vídeos...)',
+    feat2: 'Atendimento 24/7 em 3 idiomas, com sua personalidade',
+    feat3: 'Funil de perguntas inteligente que qualifica e converte',
+    feat4: 'Relatório semanal de conversas e vendas perdidas',
+    feat5: 'Avatar do vendedor gerado por IA (foto + perfil)',
+    feat6: 'Geração de mensagens e vídeos para redes sociais',
+    feat7: 'Agendamento automático de postagens (horários otimizados)',
+    comparativoNota: 'Os itens do PRO aparecem em destaque para você visualizar o que ganha.',
+    addonAvatarTitulo: '🪞 Criar Avatar do Vendedor (PRO)',
+    addonAvatarDesc: 'Sugestão: o Severino gera um avatar profissional do seu vendedor virtual (foto, nome e perfil) para usar no WhatsApp e redes sociais — dá rosto e confiança ao bot. +R$ 19/mês.',
+    addonConteudoTitulo: '🎬 Mensagens + Vídeos + Agendamento (PRO)',
+    addonConteudoDesc: 'Sugestão: o Severino cria mensagens prontas, roteiros de vídeos (Reels/Shorts) e posts para seus produtos, e agenda as publicações nos melhores horários. +R$ 39/mês.',
+    estrategiasTitulo: '📈 Como o Severino alavanca suas vendas',
+    est1: 'Atende em segundos, 24/7 — nunca mais perca cliente por demora',
+    est2: 'Funil inteligente que descobre a necessidade e indica o produto certo',
+    est3: 'Follow-up automático: nenhum interessado fica sem retorno',
+    est4: 'Divulgação constante nas redes com seu avatar e seus produtos',
+    est5: 'Atendimento com excelência cristã: honestidade, paciência e respeito',
+    cryptoTitle: '🪙 Aceitamos criptomoedas',
+    estavel: 'Mais estável',
+    conhecido: 'Mais conhecido',
+    brasil: 'Brasil',
+    ctaTudoPronto: '🎯 Tudo pronto!',
+    lgpd: 'Aceito receber contato e concordo com a Política de Privacidade. Seus dados estão seguros conosco.',
+    btnComecar: '🤖 Ativar meu Vendedor IA · Garantia de Devolução',
+    ctaMissao: 'Sua contribuição sustenta o projeto e ajuda a manter o acesso gratuito para quem precisa aprender.',
+    pago_verse: '"Honra ao Senhor com os teus bens e com as primícias de toda a tua renda." — Provérbios 3:9',
+    btnBack: '← Voltar',
+    btnBack2: '← Voltar',
+    btnRecomecar: '🔄 Recomeçar',
+    disclaimer1: '<strong>Severino Vendedor IA</strong> — Ferramenta com princípios cristãos. Não nos envolvemos com atividades imorais, desonestas ou ilegais.',
+    disclaimer2: 'As respostas do vendedor são geradas por IA e não substituem orientação profissional, jurídica ou pastoral.',
+    optional: '(opcional)',
+    errEtapa1: 'Preencha pelo menos: nome do negócio e WhatsApp.',
+    errEtapa2: 'Adicione pelo menos 1 produto (nome + preço + descrição).',
+    errEtapa3: 'Envie pelo menos 1 arquivo ou escreva um texto sobre seu negócio.',
+    errArquivoGrande: 'O arquivo é maior que 8MB e não foi adicionado: ',
+    errArquivoTipo: 'Formato não suportado: ',
+    errMaxArquivos: 'Limite de 12 arquivos atingido.',
+    errLGPD: 'Por favor, aceite os termos de privacidade para continuar.',
+    enviando: '⏳ Enviando...',
+    enviado: '✅ Enviado!',
+    enviadoOk: '🎯 Recebido! O Severino Vendedor já está sendo treinado com seus materiais. Em breve você receberá o contato de ativação. Que Deus abençoe suas vendas!',
+    errEnvio: '⚠️ Erro — Tente WhatsApp',
+    errEnvioMsg: 'Não foi possível enviar automaticamente.',
+    whatsAppBtn: '📱 WhatsApp',
+    kb: 'KB',
+    mb: 'MB',
+    arquivoAdicionado: 'adicionado',
+    nenhumProduto: 'Nenhum produto adicionado ainda. Adicione acima ⬆',
+    remover: '✕',
+    conviteTitulo: 'Convite especial',
+    conviteTexto: 'Você foi convidado por um parceiro! Aproveite o acesso antecipado e o suporte prioritário.',
+    betaTexto: 'Você está testando a ferramenta como parceiro de desenvolvimento. Plano PRO liberado (R$ 0) com avatar, conteúdo e agendamento. Suas respostas e sugestões vão ajudar a ajustar a ferramenta. Muito obrigado!',
+    betaContato: 'Dúvidas ou sugestões: envie pelo seu cadastro — entramos em contato pelo WhatsApp.',
+    ctaBeta: '🧪 Enviar cadastro de teste · R$ 0 · PRO liberado'
+  },
+  en: {
+    title: 'Severino — AI Salesperson',
+    subtitle: 'Your 24/7 salesperson and sales consultant, with Christian principles',
+    headerVerse: '"Whatever you do, work at it with all your heart, as working for the Lord."<br>— Colossians 3:23',
+    s1_title: '🏪 Tell us about your business',
+    s1_desc: 'Severino the Salesperson will be built around YOUR business. The better he knows you, the more sales he closes.',
+    lblNegocio: 'Your business or store name <span class="hint">(as shown to customers)</span>',
+    hintNegocio: '(as shown to customers)',
+    phNegocio: 'Ex: Maria\'s Sweets',
+    lblRamo: 'Field / segment',
+    ramoAlimentos: '🍰 Food and drinks',
+    ramoModa: '👗 Fashion and accessories',
+    ramoBeleza: '💄 Beauty and aesthetics',
+    ramoServicos: '🛠️ Services and labor',
+    ramoDigital: '💻 Digital / info products',
+    ramoEducacao: '📚 Education and courses',
+    ramoSaude: '🏥 Health and wellness',
+    ramoConstrucao: '🏗️ Construction and renovations',
+    ramoAutomotivo: '🚗 Automotive',
+    ramoIgreja: '🙏 Church / Ministry',
+    ramoOutro: '🤷 Other',
+    lblWhats: 'Your WhatsApp <span class="hint">(to activate your salesperson)</span>',
+    hintWhats: '(to activate your salesperson)',
+    phWhats: '(XX) 9XXXX-XXXX',
+    lblInstagram: 'Instagram / Facebook / Website <span class="hint">(optional — Severino will promote your pages)</span>',
+    hintOpcional: '(optional — Severino will promote your pages)',
+    phRedes: 'https://instagram.com/yourstore',
+    btnNext: 'Next →',
+    s2_title: '📦 Register your products',
+    s2_desc: 'Add what you sell. The AI salesperson will learn each product, price and benefit to sell like the world\'s best seller.',
+    lblProduto: 'Product/service name',
+    phProdutoNome: 'Ex: 300ml pot cake',
+    lblPreco: 'Price',
+    lblDescricao: 'Description and benefits <span class="hint">(what does the customer get?)</span>',
+    hintBeneficios: '(what does the customer get?)',
+    phProdutoDesc: 'Ex: Handmade pot cake, Belgian chocolate flavor. Made to order, same-day delivery...',
+    btnAddProduto: '➕ Add product',
+    btnNext2: 'Next →',
+    s3_title: '📚 Train Severino the Salesperson',
+    s3_desc: 'Send everything you have about your products: catalogs, price sheets, photos, videos, audio, PDFs, documents... The salesperson learns from all of it.',
+    uploadClique: 'Click here or drag your files',
+    uploadFormatos: 'PDF · DOCX · XLSX · CSV · TXT · MD · JSON · JPG · PNG · WEBP · MP4 · MP3 — up to 8MB each, max 12 files',
+    lblTreinoTexto: 'Tell us in your own words <span class="hint">(how you sell today, your differential, your story)</span>',
+    hintTreinoTexto: '(how you sell today, your differential, your story)',
+    phTreinoTexto: 'Ex: Our store is family-owned, running since 2015. The cake is made with imported Belgian chocolate and we deliver in 40 minutes. Customers come back for the taste and service...',
+    lblLinks: 'Reference links <span class="hint">(optional)</span>',
+    hintOpcional2: '(optional)',
+    phLinkRef: 'https://yoursite.com/products',
+    btnNext3: 'Next →',
+    s4_title: '🎭 Give your salesperson a personality',
+    s4_desc: 'The salesperson is 100% adjustable: name, tone of voice, language, business hours and sales rules. You control everything.',
+    lblNomeBot: 'AI salesperson name',
+    phNomeBot: 'Ex: Severino, Ana, Virtual Salesperson...',
+    lblTom: 'Tone of voice',
+    tomCordial: '🤝 Warm and welcoming (recommended)',
+    tomFormal: '👔 Formal and professional',
+    tomDescontraido: '😄 Casual and friendly',
+    tomCristao: 'With Christian principles',
+    lblIdiomaAtend: 'Service language',
+    lblHorario: 'Business hours <span class="hint">(outside hours, the bot still answers — never lose a sale)</span>',
+    hintHorario: '(outside hours, the bot still answers — never lose a sale)',
+    phHorario: 'Ex: Mon-Sat, 8am to 8pm',
+    lblRegras: 'Sales rules <span class="hint">(max discounts, delivery policy, guarantee, what cannot be promised)</span>',
+    hintRegras: '(max discounts, delivery policy, guarantee, what cannot be promised)',
+    phRegras: 'Ex: Maximum 10% discount. Free shipping above R$ 100. Never promise delivery beyond 48h. No exchange after 7 days.',
+    btnNext4: 'Next →',
+    s5_title: '💳 Choose your plan',
+    s5_desc: 'Monthly, semiannual or annual — with progressive discounts. All with money-back guarantee.',
+    lblFrequencia: 'Billing frequency',
+    freqMensal: 'Monthly',
+    freqSemestral: 'Semiannual',
+    freqAnual: 'Annual',
+    economia15: 'SAVE 15%',
+    economia25: 'SAVE 25%',
+    garantia7: '🛡️ 7-DAY GUARANTEE',
+    garantia15: '🛡️ 15-DAY GUARANTEE',
+    planoBasico: 'BASIC',
+    planoPro: 'PRO',
+    basicoDesc: '1 AI salesperson<br>trained with your files',
+    proDesc: '2 salespeople + avatar<br>+ automatic social media',
+    recomendado: 'RECOMMENDED',
+    comparativo: 'Comparison',
+    feat1: 'AI salesperson trained with your files (PDF, spreadsheets, videos...)',
+    feat2: '24/7 service in 3 languages, with your personality',
+    feat3: 'Smart question funnel that qualifies and converts',
+    feat4: 'Weekly report of conversations and lost sales',
+    feat5: 'AI-generated salesperson avatar (photo + profile)',
+    feat6: 'Generation of messages and videos for social media',
+    feat7: 'Automatic post scheduling (optimized times)',
+    comparativoNota: 'PRO items are highlighted so you can see what you gain.',
+    addonAvatarTitulo: '🪞 Create Salesperson Avatar (PRO)',
+    addonAvatarDesc: 'Suggestion: Severino generates a professional avatar of your virtual salesperson (photo, name and profile) for WhatsApp and social media — gives the bot a face and trust. +R$ 19/month.',
+    addonConteudoTitulo: '🎬 Messages + Videos + Scheduling (PRO)',
+    addonConteudoDesc: 'Suggestion: Severino creates ready messages, video scripts (Reels/Shorts) and posts for your products, and schedules posts at the best times. +R$ 39/month.',
+    estrategiasTitulo: '📈 How Severino boosts your sales',
+    est1: 'Answers in seconds, 24/7 — never lose a customer to delay',
+    est2: 'Smart funnel that finds the need and recommends the right product',
+    est3: 'Automatic follow-up: no prospect left behind',
+    est4: 'Constant promotion on social media with your avatar and products',
+    est5: 'Service with Christian excellence: honesty, patience and respect',
+    cryptoTitle: '🪙 We accept cryptocurrencies',
+    estavel: 'Most stable',
+    conhecido: 'Most known',
+    brasil: 'Brazil',
+    ctaTudoPronto: '🎯 All set!',
+    lgpd: 'I accept to be contacted and agree with the Privacy Policy. Your data is safe with us.',
+    btnComecar: '🤖 Activate my AI Salesperson · Money-Back Guarantee',
+    ctaMissao: 'Your contribution sustains the project and keeps free access for those who need to learn.',
+    pago_verse: '"Honor the Lord with your wealth and with the firstfruits of all your crops." — Proverbs 3:9',
+    btnBack: '← Back',
+    btnBack2: '← Back',
+    btnRecomecar: '🔄 Restart',
+    disclaimer1: '<strong>Severino AI Salesperson</strong> — Tool with Christian principles. We do not engage in immoral, dishonest or illegal activities.',
+    disclaimer2: 'Salesperson responses are AI-generated and do not replace professional, legal or pastoral guidance.',
+    optional: '(optional)',
+    errEtapa1: 'Please fill at least: business name and WhatsApp.',
+    errEtapa2: 'Add at least 1 product (name + price + description).',
+    errEtapa3: 'Send at least 1 file or write a text about your business.',
+    errArquivoGrande: 'File is larger than 8MB and was not added: ',
+    errArquivoTipo: 'Unsupported format: ',
+    errMaxArquivos: '12-file limit reached.',
+    errLGPD: 'Please accept the privacy terms to continue.',
+    enviando: '⏳ Sending...',
+    enviado: '✅ Sent!',
+    enviadoOk: '🎯 Received! Severino the Salesperson is being trained with your materials. You will receive activation contact shortly. May God bless your sales!',
+    errEnvio: '⚠️ Error — Try WhatsApp',
+    errEnvioMsg: 'Could not send automatically.',
+    whatsAppBtn: '📱 WhatsApp',
+    kb: 'KB',
+    mb: 'MB',
+    arquivoAdicionado: 'added',
+    nenhumProduto: 'No products added yet. Add above ⬆',
+    remover: '✕',
+    conviteTitulo: 'Special invitation',
+    conviteTexto: 'You were invited by a partner! Enjoy early access and priority support.',
+    betaTexto: 'You are testing the tool as a development partner. PRO plan unlocked (R$ 0) with avatar, content and scheduling. Your answers and suggestions will help refine the tool. Thank you!',
+    betaContato: 'Questions or suggestions: send them with your registration — we will reach out on WhatsApp.',
+    ctaBeta: '🧪 Send test registration · R$ 0 · PRO unlocked'
+  },
+  es: {
+    title: 'Severino — Vendedor IA',
+    subtitle: 'Tu vendedor y consultor de ventas 24/7, con principios cristianos',
+    headerVerse: '"Todo lo que hagan, háganlo de todo corazón, como para el Señor."<br>— Colosenses 3:23',
+    s1_title: '🏪 Cuéntanos sobre tu negocio',
+    s1_desc: 'El Vendedor Severino será creado a la medida de TU negocio. Cuanto mejor te conozca, más ventas cerrará.',
+    lblNegocio: 'Nombre de tu negocio o tienda <span class="hint">(como aparece para los clientes)</span>',
+    hintNegocio: '(como aparece para los clientes)',
+    phNegocio: 'Ej: Dulces de María',
+    lblRamo: 'Ramo / segmento',
+    ramoAlimentos: '🍰 Alimentos y bebidas',
+    ramoModa: '👗 Moda y accesorios',
+    ramoBeleza: '💄 Belleza y estética',
+    ramoServicos: '🛠️ Servicios y mano de obra',
+    ramoDigital: '💻 Digital / infoproductos',
+    ramoEducacao: '📚 Educación y cursos',
+    ramoSaude: '🏥 Salud y bienestar',
+    ramoConstrucao: '🏗️ Construcción y reformas',
+    ramoAutomotivo: '🚗 Automotriz',
+    ramoIgreja: '🙏 Iglesia / Ministerio',
+    ramoOutro: '🤷 Otro',
+    lblWhats: 'Tu WhatsApp <span class="hint">(para activar tu vendedor)</span>',
+    hintWhats: '(para activar tu vendedor)',
+    phWhats: '(XX) 9XXXX-XXXX',
+    lblInstagram: 'Instagram / Facebook / Sitio <span class="hint">(opcional — Severino divulgará tus redes)</span>',
+    hintOpcional: '(opcional — Severino divulgará tus redes)',
+    phRedes: 'https://instagram.com/tutienda',
+    btnNext: 'Siguiente →',
+    s2_title: '📦 Registra tus productos',
+    s2_desc: 'Agrega lo que vendes. El vendedor IA aprenderá cada producto, precio y beneficio para vender como el mejor vendedor del mundo.',
+    lblProduto: 'Nombre del producto/servicio',
+    phProdutoNome: 'Ej: Pastel en frasco de 300ml',
+    lblPreco: 'Precio',
+    lblDescricao: 'Descripción y beneficios <span class="hint">(¿qué gana el cliente?)</span>',
+    hintBeneficios: '(¿qué gana el cliente?)',
+    phProdutoDesc: 'Ej: Pastel artesanal en frasco, sabor chocolate belga. Hecho bajo pedido, entrega el mismo día...',
+    btnAddProduto: '➕ Añadir producto',
+    btnNext2: 'Siguiente →',
+    s3_title: '📚 Entrena al Vendedor Severino',
+    s3_desc: 'Envía todo lo que tienes sobre tus productos: catálogos, planillas de precios, fotos, videos, audios, PDFs, documentos... El vendedor aprende de todo eso.',
+    uploadClique: 'Haz clic aquí o arrastra tus archivos',
+    uploadFormatos: 'PDF · DOCX · XLSX · CSV · TXT · MD · JSON · JPG · PNG · WEBP · MP4 · MP3 — hasta 8MB cada uno, máx. 12 archivos',
+    lblTreinoTexto: 'Cuéntanos con tus palabras <span class="hint">(cómo vendes hoy, tu diferencial, tu historia)</span>',
+    hintTreinoTexto: '(cómo vendes hoy, tu diferencial, tu historia)',
+    phTreinoTexto: 'Ej: Nuestra tienda es familiar, atiende desde 2015. El pastel está hecho con chocolate belga importado y entregamos en 40 minutos. Nuestros clientes vuelven siempre por el sabor y la atención...',
+    lblLinks: 'Enlaces de referencia <span class="hint">(opcional)</span>',
+    hintOpcional2: '(opcional)',
+    phLinkRef: 'https://tusitio.com/productos',
+    btnNext3: 'Siguiente →',
+    s4_title: '🎭 Dale personalidad a tu vendedor',
+    s4_desc: 'El vendedor es 100% ajustable: nombre, tono de voz, idioma, horario de atención y reglas de venta. Tú controlas todo.',
+    lblNomeBot: 'Nombre del vendedor IA',
+    phNomeBot: 'Ej: Severino, Ana, Vendedor Virtual...',
+    lblTom: 'Tono de voz',
+    tomCordial: '🤝 Cordial y acogedor (recomendado)',
+    tomFormal: '👔 Formal y profesional',
+    tomDescontraido: '😄 Despreocupado y amigable',
+    tomCristao: 'Con principios cristianos',
+    lblIdiomaAtend: 'Idioma de atención',
+    lblHorario: 'Horario de atención <span class="hint">(fuera de horario, el bot igual responde — sin perder ventas)</span>',
+    hintHorario: '(fuera de horario, el bot igual responde — sin perder ventas)',
+    phHorario: 'Ej: Lun-Sáb, 8h a 20h',
+    lblRegras: 'Reglas de venta <span class="hint">(descuentos máximos, política de entrega, garantía, qué no se puede prometer)</span>',
+    hintRegras: '(descuentos máximos, política de entrega, garantía, qué no se puede prometer)',
+    phRegras: 'Ej: Descuento máximo del 10%. Envío gratis arriba de R$ 100. No prometer entrega más allá de 48h. No aceptar cambios después de 7 días.',
+    btnNext4: 'Siguiente →',
+    s5_title: '💳 Elige tu plan',
+    s5_desc: 'Mensual, semestral o anual — con descuento progresivo. Todos con garantía de devolución.',
+    lblFrequencia: 'Frecuencia de cobro',
+    freqMensal: 'Mensual',
+    freqSemestral: 'Semestral',
+    freqAnual: 'Anual',
+    economia15: 'AHORRA 15%',
+    economia25: 'AHORRA 25%',
+    garantia7: '🛡️ GARANTÍA DE 7 DÍAS',
+    garantia15: '🛡️ GARANTÍA DE 15 DÍAS',
+    planoBasico: 'BÁSICO',
+    planoPro: 'PRO',
+    basicoDesc: '1 vendedor IA<br>entrenado con tus archivos',
+    proDesc: '2 vendedores + avatar<br>+ redes sociales automáticas',
+    recomendado: 'RECOMENDADO',
+    comparativo: 'Comparativo',
+    feat1: 'Vendedor IA entrenado con tus archivos (PDF, planillas, videos...)',
+    feat2: 'Atención 24/7 en 3 idiomas, con tu personalidad',
+    feat3: 'Embudo de preguntas inteligente que califica y convierte',
+    feat4: 'Informe semanal de conversaciones y ventas perdidas',
+    feat5: 'Avatar del vendedor generado por IA (foto + perfil)',
+    feat6: 'Generación de mensajes y videos para redes sociales',
+    feat7: 'Programación automática de publicaciones (horarios optimizados)',
+    comparativoNota: 'Los ítems del PRO aparecen resaltados para que veas lo que ganas.',
+    addonAvatarTitulo: '🪞 Crear Avatar del Vendedor (PRO)',
+    addonAvatarDesc: 'Sugerencia: Severino genera un avatar profesional de tu vendedor virtual (foto, nombre y perfil) para WhatsApp y redes sociales — da rostro y confianza al bot. +R$ 19/mes.',
+    addonConteudoTitulo: '🎬 Mensajes + Videos + Programación (PRO)',
+    addonConteudoDesc: 'Sugerencia: Severino crea mensajes listos, guiones de videos (Reels/Shorts) y publicaciones para tus productos, y agenda las publicaciones en los mejores horarios. +R$ 39/mes.',
+    estrategiasTitulo: '📈 Cómo Severino impulsa tus ventas',
+    est1: 'Responde en segundos, 24/7 — nunca pierdas un cliente por demora',
+    est2: 'Embudo inteligente que descubre la necesidad y recomienda el producto correcto',
+    est3: 'Seguimiento automático: ningún interesado queda sin respuesta',
+    est4: 'Divulgación constante en redes con tu avatar y tus productos',
+    est5: 'Atención con excelencia cristiana: honestidad, paciencia y respeto',
+    cryptoTitle: '🪙 Aceptamos criptomonedas',
+    estavel: 'Más estable',
+    conhecido: 'Más conocido',
+    brasil: 'Brasil',
+    ctaTudoPronto: '🎯 ¡Todo listo!',
+    lgpd: 'Acepto ser contactado y acepto la Política de Privacidad. Tus datos están seguros con nosotros.',
+    btnComecar: '🤖 Activar mi Vendedor IA · Garantía de Devolución',
+    ctaMissao: 'Tu contribución sostiene el proyecto y mantiene el acceso gratuito para quienes necesitan aprender.',
+    pago_verse: '"Honra al Señor con tus bienes y con las primicias de todos tus ingresos." — Proverbios 3:9',
+    btnBack: '← Volver',
+    btnBack2: '← Volver',
+    btnRecomecar: '🔄 Reiniciar',
+    disclaimer1: '<strong>Vendedor Severino IA</strong> — Herramienta con principios cristianos. No nos involucramos en actividades inmorales, deshonestas o ilegales.',
+    disclaimer2: 'Las respuestas del vendedor son generadas por IA y no sustituyen la orientación profesional, jurídica o pastoral.',
+    optional: '(opcional)',
+    errEtapa1: 'Completa al menos: nombre del negocio y WhatsApp.',
+    errEtapa2: 'Añade al menos 1 producto (nombre + precio + descripción).',
+    errEtapa3: 'Envía al menos 1 archivo o escribe un texto sobre tu negocio.',
+    errArquivoGrande: 'El archivo supera 8MB y no fue añadido: ',
+    errArquivoTipo: 'Formato no soportado: ',
+    errMaxArquivos: 'Límite de 12 archivos alcanzado.',
+    errLGPD: 'Por favor, acepta los términos de privacidad para continuar.',
+    enviando: '⏳ Enviando...',
+    enviado: '✅ ¡Enviado!',
+    enviadoOk: '🎯 ¡Recibido! El Vendedor Severino ya está siendo entrenado con tus materiales. Pronto recibirás el contacto de activación. ¡Que Dios bendiga tus ventas!',
+    errEnvio: '⚠️ Error — Intenta WhatsApp',
+    errEnvioMsg: 'No se pudo enviar automáticamente.',
+    whatsAppBtn: '📱 WhatsApp',
+    kb: 'KB',
+    mb: 'MB',
+    arquivoAdicionado: 'añadido',
+    nenhumProduto: 'Aún no hay productos. Añade arriba ⬆',
+    remover: '✕',
+    conviteTitulo: 'Invitación especial',
+    conviteTexto: '¡Fuiste invitado por un socio! Disfruta del acceso anticipado y el soporte prioritario.',
+    betaTexto: 'Estás probando la herramienta como socio de desarrollo. Plan PRO liberado (R$ 0) con avatar, contenido y programación. Tus respuestas y sugerencias ayudarán a ajustar la herramienta. ¡Muchas gracias!',
+    betaContato: '¿Dudas o sugerencias? Envíalas con tu registro — te contactaremos por WhatsApp.',
+    ctaBeta: '🧪 Enviar registro de prueba · R$ 0 · PRO liberado'
+  }
+};
+
+let currentLang = localStorage.getItem('severino_lang') || 'pt';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('severino_lang', lang);
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key] !== undefined) {
+      el.innerHTML = TRANSLATIONS[lang][key];
+    }
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key] !== undefined) {
+      el.placeholder = TRANSLATIONS[lang][key].replace(/<[^>]*>/g, '');
+    }
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('lang' + lang.toUpperCase()).classList.add('active');
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : lang;
+  atualizarPrecos();
+  renderArquivos();
+  renderProdutos();
+  atualizarCTA();
+}
+
+// ===== INICIALIZAÇÃO =====
+const urlParams = new URLSearchParams(window.location.search);
+const conviteCode = urlParams.get('convite');
+window.isConvidado = !!conviteCode;
+window.conviteCode = conviteCode;
+window.modoTeste = !!(conviteCode && conviteCode.toLowerCase() === 'beta-pro');
+
+let currentStep = 1;
+const totalSteps = 5;
+const L = (pt, en, es) => currentLang === 'pt' ? pt : currentLang === 'en' ? en : es;
+
+function updateProgress() {
+  const pct = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  const label = document.getElementById('progressLabel');
+  if (currentLang === 'pt') label.textContent = `Etapa ${currentStep} de ${totalSteps}`;
+  else if (currentLang === 'en') label.textContent = `Step ${currentStep} of ${totalSteps}`;
+  else label.textContent = `Paso ${currentStep} de ${totalSteps}`;
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  const step = document.querySelector(`[data-step="${n}"]`);
+  if (step) step.classList.add('active');
+  currentStep = n;
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep() { if (currentStep < 5) showStep(currentStep + 1); }
+function prevStep() { if (currentStep > 1) showStep(currentStep - 1); }
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? (el.value || '').trim() : '';
+}
+
+// ===== VALIDAÇÕES =====
+function validarEtapa1() {
+  const negocio = getVal('negocio');
+  const whatsapp = getVal('whatsapp');
+  if (!negocio || !whatsapp) {
+    alert(TRANSLATIONS[currentLang].errEtapa1);
+    return;
+  }
+  nextStep();
+}
+
+function validarEtapa2() {
+  if (window.produtos.length === 0) {
+    alert(TRANSLATIONS[currentLang].errEtapa2);
+    return;
+  }
+  nextStep();
+}
+
+function validarEtapa3() {
+  if (window.arquivos.length === 0 && !getVal('treino_texto')) {
+    alert(TRANSLATIONS[currentLang].errEtapa3);
+    return;
+  }
+  nextStep();
+}
+
+// ===== PRODUTOS =====
+window.produtos = [];
+window.produtoEditando = null;
+
+function adicionarProduto() {
+  const nome = getVal('produto_nome');
+  const preco = getVal('produto_preco');
+  const desc = getVal('produto_desc');
+  if (!nome || !preco || !desc) {
+    alert(L('Preencha nome, preço e descrição do produto.', 'Fill in name, price and description of the product.', 'Completa nombre, precio y descripción del producto.'));
+    return;
+  }
+  window.produtos.push({ nome, preco: parseFloat(preco.replace(',', '.')), desc });
+  document.getElementById('produto_nome').value = '';
+  document.getElementById('produto_preco').value = '';
+  document.getElementById('produto_desc').value = '';
+  renderProdutos();
+}
+
+function removerProduto(idx) {
+  window.produtos.splice(idx, 1);
+  renderProdutos();
+}
+
+function renderProdutos() {
+  const box = document.getElementById('listaProdutos');
+  if (window.produtos.length === 0) {
+    box.innerHTML = `<p style="font-size:0.7rem; color:var(--muted); margin-top:10px;">${TRANSLATIONS[currentLang].nenhumProduto}</p>`;
+    return;
+  }
+  box.innerHTML = window.produtos.map((p, i) => `
+    <div class="produto-card">
+      <button class="p-rm" onclick="removerProduto(${i})">✕</button>
+      <div class="p-top">
+        <span class="p-nome">${escapeHTML(p.nome)}</span>
+        <span class="p-preco">R$ ${p.preco.toFixed(2).replace('.', ',')}</span>
+      </div>
+      <div class="p-desc">${escapeHTML(p.desc)}</div>
+      <div class="p-gap"><span class="tag-mini">📦 ${L('Produto', 'Product', 'Producto')} ${i + 1}</span></div>
+    </div>
+  `).join('');
+}
+
+// ===== UPLOAD DE ARQUIVOS =====
+window.arquivos = [];
+
+const EXT_PERMITIDAS = ['pdf','doc','docx','xls','xlsx','csv','txt','md','json','png','jpg','jpeg','webp','gif','mp4','mp3','wav','ogg'];
+const MAX_TAMANHO = 8 * 1024 * 1024;
+const MAX_ARQUIVOS = 12;
+
+function droparArquivos(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  if (e.dataTransfer && e.dataTransfer.files) adicionarArquivos(e.dataTransfer.files);
+}
+
+function fileParaBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatarTamanho(bytes) {
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' ' + TRANSLATIONS[currentLang].mb;
+  return Math.round(bytes / 1024) + ' ' + TRANSLATIONS[currentLang].kb;
+}
+
+async function adicionarArquivos(files) {
+  for (const file of Array.from(files)) {
+    if (window.arquivos.length >= MAX_ARQUIVOS) {
+      alert(TRANSLATIONS[currentLang].errMaxArquivos);
+      break;
+    }
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!EXT_PERMITIDAS.includes(ext)) {
+      alert(TRANSLATIONS[currentLang].errArquivoTipo + file.name);
+      continue;
+    }
+    if (file.size > MAX_TAMANHO) {
+      alert(TRANSLATIONS[currentLang].errArquivoGrande + file.name);
+      continue;
+    }
+    const base64 = await fileParaBase64(file);
+    window.arquivos.push({
+      nome: file.name,
+      tipo: file.type || ext,
+      tamanho: file.size,
+      ext: ext,
+      base64: base64
+    });
+  }
+  document.getElementById('fileInput').value = '';
+  renderArquivos();
+}
+
+function removerArquivo(idx) {
+  window.arquivos.splice(idx, 1);
+  renderArquivos();
+}
+
+function renderArquivos() {
+  const box = document.getElementById('listaArquivos');
+  if (window.arquivos.length === 0) {
+    box.innerHTML = '';
+    return;
+  }
+  const icon = { pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', csv: '📊', txt: '📄', md: '📄', json: '🧩', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', webp: '🖼️', gif: '🎞️', mp4: '🎬', mp3: '🎵', wav: '🎵', ogg: '🎵' };
+  box.innerHTML = window.arquivos.map((a, i) => `
+    <div class="file-chip ok">
+      <span>${icon[a.ext] || '📎'}</span>
+      <span class="f-nome">${escapeHTML(a.nome)}</span>
+      <span class="f-info">${formatarTamanho(a.tamanho)} · ${TRANSLATIONS[currentLang].arquivoAdicionado}</span>
+      <span class="f-ok">✔</span>
+      <button class="f-rm" onclick="removerArquivo(${i})">${TRANSLATIONS[currentLang].remover}</button>
+    </div>
+  `).join('');
+}
+
+// ===== PLANOS & FREQUÊNCIA =====
+const PLANOS = {
+  basico: {
+    mensal: 47, semestral: 240, anual: 420,
+    garantia: 7,
+    porMes: { mensal: 47, semestral: 40, anual: 35 }
+  },
+  pro: {
+    mensal: 97, semestral: 490, anual: 870,
+    garantia: 15,
+    porMes: { mensal: 97, semestral: 82, anual: 73 }
+  }
+};
+
+const ADDON_AVATAR = 19;
+const ADDON_CONTEUDO = 39;
+
+window.frequencia = 'mensal';
+window.plano = 'pro';
+window.avatar = true;
+window.conteudo = true;
+
+function selecionarFrequencia(freq) {
+  window.frequencia = freq;
+  document.querySelectorAll('.freq-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('freq' + freq.charAt(0).toUpperCase() + freq.slice(1)).classList.add('active');
+  atualizarPrecos();
+  atualizarCTA();
+}
+
+function selecionarPlano(plano) {
+  window.plano = plano;
+  document.getElementById('planBasico').classList.toggle('active', plano === 'basico');
+  document.getElementById('planPro').classList.toggle('active', plano === 'pro');
+  atualizarPrecos();
+  atualizarCTA();
+  atualizarFeatureList();
+}
+
+function toggleAvatar() {
+  window.avatar = document.getElementById('avatarCheck').checked;
+  atualizarCTA();
+}
+function toggleConteudo() {
+  window.conteudo = document.getElementById('conteudoCheck').checked;
+  atualizarCTA();
+}
+
+function atualizarPrecos() {
+  const freq = window.frequencia;
+  document.getElementById('precoBasico').innerHTML = `<span class="moeda">R$</span> ${PLANOS.basico[freq]}`;
+  document.getElementById('precoPro').innerHTML = `<span class="moeda">R$</span> ${PLANOS.pro[freq]}`;
+  document.getElementById('freqMensal').querySelector('.f-preco').textContent = '—';
+  document.getElementById('freqSemestral').querySelector('.f-preco').textContent = L('2×', '2×', '2×');
+  document.getElementById('freqAnual').querySelector('.f-preco').textContent = L('1×', '1×', '1×');
+}
+
+function atualizarFeatureList() {
+  const pro = window.plano === 'pro';
+  const proItens = ['feat5', 'feat6', 'feat7'];
+  proItens.forEach((key, i) => {
+    const row = document.getElementById('feat' + (5 + i) + 'row');
+    const ck = document.getElementById('feat' + (5 + i) + 'ck');
+    const txt = document.getElementById('feat' + (5 + i) + 'txt');
+    if (row) row.style.display = 'flex';
+    if (ck) ck.classList.toggle('no', !pro);
+    if (txt) {
+      txt.classList.toggle('has', pro);
+      txt.classList.toggle('lacks', !pro);
+    }
+  });
+  const normalItens = ['feat2', 'feat3', 'feat4'];
+  normalItens.forEach(key => {
+    const ck = document.getElementById(key + 'ck');
+    const txt = document.getElementById(key + 'txt');
+    if (ck) { ck.classList.remove('no'); }
+    if (txt) { txt.classList.remove('lacks'); txt.classList.add('has'); }
+  });
+}
+
+function valorTotal() {
+  const freq = window.frequencia;
+  let total = PLANOS[window.plano][freq];
+  if (window.plano === 'pro') {
+    if (window.avatar) total += ADDON_AVATAR * (freq === 'mensal' ? 1 : freq === 'semestral' ? 6 : 12);
+    if (window.conteudo) total += ADDON_CONTEUDO * (freq === 'mensal' ? 1 : freq === 'semestral' ? 6 : 12);
+  }
+  return total;
+}
+
+function atualizarCTA() {
+  const planoLabel = window.plano === 'pro' ? 'PRO' : 'BASE';
+  const dias = PLANOS[window.plano].garantia;
+  const freqLabel = L('mês', 'mo', 'mes') + ' · ' + (window.frequencia === 'semestral' ? L('semestral', 'semiannual', 'semestral') : window.frequencia === 'anual' ? L('anual', 'annual', 'anual') : L('mensal', 'monthly', 'mensual'));
+  const extras = [];
+  if (window.plano === 'pro') {
+    if (window.avatar) extras.push(L('Avatar', 'Avatar', 'Avatar'));
+    if (window.conteudo) extras.push(L('Posts+Agendamento', 'Posts+Scheduling', 'Posts+Programación'));
+  }
+  document.getElementById('ctaDescricao').textContent = `${L('Plano', 'Plan')} ${planoLabel} · 🛡️ ${dias} ${L('dias de garantia', 'days guarantee', 'días de garantía')}`;
+  document.getElementById('ctaValor').textContent = `R$ ${valorTotal().toLocaleString('pt-BR')} ${freqLabel}${extras.length ? ' · ' + extras.join(' + ') : ''} · ${L('Cancele quando quiser', 'Cancel anytime', 'Cancela cuando quieras')}`;
+  const pagamento = document.querySelector('input[name="crypto"]:checked');
+  document.getElementById('ctaValor').textContent += ' · ' + (pagamento ? (pagamento.value === 'usdt' ? '💎 USDT' : pagamento.value === 'btc' ? '₿ BTC' : '💳 ' + L('Pix/Cartão', 'Pix/Card', 'Pix/Tarjeta')) : '');
+}
+
+// ===== ENVIO =====
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function enviarParaSeverino() {
+  if (!document.getElementById('lgpdConsent').checked) {
+    alert(TRANSLATIONS[currentLang].errLGPD);
+    return;
+  }
+
+  const btn = document.getElementById('btnEnviar');
+  const status = document.getElementById('statusEnvio');
+  const freq = window.frequencia;
+  const plano = window.plano;
+  const beta = window.modoTeste === true;
+
+  const payload = {
+    tipo: 'vendedor',
+    negocio: getVal('negocio'),
+    ramo: getVal('ramo'),
+    whatsapp: getVal('whatsapp'),
+    redes: getVal('redes'),
+    produtos: window.produtos,
+    treino: {
+      texto: getVal('treino_texto'),
+      linkRef: getVal('link_ref'),
+      arquivos: window.arquivos.map(a => ({ nome: a.nome, ext: a.ext, tamanho: a.tamanho }))
+    },
+    personalidade: {
+      nomeBot: getVal('nome_bot') || 'Severino',
+      tomVoz: getVal('tom_voz') || 'cordial',
+      idiomaAtend: getVal('idioma_atend') || 'pt',
+      horario: getVal('horario_atend'),
+      regras: getVal('regras_venda')
+    },
+    plano: plano,
+    frequencia: freq,
+    avatar: plano === 'pro' ? window.avatar : false,
+    conteudo: plano === 'pro' ? window.conteudo : false,
+    valorTotal: beta ? 0 : valorTotal(),
+    diasGarantia: PLANOS[plano].garantia,
+    metodoPagamento: document.querySelector('input[name="crypto"]:checked')?.value || 'fiat',
+    idioma: currentLang,
+    lgpdConsent: true,
+    convidado: window.isConvidado || false,
+    conviteCode: window.conviteCode || null,
+    modoTeste: beta || false
+  };
+
+  btn.disabled = true;
+  btn.textContent = '⏳ ' + TRANSLATIONS[currentLang].enviando;
+  status.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/vendedor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '✅ ' + TRANSLATIONS[currentLang].enviado;
+      btn.style.background = 'var(--success)';
+      btn.style.color = '#000';
+      status.innerHTML = `<p style="color:var(--success);font-size:0.78rem;font-weight:600;">${TRANSLATIONS[currentLang].enviadoOk}</p>`;
+      enviarConfirmacaoWhatsApp(payload);
+    } else {
+      throw new Error(data.error || 'Erro no envio');
+    }
+  } catch (e) {
+    btn.textContent = '⚠️ ' + TRANSLATIONS[currentLang].errEnvio;
+    btn.style.background = 'var(--warn)';
+    btn.style.color = '#000';
+    status.innerHTML = `<p style="color:var(--warn);font-size:0.75rem;">${TRANSLATIONS[currentLang].errEnvioMsg}</p><button class="btn btn-sm" onclick="compartilharWhatsApp()" style="background:#25D366;color:#fff;padding:10px 16px;border:none;border-radius:10px;cursor:pointer;font-size:0.8rem;font-weight:600;margin-top:4px;">📱 WhatsApp</button>`;
+  }
+}
+
+function enviarConfirmacaoWhatsApp(d) {
+  const num = d.whatsapp || '';
+  if (!num || num.replace(/\D/g, '').length < 10) return;
+
+  const planoLabel = d.plano === 'pro' ? 'PRO' : 'BASE';
+  const freqLabel = d.frequencia === 'semestral' ? L('semestral', 'semiannual', 'semestral') : d.frequencia === 'anual' ? L('anual', 'annual', 'anual') : L('mensal', 'monthly', 'mensual');
+  const extras = [];
+  if (d.avatar) extras.push(L('Avatar', 'Avatar', 'Avatar'));
+  if (d.conteudo) extras.push(L('Posts+Agendamento', 'Posts+Scheduling', 'Posts+Programación'));
+
+  let msg;
+  if (currentLang === 'en') {
+    msg = '🦾 *Severino Salesperson — Registration Received!*%0A%0A';
+    msg += 'Your *' + planoLabel + '* plan (' + freqLabel + ') was confirmed.%0A%0A';
+    msg += '📋 *Summary:*%0A';
+    msg += '• Business: ' + (d.negocio || '—') + '%0A';
+    msg += '• Products: ' + (d.produtos.length || 0) + '%0A';
+    msg += '• Training files: ' + (d.treino.arquivos.length || 0) + '%0A';
+    msg += '• Plan: ' + planoLabel + ' ' + freqLabel + '%0A';
+    msg += extras.length ? '• Extras: ' + extras.join(' + ') + '%0A' : '';
+    msg += '• Total: R$ ' + d.valorTotal + '%0A%0A';
+    msg += '🛡️ *' + d.diasGarantia + '-day guarantee.* Not happy? We refund you, no questions asked.%0A%0A';
+    msg += 'Your AI salesperson will be trained and activated. May God bless your sales! 🙏%0A%0A';
+    msg += '👤 *Your salesperson:* ' + (d.personalidade && d.personalidade.nomeBot ? d.personalidade.nomeBot : 'Ana') + '%0A';
+    msg += '📸 *Photo:* https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4';
+  } else if (currentLang === 'es') {
+    msg = '🦾 *Vendedor Severino — ¡Registro Recibido!*%0A%0A';
+    msg += 'Tu plan *' + planoLabel + '* (' + freqLabel + ') fue confirmado.%0A%0A';
+    msg += '📋 *Resumen:*%0A';
+    msg += '• Negocio: ' + (d.negocio || '—') + '%0A';
+    msg += '• Productos: ' + (d.produtos.length || 0) + '%0A';
+    msg += '• Archivos de entrenamiento: ' + (d.treino.arquivos.length || 0) + '%0A';
+    msg += '• Plan: ' + planoLabel + ' ' + freqLabel + '%0A';
+    msg += extras.length ? '• Extras: ' + extras.join(' + ') + '%0A' : '';
+    msg += '• Total: R$ ' + d.valorTotal + '%0A%0A';
+    msg += '🛡️ *Tienes ' + d.diasGarantia + ' días de garantía.* ¿No te gusta? Te devolvemos tu dinero, sin preguntas.%0A%0A';
+    msg += 'Tu vendedor IA será entrenado y activado. ¡Que Dios bendiga tus ventas! 🙏%0A%0A';
+    msg += '👤 *Tu vendedora:* ' + (d.personalidade && d.personalidade.nomeBot ? d.personalidade.nomeBot : 'Ana') + '%0A';
+    msg += '📸 *Foto:* https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4';
+  } else {
+    msg = '🦾 *Vendedor Severino — Cadastro Recebido!*%0A%0A';
+    msg += 'Olá! Seu plano *' + planoLabel + '* (' + freqLabel + ') foi confirmado.%0A%0A';
+    msg += '📋 *Resumo:*%0A';
+    msg += '• Negócio: ' + (d.negocio || '—') + '%0A';
+    msg += '• Produtos: ' + (d.produtos.length || 0) + '%0A';
+    msg += '• Arquivos de treino: ' + (d.treino.arquivos.length || 0) + '%0A';
+    msg += '• Plano: ' + planoLabel + ' ' + freqLabel + '%0A';
+    msg += extras.length ? '• Extras: ' + extras.join(' + ') + '%0A' : '';
+    msg += '• Total: R$ ' + d.valorTotal + '%0A%0A';
+    msg += '🛡️ *Você tem ' + d.diasGarantia + ' dias de garantia.* Se não gostar, devolvemos seu dinheiro, sem perguntas.%0A%0A';
+    msg += '⏱ Seu vendedor IA será treinado com seus materiais e ativado automaticamente.%0A';
+    msg += 'Você não precisa fazer nada — o Severino cuida de tudo pelo WhatsApp.%0A%0A';
+    msg += '👤 *Sua vendedora:* ' + (d.personalidade && d.personalidade.nomeBot ? d.personalidade.nomeBot : 'Ana') + '%0A';
+    msg += '📸 *Foto:* https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4%0A%0A';
+    msg += '_Que Deus abençoe suas vendas!_ 🙏';
+  }
+
+  const cleanNum = num.replace(/\D/g, '');
+  const avatarUrl = 'https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4';
+  window.open('https://wa.me/55' + cleanNum + '?text=' + msg, '_blank');
+}
+
+function compartilharWhatsApp() {
+  const num = getVal('whatsapp').replace(/\D/g, '');
+  if (!num) return;
+  const d = {
+    negocio: getVal('negocio'),
+    ramo: getVal('ramo'),
+    produtos: window.produtos,
+    treino: { arquivos: window.arquivos, texto: getVal('treino_texto') },
+    personalidade: { nomeBot: getVal('nome_bot') || 'Severino', tomVoz: getVal('tom_voz') },
+    plano: window.plano,
+    frequencia: window.frequencia
+  };
+  const msg = L(
+    '🦾 *Vendedor Severino — Cadastro via WhatsApp*%0A%0A' + '• Negócio: ' + (d.negocio || '—') + '%0A' + '• Ramo: ' + (d.ramo || '—') + '%0A' + '• Produtos: ' + (d.produtos.length || 0) + '%0A' + '• Arquivos: ' + (d.treino.arquivos.length || 0) + '%0A' + '• Plano: ' + (d.plano || '—') + ' (' + (d.frequencia || '—') + ')%0A%0A' + '👤 *Sua vendedora:* ' + (d.personalidade && d.personalidade.nomeBot ? d.personalidade.nomeBot : 'Ana') + '%0A' + '📸 *Foto:* https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4%0A%0A' + '_Quero ativar meu vendedor IA. Que Deus abençoe!_ 🙏',
+    '🦾 *Severino Salesperson — Registration via WhatsApp*%0A%0A' + '• Business: ' + (d.negocio || '—') + '%0A' + '• Field: ' + (d.ramo || '—') + '%0A' + '• Products: ' + (d.produtos.length || 0) + '%0A' + '• Files: ' + (d.treino.arquivos.length || 0) + '%0A' + '• Plan: ' + (d.plano || '—') + ' (' + (d.frequencia || '—') + ')%0A%0A' + '👤 *Your salesperson:* ' + (d.personalidade && d.personalidade.nomeBot ? d.personalidade.nomeBot : 'Ana') + '%0A' + '📸 *Photo:* https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4%0A%0A' + '_I want to activate my AI salesperson. May God bless! 🙏_',
+    '🦾 *Vendedor Severino — Registro vía WhatsApp*%0A%0A' + '• Negocio: ' + (d.negocio || '—') + '%0A' + '• Ramo: ' + (d.ramo || '—') + '%0A' + '• Productos: ' + (d.produtos.length || 0) + '%0A' + '• Archivos: ' + (d.treino.arquivos.length || 0) + '%0A' + '• Plan: ' + (d.plano || '—') + ' (' + (d.frequencia || '—') + ')%0A%0A' + '👤 *Tu vendedora:* ' + (d.personalidade && d.personalidade.nomeBot ? d.personalidade.nomeBot : 'Ana') + '%0A' + '📸 *Foto:* https://avatars.githubusercontent.com/u/278813277?s=400&u=86f5a11641feec18712f8f8f45c5df7199d9abc0&v=4%0A%0A' + '_Quiero activar mi vendedor IA. ¡Que Dios bendiga!_ 🙏'
+  );
+  window.open('https://wa.me/55' + num + '?text=' + msg, '_blank');
+}
+
+function reiniciar() {
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else if (el.type !== 'checkbox' && el.type !== 'radio') el.value = '';
+    else if (el.type === 'checkbox') el.checked = false;
+  });
+  window.produtos = [];
+  window.arquivos = [];
+  renderProdutos();
+  renderArquivos();
+  showStep(1);
+}
+
+setLang(currentLang);
+updateProgress();
+
+// Banner de convite (se veio via ?convite=)
+if (window.isConvidado) {
+  const banner = document.getElementById('conviteBanner');
+  const quem = document.getElementById('conviteQuem');
+  const nomeConvite = window.conviteCode.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  quem.textContent = '(' + nomeConvite + ')';
+  if (!window.modoTeste) banner.style.display = 'block';
+}
+
+// MODO TESTE (beta): plano PRO liberado, R$ 0, para validação e desenvolvimento
+if (window.modoTeste) {
+  document.getElementById('betaBanner').style.display = 'block';
+  window.plano = 'pro';
+  window.avatar = true;
+  window.conteudo = true;
+  document.getElementById('avatarCheck').checked = true;
+  document.getElementById('conteudoCheck').checked = true;
+  document.getElementById('planBasico').classList.remove('active');
+  document.getElementById('planPro').classList.add('active');
+  document.getElementById('ctaDescricao').textContent = '🧪 Plano PRO · Modo Teste · ' + TRANSLATIONS[currentLang].betaContato;
+  document.getElementById('ctaValor').textContent = 'R$ 0 · PRO completo (Avatar + Conteúdo + Agendamento) · ' + (currentLang === 'pt' ? 'Cortesia de validação' : currentLang === 'en' ? 'Validation courtesy' : 'Cortesía de validación');
+  document.getElementById('btnEnviar').textContent = TRANSLATIONS[currentLang].ctaBeta;
+  document.getElementById('btnEnviar').style.background = 'var(--gold)';
+  atualizarFeatureList();
+  atualizarCTA();
+}
+</script>
+</body>
+</html>

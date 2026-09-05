@@ -1,0 +1,870 @@
+[
+  {
+    "ts": 1788642216510,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 803,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 723,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 642,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 602,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=19.8 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=21.2 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=38.6",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-61.60",
+            "longa": "96.18",
+            "trend": "bearish",
+            "value": "-157.78"
+          },
+          "qqe": {
+            "line": "1.6",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.25",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "19.8",
+            "ema1": "19.8",
+            "ema2": "19.8"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-2.51",
+            "longa": "6.37",
+            "trend": "bearish",
+            "value": "-8.88"
+          },
+          "qqe": {
+            "line": "0.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.47",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "21.2",
+            "ema1": "21.2",
+            "ema2": "21.2"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.10",
+            "longa": "0.30",
+            "trend": "bearish",
+            "value": "-0.40"
+          },
+          "qqe": {
+            "line": "8.5",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.49",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "38.6",
+            "ema1": "38.6",
+            "ema2": "38.6"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788642216508
+    }
+  },
+  {
+    "ts": 1788642156562,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 803,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 723,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 642,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 602,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=19.8 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=21.2 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=38.6",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-61.60",
+            "longa": "96.18",
+            "trend": "bearish",
+            "value": "-157.78"
+          },
+          "qqe": {
+            "line": "1.6",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.25",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "19.8",
+            "ema1": "19.8",
+            "ema2": "19.8"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-2.51",
+            "longa": "6.37",
+            "trend": "bearish",
+            "value": "-8.88"
+          },
+          "qqe": {
+            "line": "0.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.47",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "21.2",
+            "ema1": "21.2",
+            "ema2": "21.2"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.10",
+            "longa": "0.30",
+            "trend": "bearish",
+            "value": "-0.40"
+          },
+          "qqe": {
+            "line": "8.5",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.49",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "38.6",
+            "ema1": "38.6",
+            "ema2": "38.6"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788642156560
+    }
+  },
+  {
+    "ts": 1788642096520,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 803,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 723,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 642,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 602,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=19.8 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=21.2 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=38.6",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-61.60",
+            "longa": "96.18",
+            "trend": "bearish",
+            "value": "-157.78"
+          },
+          "qqe": {
+            "line": "1.6",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.25",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "19.8",
+            "ema1": "19.8",
+            "ema2": "19.8"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-2.51",
+            "longa": "6.37",
+            "trend": "bearish",
+            "value": "-8.88"
+          },
+          "qqe": {
+            "line": "0.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.47",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "21.2",
+            "ema1": "21.2",
+            "ema2": "21.2"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.10",
+            "longa": "0.30",
+            "trend": "bearish",
+            "value": "-0.40"
+          },
+          "qqe": {
+            "line": "8.5",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.49",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "38.6",
+            "ema1": "38.6",
+            "ema2": "38.6"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788642096518
+    }
+  },
+  {
+    "ts": 1788642036418,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 803,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 723,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 642,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 602,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=19.8 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=21.2 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=38.6",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-61.60",
+            "longa": "96.18",
+            "trend": "bearish",
+            "value": "-157.78"
+          },
+          "qqe": {
+            "line": "1.6",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.25",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "19.8",
+            "ema1": "19.8",
+            "ema2": "19.8"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-2.51",
+            "longa": "6.37",
+            "trend": "bearish",
+            "value": "-8.88"
+          },
+          "qqe": {
+            "line": "0.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.47",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "21.2",
+            "ema1": "21.2",
+            "ema2": "21.2"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.10",
+            "longa": "0.30",
+            "trend": "bearish",
+            "value": "-0.40"
+          },
+          "qqe": {
+            "line": "8.5",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.49",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "38.6",
+            "ema1": "38.6",
+            "ema2": "38.6"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788642036416
+    }
+  },
+  {
+    "ts": 1788641976438,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 601,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 541,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 481,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 451,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=34.9 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=27.0 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=44.9",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-35.81",
+            "longa": "79.93",
+            "trend": "bearish",
+            "value": "-115.74"
+          },
+          "qqe": {
+            "line": "35.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.16",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "34.9",
+            "ema1": "34.9",
+            "ema2": "34.9"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-1.81",
+            "longa": "5.81",
+            "trend": "bearish",
+            "value": "-7.62"
+          },
+          "qqe": {
+            "line": "18.3",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.40",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "27.0",
+            "ema1": "27.0",
+            "ema2": "27.0"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.05",
+            "longa": "0.27",
+            "trend": "bearish",
+            "value": "-0.32"
+          },
+          "qqe": {
+            "line": "36.1",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.37",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "44.9",
+            "ema1": "44.9",
+            "ema2": "44.9"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788641976437
+    }
+  },
+  {
+    "ts": 1788641916448,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 601,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 541,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 481,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 451,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=34.9 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=27.0 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=44.9",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-35.81",
+            "longa": "79.93",
+            "trend": "bearish",
+            "value": "-115.74"
+          },
+          "qqe": {
+            "line": "35.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.16",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "34.9",
+            "ema1": "34.9",
+            "ema2": "34.9"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-1.81",
+            "longa": "5.81",
+            "trend": "bearish",
+            "value": "-7.62"
+          },
+          "qqe": {
+            "line": "18.3",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.40",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "27.0",
+            "ema1": "27.0",
+            "ema2": "27.0"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.05",
+            "longa": "0.27",
+            "trend": "bearish",
+            "value": "-0.32"
+          },
+          "qqe": {
+            "line": "36.1",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.37",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "44.9",
+            "ema1": "44.9",
+            "ema2": "44.9"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788641916446
+    }
+  },
+  {
+    "ts": 1788641856521,
+    "tipo": "rapida",
+    "data": {
+      "rankings": [
+        {
+          "periodo": "7d",
+          "melhor": "ema_cross",
+          "score": 601,
+          "timeframe_recomendado": "5m",
+          "justificativa": "Score institucional multi-indicador"
+        },
+        {
+          "periodo": "30d",
+          "melhor": "ema_cross",
+          "score": 541,
+          "timeframe_recomendado": "4H"
+        },
+        {
+          "periodo": "60d",
+          "melhor": "ema_cross",
+          "score": 481,
+          "timeframe_recomendado": "1D"
+        },
+        {
+          "periodo": "90d",
+          "melhor": "ema_cross",
+          "score": 451,
+          "timeframe_recomendado": "1D"
+        }
+      ],
+      "recomendacao_geral": "ema_cross",
+      "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+      "mercado_atual": "tendencia_baixa",
+      "confianca": 81,
+      "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=34.9 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=27.0 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=44.9",
+      "sugestao_timeframe_operacional": "5m",
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-35.81",
+            "longa": "79.93",
+            "trend": "bearish",
+            "value": "-115.74"
+          },
+          "qqe": {
+            "line": "35.7",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.16",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "34.9",
+            "ema1": "34.9",
+            "ema2": "34.9"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "-1.81",
+            "longa": "5.81",
+            "trend": "bearish",
+            "value": "-7.62"
+          },
+          "qqe": {
+            "line": "18.3",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.40",
+            "ready": false
+          },
+          "bos": {
+            "trend": "lateral",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "27.0",
+            "ema1": "27.0",
+            "ema2": "27.0"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "-0.05",
+            "longa": "0.27",
+            "trend": "bearish",
+            "value": "-0.32"
+          },
+          "qqe": {
+            "line": "36.1",
+            "dar": "2.12",
+            "trend": "bearish"
+          },
+          "squeeze": {
+            "active": false,
+            "momentum": "-0.37",
+            "ready": false
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "44.9",
+            "ema1": "44.9",
+            "ema2": "44.9"
+          }
+        }
+      },
+      "_full": false,
+      "_ts": 1788641856519
+    }
+  }
+]

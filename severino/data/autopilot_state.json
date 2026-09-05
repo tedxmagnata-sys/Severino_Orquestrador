@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-08-01T02:46:30.948Z",
+  "checks": 51522,
+  "recovered": 0,
+  "failedChecks": [],
+  "lastHealthOk": "2026-09-05T21:03:05.163Z",
+  "lastHealthFail": null,
+  "cost": {
+    "todayTokens": 0,
+    "monthlyBudgetTokens": 5000000,
+    "budgetExceeded": false
+  },
+  "refunds": {
+    "requested": 1,
+    "processed": 1,
+    "pending": []
+  },
+  "feedback": {
+    "happy": 0,
+    "unhappy": 1,
+    "recent": [
+      {
+        "happy": false,
+        "text": "",
+        "at": "2026-08-01T02:46:42.729Z",
+        "idioma": "pt"
+      }
+    ]
+  },
+  "backups": 127,
+  "userAutomations": {}
+}

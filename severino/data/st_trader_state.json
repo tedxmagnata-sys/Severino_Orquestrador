@@ -1,0 +1,13 @@
+{
+  "lastSig": "",
+  "lastSent": 0,
+  "lastDecision": {
+    "action": "reject",
+    "ts": 1787685678481,
+    "by": 1088548125
+  },
+  "pending": {
+    "plant": "1H",
+    "harvest": "1D"
+  }
+}

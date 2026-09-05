@@ -1,0 +1,16 @@
+{
+  "5854115851": {
+    "licenseCode": "VIP7-TDPZIN",
+    "telegramId": 5854115851,
+    "nome": "Arthur Sabino",
+    "email": "",
+    "createdAt": "2026-07-30T18:04:57.436Z",
+    "prefs": {
+      "dailyAnalysis": true,
+      "climateChange": true,
+      "operationalSignal": true
+    },
+    "lastClimate": {},
+    "lastDailySent": ""
+  }
+}

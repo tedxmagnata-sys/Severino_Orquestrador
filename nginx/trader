@@ -1,0 +1,65 @@
+# =====================================================================
+# TRADER.SEVERINOBOT.COM — Dashboard Futurista de Trading (porta 3349)
+# Painel Severino Trader com análise de mercado e seleção de estratégias
+# =====================================================================
+server {
+    if ($host = trader.severinobot.com) {
+        return 301 https://$host$request_uri;
+    }
+
+    if ($host = www.trader.severinobot.com) {
+        return 301 https://$host$request_uri;
+    }
+
+    listen 80;
+    listen [::]:80;
+    server_name trader.severinobot.com www.trader.severinobot.com;
+    return 301 https://$host$request_uri;
+
+
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name trader.severinobot.com www.trader.severinobot.com;
+    ssl_certificate /etc/letsencrypt/live/trader.severinobot.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/trader.severinobot.com/privkey.pem; # managed by Certbot
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    client_max_body_size 50M;
+
+    # WebSocket support for real-time updates
+    location /ws {
+        proxy_pass http://127.0.0.1:3349;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # API endpoints
+    location /api/ {
+        proxy_pass http://127.0.0.1:3349;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Static files
+    location / {
+        proxy_pass http://127.0.0.1:3349;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+}

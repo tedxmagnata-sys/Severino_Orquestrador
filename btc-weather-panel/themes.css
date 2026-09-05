@@ -1,0 +1,216 @@
+/* ==========================================================================
+   BTC WEATHER PANEL - THEME SWITCHER (Glass / Neon / Minimal)
+   Carregado APÓS index.css. Usa data-theme="glass|neon|minimal" no <body>.
+   ========================================================================== */
+
+/* --- Theme switcher UI (reusa estilos do lang-switcher) --- */
+.theme-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+.glass-dot {
+    background: conic-gradient(#ffb703, #00f0ff, #ff3366, #ffb703);
+}
+.neon-dot {
+    background: radial-gradient(circle at 30% 30%, #00f0ff, #0a3a44);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
+}
+.minimal-dot {
+    background: radial-gradient(circle at 30% 30%, #e6e9f0, #565d6e);
+}
+#theme-current-label {
+    text-transform: capitalize;
+}
+
+/* --- TEMA 1: GLASSMORPHISM PREMIUM (padrão / atual) --- */
+body[data-theme="glass"] {
+    --bg-dark: #08090f;
+    --bg-card: rgba(18, 20, 32, 0.55);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --text-primary: #f1f3f9;
+    --text-secondary: #8f92a3;
+    --color-sunny: #ffb703;
+    --color-sunny-glow: rgba(255, 183, 3, 0.15);
+    --color-cloudy: #00f0ff;
+    --color-cloudy-glow: rgba(0, 240, 255, 0.12);
+    --color-stormy: #ff3366;
+    --color-stormy-glow: rgba(255, 51, 102, 0.18);
+    --color-premium: #2979ff;
+    --color-premium-glow: rgba(41, 121, 255, 0.25);
+    --color-elite: #a100ff;
+}
+
+/* --- TEMA 2: NEON TERMINAL --- */
+body[data-theme="neon"] {
+    --bg-dark: #050608;
+    --bg-card: rgba(6, 12, 18, 0.72);
+    --border-color: rgba(0, 240, 255, 0.18);
+    --text-primary: #eafcff;
+    --text-secondary: #7fa8b8;
+    --color-sunny: #ffcf3d;
+    --color-sunny-glow: rgba(255, 207, 61, 0.5);
+    --color-cloudy: #00f0ff;
+    --color-cloudy-glow: rgba(0, 240, 255, 0.5);
+    --color-stormy: #ff2d78;
+    --color-stormy-glow: rgba(255, 45, 120, 0.5);
+    --color-premium: #00e5ff;
+    --color-premium-glow: rgba(0, 229, 255, 0.45);
+    --color-elite: #ff2d78;
+}
+
+/* Neon: fundo com grid cyberpunk + glow intenso */
+body[data-theme="neon"] {
+    background-image:
+        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+    background-size: 42px 42px;
+}
+body[data-theme="neon"] .bg-glow {
+    opacity: 0.28;
+    filter: blur(90px);
+}
+body[data-theme="neon"] .glow-1 { background: radial-gradient(circle, var(--color-sunny) 0%, transparent 70%); }
+body[data-theme="neon"] .glow-2 { background: radial-gradient(circle, var(--color-cloudy) 0%, transparent 70%); }
+body[data-theme="neon"] .glow-3 { background: radial-gradient(circle, var(--color-stormy) 0%, transparent 70%); }
+
+body[data-theme="neon"] .weather-hero-card,
+body[data-theme="neon"] .forecast-card,
+body[data-theme="neon"] .signal-box,
+body[data-theme="neon"] .header {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.12), 0 0 22px rgba(0, 240, 255, 0.10), inset 0 0 18px rgba(0, 240, 255, 0.04);
+}
+body[data-theme="neon"] .weather-hero-card.theme-sunny,
+body[data-theme="neon"] .forecast-card.card-bullish {
+    box-shadow: 0 0 0 1px rgba(255, 207, 61, 0.35), 0 0 26px rgba(255, 207, 61, 0.25), inset 0 0 18px rgba(255, 207, 61, 0.06);
+}
+body[data-theme="neon"] .weather-hero-card.theme-cloudy,
+body[data-theme="neon"] .forecast-card.card-neutral {
+    box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.35), 0 0 26px rgba(0, 240, 255, 0.25), inset 0 0 18px rgba(0, 240, 255, 0.06);
+}
+body[data-theme="neon"] .weather-hero-card.theme-stormy,
+body[data-theme="neon"] .forecast-card.card-bearish {
+    box-shadow: 0 0 0 1px rgba(255, 45, 120, 0.35), 0 0 26px rgba(255, 45, 120, 0.25), inset 0 0 18px rgba(255, 45, 120, 0.06);
+}
+body[data-theme="neon"] .temperature-value,
+body[data-theme="neon"] .forecast-card .card-time,
+body[data-theme="neon"] .prob-pct,
+body[data-theme="neon"] .term-card-value,
+body[data-theme="neon"] .btn-primary {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.5px;
+}
+body[data-theme="neon"] .btn-primary {
+    background: linear-gradient(135deg, var(--color-cloudy), var(--color-premium));
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+}
+body[data-theme="neon"] .logo-icon {
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.7));
+}
+body[data-theme="neon"] .logo-area h1 {
+    background: linear-gradient(90deg, #00f0ff, #ff2d78);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+body[data-theme="neon"] .status-indicator.live {
+    background: rgba(0, 240, 255, 0.12);
+    color: #00f0ff;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+/* --- TEMA 3: MINIMAL LUXO (Apple/Stripe style) --- */
+body[data-theme="minimal"] {
+    --bg-dark: #0b0b10;
+    --bg-card: rgba(255, 255, 255, 0.028);
+    --border-color: rgba(255, 255, 255, 0.06);
+    --text-primary: #f5f6fa;
+    --text-secondary: #9aa0ae;
+    --color-sunny: #e0a800;
+    --color-sunny-glow: rgba(224, 168, 0, 0.10);
+    --color-cloudy: #7ea6c8;
+    --color-cloudy-glow: rgba(126, 166, 200, 0.10);
+    --color-stormy: #e0526b;
+    --color-stormy-glow: rgba(224, 82, 107, 0.10);
+    --color-premium: #9aa5ff;
+    --color-premium-glow: rgba(154, 165, 255, 0.15);
+    --color-elite: #c8a1ff;
+}
+
+body[data-theme="minimal"] .bg-glow {
+    opacity: 0.05;
+    filter: blur(150px);
+}
+body[data-theme="minimal"] .weather-hero-card,
+body[data-theme="minimal"] .forecast-card,
+body[data-theme="minimal"] .signal-box,
+body[data-theme="minimal"] .header {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--bg-card) !important;
+    border-radius: 12px;
+    border-width: 1px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+body[data-theme="minimal"] .weather-hero-card.theme-sunny,
+body[data-theme="minimal"] .forecast-card.card-bullish {
+    border-color: rgba(224, 168, 0, 0.28) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+body[data-theme="minimal"] .weather-hero-card.theme-cloudy,
+body[data-theme="minimal"] .forecast-card.card-neutral {
+    border-color: rgba(126, 166, 200, 0.28) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+body[data-theme="minimal"] .weather-hero-card.theme-stormy,
+body[data-theme="minimal"] .forecast-card.card-bearish {
+    border-color: rgba(224, 82, 107, 0.28) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+body[data-theme="minimal"] .forecast-card .weather-icon {
+    text-shadow: none !important;
+}
+body[data-theme="minimal"] .forecast-card .weather-icon svg {
+    filter: none !important;
+}
+body[data-theme="minimal"] .btn-primary {
+    background-color: #fff !important;
+    background-image: none !important;
+    color: #0b0b10 !important;
+    font-weight: 700;
+    box-shadow: none !important;
+}
+body[data-theme="minimal"] .btn-secondary {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border-color: var(--border-color) !important;
+}
+body[data-theme="minimal"] .logo-area h1 {
+    background: none !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    font-weight: 700;
+}
+body[data-theme="minimal"] .logo-area .subtitle {
+    letter-spacing: 0.4px;
+}
+body[data-theme="minimal"] .temperature-value {
+    font-weight: 200;
+    letter-spacing: -1px;
+}
+body[data-theme="minimal"] .j1-tab-btn,
+body[data-theme="minimal"] .mini-tab-btn {
+    border-radius: 6px !important;
+}
+
+/* Suaviza a transição ao trocar de tema */
+body {
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+body *, body *::before, body *::after {
+    transition: border-color 0.4s ease, box-shadow 0.4s ease, background-color 0.4s ease, color 0.4s ease;
+}

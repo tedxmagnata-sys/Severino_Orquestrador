@@ -1,0 +1,1481 @@
+/**
+ * 🪙 BTC Weather Panel — Servidor Independente
+ * Porta 3340 · PM2: btcweather
+ *
+ * Separado do severinobot.com (porta 3334) para rodar de forma independente.
+ * Serve o app + APIs do BTC. Dados compartilhados em /root/severino/data
+ * (licenses.json, telemetry, weather config) para o funil do ecossistema
+ * (orquestrador 3335) continuar seguindo os leads.
+ *
+ * Rotas:
+ *   Estáticos: /, /btc-weather-panel/, /weather-panel/, /app, /admin-dashboard, /oferta, /ebook-btc
+ *   API: /api/trial · /api/license/validate · /api/license/activate · /api/license/generate
+ *        /api/weather/config · /api/webhook/clima · /api/lead · /api/admin/metrics
+ *        /api/public/metrics · /api/telemetry/ping · /api/event · /api/cohort(/increment)
+ *        /api/purchase/webhook (Kiwify) · /api/telegram/webhook (bot compartilhado)
+ */
+
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const { PassThrough } = require('stream');
+const crypto = require('crypto');
+try { require('dotenv').config(); } catch (e) {}
+(function loadEnv() {
+  const candidate = process.env.ENV_FILE || '/root/severino/.env';
+  // Só retorna cedo quando ADMIN_CODE já veio do ambiente (pm2/.env);
+  // caso contrário carrega do arquivo para garantir a rota de admin.
+  const jaTem = !!(process.env.SECRET_KEY && process.env.ADMIN_CODE);
+  if (jaTem) return;
+  try {
+    const raw = fs.readFileSync(candidate, 'utf8');
+    raw.split(/\r?\n/).forEach(line => {
+      const t = line.trim();
+      if (!t || t.startsWith('#')) return;
+      const idx = t.indexOf('=');
+      if (idx > -1) { const k = t.slice(0, idx).trim(); if (!process.env[k]) process.env[k] = t.slice(idx + 1).trim(); }
+    });
+  } catch (e) { console.warn('⚠️ Sem .env:', e.message); }
+})();
+
+let telegramBot;
+try { telegramBot = require('/root/severino/ecosystem/telegram_bot'); } catch (e) { telegramBot = null; }
+let vendedor_ai;
+try { vendedor_ai = require('/root/severino/vendedor_ai'); } catch (e) { vendedor_ai = null; }
+
+const PORT = process.env.PORT || 3340;
+const WEATHER_ROOT = '/root/btc-weather-panel';
+const DATA_DIR = '/root/severino/data';
+
+/* ==========================================================================
+   🤖 SEVERINO TRADER — clima server-side + alerta Telegram com Autorizar/Rejeitar
+   ========================================================================== */
+const ST_STATE_PATH = path.join(DATA_DIR, 'st_trader_state.json');
+const ST_TF = { '15M':'15m','1H':'1h','4H':'4h','1D':'1d','3D':'3d','1W':'1w','1M':'1M' };
+const ST_TF_LABEL = { '15M':'15M','1H':'1H','4H':'4H','1D':'Diário','3D':'3 Dias','1W':'Semanal','1M':'Mensal' };
+const ST_COOLDOWN_MIN = parseInt(process.env.ST_ALERT_COOLDOWN_MIN || '180', 10); // 3h entre alertas iguais
+const ST_ALERTS_ENABLED = (process.env.ST_ALERTS_ENABLED || '1') !== '0';
+const ST_SMART = { lastOI: 0, oiUpdated:0 };
+
+function stLoadState(){ try { return JSON.parse(fs.readFileSync(ST_STATE_PATH,'utf8')); } catch { return { lastSig:'', lastSent:0, lastDecision:null }; } }
+function stSaveState(s){ try { fs.writeFileSync(ST_STATE_PATH, JSON.stringify(s,null,2)); } catch {} }
+
+/* ---------- OKX INTEGRATION (execução de ordens) ---------- */
+const ST_CFG_PATH = path.join(DATA_DIR, 'st_okx_config.json');
+const ST_ENC_KEY = crypto.createHash('sha256').update('severino-trader:' + (process.env.SECRET_KEY || 'fallback')).digest();
+function stEnc(s){ const iv = crypto.randomBytes(12); const c = crypto.createCipheriv('aes-256-gcm', ST_ENC_KEY, iv); const e = Buffer.concat([c.update(String(s),'utf8'), c.final()]); const t = c.getAuthTag(); return Buffer.concat([iv,t,e]).toString('base64'); }
+function stDec(b){ try { const buf = Buffer.from(b,'base64'); const iv = buf.slice(0,12), t = buf.slice(12,28), e = buf.slice(28); const d = crypto.createDecipheriv('aes-256-gcm', ST_ENC_KEY, iv); d.setAuthTag(t); return Buffer.concat([d.update(e), d.final()]).toString('utf8'); } catch { return ''; } }
+function stLoadOkx(){ try { const j = JSON.parse(fs.readFileSync(ST_CFG_PATH,'utf8')); return { apiKey: j.apiKey||'', secretKey: stDec(j.secretKeyEnc||''), passphrase: stDec(j.passphraseEnc||''), execMode: j.execMode||'demo', entryValue: j.entryValue||5, totalEntries: j.totalEntries||10, strategy: j.strategy||'dca', autoPlant: !!j.autoPlant, autoHarvest: !!j.autoHarvest, entrySpacing: j.entrySpacing!==undefined?j.entrySpacing:0.5, aporteSchedule: j.aporteSchedule||'off', aporteAmount: j.aporteAmount||5, aporteDay: j.aporteDay!==undefined?j.aporteDay:1 }; } catch { return null; } }
+function stSaveOkx(c){ try { const prev = stLoadOkx() || {}; const merged = { apiKey: c.apiKey!==undefined?c.apiKey:prev.apiKey, secretKey: c.secretKey!==undefined?c.secretKey:prev.secretKey, passphrase: c.passphrase!==undefined?c.passphrase:prev.passphrase, execMode: c.execMode||prev.execMode||'demo', entryValue: c.entryValue||prev.entryValue||5, totalEntries: c.totalEntries||prev.totalEntries||10, strategy: c.strategy||prev.strategy||'dca', autoPlant: c.autoPlant!==undefined?!!c.autoPlant:!!prev.autoPlant, autoHarvest: c.autoHarvest!==undefined?!!c.autoHarvest:!!prev.autoHarvest, entrySpacing: c.entrySpacing!==undefined?c.entrySpacing:prev.entrySpacing!==undefined?prev.entrySpacing:0.5, aporteSchedule: c.aporteSchedule!==undefined?c.aporteSchedule:prev.aporteSchedule||'off', aporteAmount: c.aporteAmount!==undefined?c.aporteAmount:prev.aporteAmount||5, aporteDay: c.aporteDay!==undefined?c.aporteDay:prev.aporteDay!==undefined?prev.aporteDay:1 }; fs.writeFileSync(ST_CFG_PATH, JSON.stringify({ apiKey: merged.apiKey||'', secretKeyEnc: stEnc(merged.secretKey||''), passphraseEnc: stEnc(merged.passphrase||''), execMode: merged.execMode, entryValue: merged.entryValue, totalEntries: merged.totalEntries, strategy: merged.strategy, autoPlant: merged.autoPlant, autoHarvest: merged.autoHarvest, entrySpacing: merged.entrySpacing, aporteSchedule: merged.aporteSchedule, aporteAmount: merged.aporteAmount, aporteDay: merged.aporteDay }, null, 2), { mode: 0o600 }); } catch(e){ console.error('stSaveOkx:', e.message); } }
+
+function okxRequest(c, method, reqPath, bodyObj){
+  return new Promise((resolve) => {
+    const body = bodyObj ? JSON.stringify(bodyObj) : '';
+    const ts = new Date().toISOString();
+    const prehash = ts + method + reqPath + body;
+    const sign = crypto.createHmac('sha256', c.secretKey).update(prehash).digest('base64');
+    const headers = {
+      'OK-ACCESS-KEY': c.apiKey,
+      'OK-ACCESS-SIGN': sign,
+      'OK-ACCESS-TIMESTAMP': ts,
+      'OK-ACCESS-PASSPHRASE': c.passphrase,
+      'Content-Type': 'application/json'
+    };
+    if (c.execMode === 'demo') headers['x-simulated-trading'] = '1';
+    const opts = { hostname: 'www.okx.com', port: 443, path: reqPath, method, headers, timeout: 15000, family: 4 };
+    if (body) opts.headers['Content-Length'] = Buffer.byteLength(body);
+    const rq = https.request(opts, (rs) => { let d=''; rs.on('data', ch=>d+=ch); rs.on('end', ()=>{ try { resolve(JSON.parse(d)); } catch(e){ resolve({ code:'-1', msg:'parse error', raw: d.slice(0,200) }); } }); });
+    rq.on('timeout', ()=>{ rq.destroy(); resolve({ code:'-1', msg:'timeout' }); });
+    rq.on('error', (e)=> resolve({ code:'-1', msg: e.message }));
+    if (body) rq.write(body);
+    rq.end();
+  });
+}
+async function okxGetBalance(c){ const r = await okxRequest(c, 'GET', '/api/v5/account/balance?ccy=USDT'); if (r.code !== '0') return { ok:false, error: r.msg || ('code '+r.code) }; const det = (r.data && r.data[0] && r.data[0].details) || []; const usdt = det.find(x=>x.ccy==='USDT'); return { ok:true, balance: usdt ? parseFloat(usdt.availBal||usdt.cashBal||0) : 0 }; }
+async function okxPlaceOrder(c, side, usdtAmount){
+  if (c.execMode !== 'demo' && c.execMode !== 'real') c.execMode = 'demo';
+  const sz = Math.max(5, Number(usdtAmount)||5);
+  const body = { instId:'BTC-USDT', tdMode:'cash', side: side, ordType:'market', sz: String(sz), tgtCcy:'quote_ccy' };
+  const r = await okxRequest(c, 'POST', '/api/v5/trade/order', body);
+  if (r.code !== '0') return { ok:false, error: r.msg || ('code '+r.code), raw: r };
+  const d = (r.data && r.data[0]) || {};
+  if (d.sCode && d.sCode !== '0') return { ok:false, error: d.sMsg || ('sCode '+d.sCode), raw: r };
+  return { ok:true, ordId: d.ordId, side, sz };
+}
+// venda em BTC (base_ccy) — usada para colher uma porção da posição
+async function okxSellBtc(c, btcQty){
+  if (c.execMode !== 'demo' && c.execMode !== 'real') c.execMode = 'demo';
+  const sz = Math.max(0.00001, +(+btcQty).toFixed(8));
+  const body = { instId:'BTC-USDT', tdMode:'cash', side:'sell', ordType:'market', sz: String(sz), tgtCcy:'base_ccy' };
+  const r = await okxRequest(c, 'POST', '/api/v5/trade/order', body);
+  if (r.code !== '0') return { ok:false, error: r.msg || ('code '+r.code), raw: r };
+  const d = (r.data && r.data[0]) || {};
+  if (d.sCode && d.sCode !== '0') return { ok:false, error: d.sMsg || ('sCode '+d.sCode), raw: r };
+  return { ok:true, ordId: d.ordId, side:'sell', sz };
+}
+
+/* ---------- AGENTE 24/7: macro 90d + sentimento + regime ---------- */
+async function stMacro90(){
+  try {
+    const data = await stHttpJSON('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=220');
+    const closes = data.map(c=>parseFloat(c[4]));
+    const price = closes[closes.length-1];
+    const last90 = closes.slice(-90);
+    const hi90 = Math.max(...last90), lo90 = Math.min(...last90);
+    const rangePos = hi90>lo90 ? +(((price-lo90)/(hi90-lo90))*100).toFixed(1) : 50; // 0=fundo 90d, 100=topo 90d
+    const ddFromHigh = +(((price-hi90)/hi90)*100).toFixed(1); // % abaixo do topo 90d
+    const ma200 = closes.length>=200 ? closes.slice(-200).reduce((a,b)=>a+b,0)/200 : null;
+    const ma50 = closes.slice(-50).reduce((a,b)=>a+b,0)/50;
+    const rsiD = stRSI(closes,14);
+    // volatilidade realizada 30d (desvio dos retornos diários, anualizada aprox)
+    const rets=[]; for(let i=closes.length-30;i<closes.length;i++){ rets.push((closes[i]-closes[i-1])/closes[i-1]); }
+    const mean=rets.reduce((a,b)=>a+b,0)/rets.length; const varr=rets.reduce((a,b)=>a+(b-mean)*(b-mean),0)/rets.length;
+    const vol30 = +(Math.sqrt(varr)*Math.sqrt(365)*100).toFixed(1);
+    return { price, rangePos, ddFromHigh, ma200: ma200?+ma200.toFixed(0):null, ma50:+ma50.toFixed(0), aboveMa200: ma200?price>ma200:null, rsiD:+rsiD.toFixed(1), vol30 };
+  } catch(e){ return null; }
+}
+async function stFearGreed(){
+  try { const j = await stHttpJSON('https://api.alternative.me/fng/?limit=1'); const d = j.data && j.data[0]; return d ? { value:+d.value, label:d.value_classification } : null; } catch(e){ return null; }
+}
+/* ---------- smart money: funding rate + open interest ---------- */
+async function stFunding(){
+  try {
+    const j = await stHttpJSON('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT');
+    if(!j || j.fundingRate===undefined) return null;
+    const rate = parseFloat(j.fundingRate);
+    return { rate, pct:+(rate*100).toFixed(4), label:rate>=0?'Shorts pagam':(rate<0?'Longs pagam':'Neutro'), annual:+(rate*3*365*100).toFixed(1), price:parseFloat(j.markPrice||0), nextFunding:j.nextFundingTime||0 };
+  } catch(e){ return null; }
+}
+async function stOpenInterest(){
+  try {
+    const j = await stHttpJSON('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
+    const oi = parseFloat(j.openInterest);
+    const prev = ST_SMART.lastOI || oi;
+    const delta = +((oi - prev)/prev*100).toFixed(2);
+    ST_SMART.lastOI = oi; ST_SMART.oiUpdated = Date.now();
+    return { oi:Math.round(oi), delta, trend:delta>3?'Subindo':(delta<-3?'Caindo':'Neutro') };
+  } catch(e){ return null; }
+}
+
+/* ---------- FIBONACCI RETRACEMENT (ciclo BTC) ---------- */
+function stFibonacci(macro) {
+  if (!macro || !macro.price) return null;
+  const price = macro.price;
+  const high = macro.high90 || price * 1.15;
+  const low = macro.low90 || price * 0.85;
+  const range = high - low;
+  if (range <= 0) return null;
+  const levels = [
+    { level: 0.0, pct: 0, price: low, label: 'Fundo 90d' },
+    { level: 0.236, pct: 23.6, price: low + range * 0.236, label: '23.6%' },
+    { level: 0.382, pct: 38.2, price: low + range * 0.382, label: '38.2%' },
+    { level: 0.5, pct: 50, price: low + range * 0.5, label: '50% (meio)' },
+    { level: 0.618, pct: 61.8, price: low + range * 0.618, label: '61.8% (golden)' },
+    { level: 0.786, pct: 78.6, price: low + range * 0.786, label: '78.6%' },
+    { level: 1.0, pct: 100, price: high, label: 'Topo 90d' },
+  ];
+  let nearest = null, nearestDist = Infinity;
+  levels.forEach(l => {
+    const dist = Math.abs(price - l.price);
+    if (dist < nearestDist) { nearestDist = dist; nearest = l; }
+  });
+  const inGoldenZone = price >= (low + range * 0.382) && price <= (low + range * 0.618);
+  const nearGolden = nearestDist < (range * 0.03);
+  return { levels, nearest, inGoldenZone, nearGolden, currentLevel: nearest.pct, zone: inGoldenZone ? 'GOLDEN' : (price < low + range * 0.382 ? 'BELOW' : 'ABOVE'), high, low, range };
+}
+
+/* ---------- APORTE SCHEDULE (diário/semanal/mensal) ---------- */
+function stAporteDue(cfg, st) {
+  if (!cfg.aporteSchedule || cfg.aporteSchedule === 'off') return { due: false, reason: 'aporte desligado' };
+  const amount = cfg.aporteAmount || 5;
+  if (amount < 5) return { due: false, reason: 'valor mínimo $5' };
+  const now = new Date();
+  const today = now.getDate();
+  const dayOfWeek = now.getDay();
+  const lastAporte = st.lastAporteDate ? new Date(st.lastAporteDate) : null;
+  if (lastAporte && lastAporte.toDateString() === now.toDateString()) return { due: false, reason: 'já plantou hoje' };
+  switch (cfg.aporteSchedule) {
+    case 'daily': return { due: true, amount, reason: 'aporte diário programado ($' + amount + ')' };
+    case 'weekly':
+      const targetDay = cfg.aporteDay !== undefined ? cfg.aporteDay : 1;
+      if (dayOfWeek === targetDay) return { due: true, amount, reason: 'aporte semanal (' + ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][targetDay] + ') programado ($' + amount + ')' };
+      return { due: false, reason: 'aporte semanal: hoje é ' + ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dayOfWeek] + ', alvo é ' + ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][targetDay] };
+    case 'monthly':
+      const targetDate = cfg.aporteDay !== undefined ? cfg.aporteDay : 1;
+      if (today === targetDate) return { due: true, amount, reason: 'aporte mensal (dia ' + targetDate + ') programado ($' + amount + ')' };
+      return { due: false, reason: 'aporte mensal: hoje é dia ' + today + ', alvo é dia ' + targetDate };
+    default: return { due: false, reason: 'schedule desconhecido' };
+  }
+}
+
+// Regime do ciclo: accumulation | bull | distribution | bear
+function stRegime(macro, fng){
+  if(!macro) return { regime:'unknown', score:50 };
+  let s = 50;
+  if(macro.aboveMa200===true) s+=15; else if(macro.aboveMa200===false) s-=15;
+  if(macro.ma50>macro.ma200) s+=10; else s-=10;
+  s += (macro.rsiD-50)*0.6;
+  s += (macro.rangePos-50)*0.3; // perto do topo 90d aumenta, perto do fundo diminui
+  if(fng){ if(fng.value<=25) s-=12; else if(fng.value>=75) s+=12; else s += (fng.value-50)*0.2; }
+  s = Math.min(99, Math.max(1, Math.round(s)));
+  let regime = 'bull';
+  if(s<=30) regime='bear'; else if(s<=48) regime='accumulation'; else if(s>=72) regime='distribution';
+  return { regime, score:s };
+}
+
+/* ---------- saldo OKX com cache (5 min) ---------- */
+const ST_BAL_PATH = path.join(DATA_DIR, 'st_balance_cache.json');
+async function stGetBalance(cfg, force){
+  try { const c = JSON.parse(fs.readFileSync(ST_BAL_PATH,'utf8')); if(!force && c.ts && (Date.now()-c.ts)<5*60000) return c; } catch {}
+  if(!cfg || !cfg.apiKey) return { ok:false, balance:null, ts:Date.now() };
+  const b = await okxGetBalance(cfg);
+  const out = { ok: b.ok, balance: b.ok?b.balance:null, error: b.error||null, ts: Date.now() };
+  try { fs.writeFileSync(ST_BAL_PATH, JSON.stringify(out)); } catch {}
+  return out;
+}
+
+/* ---------- posição (pool de entradas DCA) ---------- */
+function stGetPos(st){ return st.position && st.position.entries ? st.position : { open:false, entries:[], invested:0, qty:0, avgPrice:0, realized:0 }; }
+function stPosSummary(pos, price){
+  const invested = +pos.invested.toFixed(2);
+  const mkt = +(pos.qty*price).toFixed(2);
+  const pnl = +(mkt-invested).toFixed(2);
+  const pnlPct = invested>0 ? +((pnl/invested)*100).toFixed(1) : 0;
+  return { invested, mkt, pnl, pnlPct, entries: pos.entries.length, avgPrice:+pos.avgPrice.toFixed(0), qty:+pos.qty.toFixed(8) };
+}
+
+/* ---------- decisão do agente ---------- */
+function stAgentDecide(climate, macro, regime, fng, st, cfg, funding, oiStats){
+  const pos = stGetPos(st);
+  const price = macro ? macro.price : (climate.length?climate[0].price:0);
+  const sum = stPosSummary(pos, price);
+  const total = cfg.totalEntries||10;
+  const R = regime.regime;
+  const cards = (climate||[]).filter(c=>!cfg.cards || cfg.cards.indexOf(c.tf)!==-1);
+  const bestDown = cards.filter(c=>c.dir==='down').sort((a,b)=>a.score-b.score)[0]||null;
+  const bestUp = cards.filter(c=>c.dir==='up').sort((a,b)=>b.score-a.score)[0]||null;
+  const fib = stFibonacci(macro);
+  const aporte = stAporteDue(cfg, st);
+
+  // ----- COLHER (take-profit em escada / stop / distribuição + smart money) -----
+  if(pos.open && pos.qty>0){
+    if(R==='distribution') return { action:'harvest', portion:1.0, reason:'Regime de DISTRIBUIÇÃO (topo de ciclo) — realizar 100%', tf:'1W', sum };
+    if(sum.pnlPct<=-25) return { action:'harvest', portion:1.0, reason:'STOP de sobrevivência (-25% do preço médio)', tf:'1D', sum };
+    if(sum.pnlPct>=100) return { action:'harvest', portion:0.5, reason:'Alvo +100% — realizar 50% e deixar o core surfar', tf:'1D', sum };
+    if(sum.pnlPct>=50) return { action:'harvest', portion:0.25, reason:'Alvo +50% — realizar 25%', tf:'1D', sum };
+    if(bestUp && bestUp.score>=75 && bestUp.sweptHigh && funding && funding.rate>=0)
+      return { action:'harvest', portion:0.15, reason:'Smart Money 📡 funding '+funding.label+' + sweep de alta — colher 15%', tf:bestUp.tf, sum };
+    if(bestUp && bestUp.score>=90 && macro && macro.rsiD>=75) return { action:'harvest', portion:0.2, reason:'Sobrecompra extrema ('+bestUp.tf+' score '+bestUp.score+', RSI1D '+macro.rsiD+') — realizar 20%', tf:bestUp.tf, sum };
+  }
+  // ----- PLANTAR com Fibonacci + Smart Money + Aporte Schedule -----
+  if(pos.entries.length < total){
+    const regimeOk = (R==='accumulation' || R==='bull');
+    const fngOk = !fng || fng.value<75;
+    if(regimeOk && fngOk && bestDown && bestDown.score<=40){
+      // price spacing: só planta se o preço caiu entrySpacing% abaixo da última entrada
+      const spacing = (cfg.entrySpacing||0.5)/100;
+      const lastEntry = pos.entries.length ? pos.entries[pos.entries.length-1].price : null;
+      if(lastEntry && price > lastEntry * (1 - spacing)){
+        return { action:null, reason:'preço distante apenas '+(+((lastEntry-price)/lastEntry*100).toFixed(2))+'% da última entrada ($'+lastEntry.toLocaleString('en-US')+') — aguardando queda de '+(cfg.entrySpacing||0.5)+'%', sum };
+      }
+      // Fibonacci zone: ideal plantar na zona golden (38.2%-61.8%)
+      const fibOk = !fib || fib.inGoldenZone || fib.nearGolden;
+      // Smart Money confirmation
+      const smartFund = funding && funding.rate<0;
+      const smartSweep = bestDown.sweptLow;
+      const smartOk = smartFund || smartSweep || !funding;
+      // Aporte schedule: se programado e due, força plantar (mesmo sem smart money)
+      const aporteForce = aporte.due && aporte.amount >= 5;
+      if(fibOk && (smartOk || aporteForce)){
+        let extra = '';
+        if(smartSweep) extra = ' 📡 stop hunt swing $'+bestDown.swingLow.toLocaleString('en-US');
+        if(smartFund) extra += ' 📡 shorts pagando funding';
+        if(fib && fib.inGoldenZone) extra += ' 📐 Fibonacci golden zone ('+fib.currentLevel+'%)';
+        if(aporteForce) extra += ' 💰 aporte programado';
+        return { action:'plant', portion:1, reason:'Regime '+R.toUpperCase()+' + '+bestDown.tf+' oversold ('+bestDown.score+')'+extra+' — DCA entrada '+(pos.entries.length+1)+'/'+total, tf:bestDown.tf, sum, fib, aporte };
+      }
+      if(!fibOk && fib){
+        return { action:null, reason:'preço fora da zona Fibonacci golden ('+fib.currentLevel+'% vs 38.2-61.8%) — aguardando melhor entrada', sum, fib };
+      }
+    }
+  }
+  return { action:null, reason:'sem sinal', sum, fib, aporte };
+}
+
+async function stExecute(action, portion, cfg, st, price){
+  const pos = stGetPos(st);
+  if(action==='plant'){
+    const usdt = Math.max(5, cfg.entryValue||5);
+    const r = await okxPlaceOrder(cfg, 'buy', usdt);
+    if(!r.ok) return { ok:false, error:r.error };
+    const qty = usdt/price;
+    pos.entries.push({ ordId:r.ordId, usdt, qty:+qty.toFixed(8), price:+price.toFixed(0), ts:Date.now() });
+    pos.invested += usdt; pos.qty += qty; pos.avgPrice = pos.invested/pos.qty; pos.open = true;
+    st.position = pos;
+    return { ok:true, ordId:r.ordId, detail:'BUY $'+usdt+' (~'+qty.toFixed(6)+' BTC @ $'+Math.round(price)+')' };
+  }
+  if(action==='harvest'){
+    const qtySell = pos.qty * portion;
+    if(qtySell < 0.00001) return { ok:false, error:'quantidade insuficiente para vender' };
+    const r = await okxSellBtc(cfg, qtySell);
+    if(!r.ok) return { ok:false, error:r.error };
+    const proceeds = qtySell*price;
+    const costPart = pos.avgPrice*qtySell;
+    pos.realized += (proceeds-costPart);
+    pos.qty -= qtySell; pos.invested = Math.max(0, pos.invested - costPart);
+    // remove entradas proporcionalmente (FIFO simplificado)
+    let remaining = qtySell;
+    pos.entries = pos.entries.filter(e=>{ if(remaining<=0) return true; const take=Math.min(e.qty,remaining); e.qty-=take; remaining-=take; return e.qty>0.0000001; });
+    if(pos.qty<=0.00001){ pos.open=false; pos.qty=0; pos.invested=0; pos.avgPrice=0; pos.entries=[]; }
+    st.position = pos;
+    return { ok:true, ordId:r.ordId, detail:'SELL '+qtySell.toFixed(6)+' BTC ('+(portion*100)+'%) ~$'+proceeds.toFixed(2)+' · lucro realizado acum $'+pos.realized.toFixed(2) };
+  }
+  return { ok:false, error:'ação inválida' };
+}
+
+
+function stHttpJSON(url){ return new Promise((resolve,reject)=>{ https.get(url,{family:4},(r)=>{ let d=''; r.on('data',c=>d+=c); r.on('end',()=>{ try{ resolve(JSON.parse(d)); }catch(e){ reject(e); } }); }).on('error',reject); }); }
+function stEMA(prices, period){ if(prices.length<period) return null; const k=2/(period+1); let ema=prices.slice(0,period).reduce((a,b)=>a+b,0)/period; for(let i=period;i<prices.length;i++){ ema=prices[i]*k+ema*(1-k);} return ema; }
+function stRSI(prices, period=14){ if(prices.length<=period) return 50; let g=0,l=0; for(let i=1;i<=period;i++){ const d=prices[i]-prices[i-1]; if(d>0)g+=d; else l-=d;} let ag=g/period, al=l/period; for(let i=period+1;i<prices.length;i++){ const d=prices[i]-prices[i-1]; ag=(ag*(period-1)+(d>0?d:0))/period; al=(al*(period-1)+(d<0?-d:0))/period;} if(al===0) return 100; const rs=ag/al; return 100-(100/(1+rs)); }
+function stSweepDetect(data){
+  if(!data||data.length<20) return{sweptHigh:false,sweptLow:false};
+  const h=data.map(c=>parseFloat(c[2])),l=data.map(c=>parseFloat(c[3])),c=data.map(c=>parseFloat(c[4]));
+  let sh=0,si=-1,sl=Infinity,li=-1;
+  for(let i=2;i<data.length-2;i++){if(h[i]>h[i-1]&&h[i]>h[i+1]&&h[i]>h[i-2]&&h[i]>h[i+2]&&i>si){sh=h[i];si=i;}if(l[i]<l[i-1]&&l[i]<l[i+1]&&l[i]<l[i-2]&&l[i]<l[i+2]&&i>li){sl=l[i];li=i;}}
+  let shi=false,slo=false;
+  for(let i=Math.max(0,si+1,li+1,data.length-4);i<data.length;i++){if(sh&&h[i]>sh*1.002&&c[i]<sh)shi=true;if(sl&&l[i]<sl*0.998&&c[i]>sl)slo=true;}
+  return{sweptHigh:shi,sweptLow:slo,swingHigh:Math.round(sh),swingLow:Math.round(sl)};
+}
+
+async function stComputeClimate(){
+  const tfs = Object.keys(ST_TF);
+  const results = await Promise.all(tfs.map(async tf => {
+    try {
+      const data = await stHttpJSON(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${ST_TF[tf]}&limit=50`);
+      const closes = data.map(c=>parseFloat(c[4]));
+      const rsi = stRSI(closes,14);
+      const ema9 = stEMA(closes,9); const ema21 = stEMA(closes,21);
+      const price = closes[closes.length-1];
+      let score = 50; score += (rsi-50)*1.0; score += (ema9>ema21?15:-15);
+      const pc = closes.slice(0,-1); const p9=stEMA(pc,9), p21=stEMA(pc,21);
+      const up9 = p9!==null && ema9>p9, up21 = p21!==null && ema21>p21;
+      if(up9&&up21) score+=10; else if(!up9&&!up21) score-=10;
+      score = Math.min(99, Math.max(1, Math.round(score)));
+      const dir = score>=55?'up':(score<=45?'down':'side');
+      const sweep = stSweepDetect(data);
+      return { tf, score, dir, rsi: +rsi.toFixed(1), price, sweptHigh: sweep.sweptHigh, sweptLow: sweep.sweptLow, swingHigh: sweep.swingHigh, swingLow: sweep.swingLow };
+    } catch(e){ return null; }
+  }));
+  return results.filter(Boolean);
+}
+
+function stBestSignals(climate){
+  let plant=null, harvest=null;
+  climate.forEach(c=>{
+    if(c.dir==='down'){ if(!plant||c.score<plant.score) plant=c; }
+    if(c.dir==='up'){ if(!harvest||c.score>harvest.score) harvest=c; }
+  });
+  return { plant, harvest };
+}
+
+function stTgSend(chatId, text, keyboard){
+  return new Promise((resolve) => {
+    const token = process.env.TELEGRAM_TOKEN || '';
+    if(!token || !chatId) return resolve(false);
+    const payload = { chat_id: chatId, text, parse_mode:'HTML' };
+    if(keyboard) payload.reply_markup = { inline_keyboard: keyboard };
+    const data = JSON.stringify(payload);
+    const opts = { hostname:'api.telegram.org', port:443, path:`/bot${token}/sendMessage`, method:'POST', headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(data)} };
+    const req = https.request(opts, (r)=>{ let d=''; r.on('data',c=>d+=c); r.on('end',()=>{ try{ const j=JSON.parse(d); resolve(!!j.ok); }catch{ resolve(false); } }); });
+    req.on('error',()=>resolve(false)); req.write(data); req.end();
+  });
+}
+function stTgAnswer(cbId, text){
+  return new Promise((resolve) => {
+    const token = process.env.TELEGRAM_TOKEN || ''; if(!token||!cbId) return resolve(false);
+    const data = JSON.stringify({ callback_query_id: cbId, text: text||'', show_alert:false });
+    const opts = { hostname:'api.telegram.org', port:443, path:`/bot${token}/answerCallbackQuery`, method:'POST', headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(data)} };
+    const req = https.request(opts, (r)=>{ let d=''; r.on('data',c=>d+=c); r.on('end',()=>{ try{ const j=JSON.parse(d); resolve(!!j.ok); }catch{ resolve(false); } }); });
+    req.on('error',()=>resolve(false)); req.write(data); req.end();
+  });
+}
+function stTgEdit(chatId, messageId, text){
+  return new Promise((resolve) => {
+    const token = process.env.TELEGRAM_TOKEN || ''; if(!token||!chatId||!messageId) return resolve(false);
+    const data = JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode:'HTML' });
+    const opts = { hostname:'api.telegram.org', port:443, path:`/bot${token}/editMessageText`, method:'POST', headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(data)} };
+    const req = https.request(opts, (r)=>{ let d=''; r.on('data',c=>d+=c); r.on('end',()=>{ try{ const j=JSON.parse(d); resolve(!!j.ok); }catch{ resolve(false); } }); });
+    req.on('error',()=>resolve(false)); req.write(data); req.end();
+  });
+}
+
+function stRegimeLabel(r){ return { accumulation:'🟢 ACUMULAÇÃO', bull:'🔵 BULL RUN', distribution:'🔴 DISTRIBUIÇÃO', bear:'⚫ BEAR/CAPITULAÇÃO', unknown:'⚪ INDEFINIDO' }[r]||r; }
+function stBuildMessage(o){
+  const { climate, macro, regime, fng, funding, oiStats, dec, bal, pos, st, cfg } = o;
+  const price = macro?macro.price:(climate.length?climate[0].price:0);
+  const sum = stPosSummary(stGetPos(st), price);
+  let msg = '🤖 <b>SEVERINO AGENTE TRADER</b> — análise 24/7\n───────────────────\n';
+  msg += '💰 BTC: <b>$'+Math.round(price).toLocaleString('en-US')+'</b>';
+  if(macro) msg += ' · 90d: '+(macro.rangePos)+'% do range · '+(macro.ddFromHigh)+'% do topo\n';
+  if(regime) msg += '🧭 Regime: <b>'+stRegimeLabel(regime.regime)+'</b> ('+regime.score+')';
+  if(fng) msg += ' · 😨 F&G: '+fng.value+' ('+fng.label+')';
+  msg += '\n';
+  if(macro && macro.ma200) msg += '📊 MA200: $'+macro.ma200.toLocaleString('en-US')+' ('+(macro.aboveMa200?'acima':'abaixo')+') · RSI1D '+macro.rsiD+' · Vol30 '+macro.vol30+'%\n';
+  if(funding) msg += '📡 Funding: '+(funding.pct)+'% · '+funding.label+(funding.annual?' · anual '+funding.annual+'%':'')+'\n';
+  if(oiStats) msg += '📦 OI: $'+(oiStats.oi/1e6|0)+'M · delta '+(oiStats.delta>=0?'+':'')+oiStats.delta+'% ('+oiStats.trend+')\n';
+  msg += '───────────────────\n';
+  if(sum.entries>0) msg += '🌱 Posição: '+sum.entries+'/'+(cfg.totalEntries||10)+' entradas · investido $'+sum.invested+' · média $'+sum.avgPrice+'\n   P&L: '+(sum.pnl>=0?'+':'')+'$'+sum.pnl+' ('+(sum.pnlPct>=0?'+':'')+sum.pnlPct+'%)\n';
+  else msg += '🌱 Posição: vazia (0/'+(cfg.totalEntries||10)+' entradas)\n';
+  if(bal && bal.ok) msg += '💼 Saldo OKX: <b>$'+(bal.balance!=null?bal.balance.toFixed(2):'?')+'</b> ['+(cfg.execMode==='demo'?'DEMO':'REAL')+']\n';
+  msg += '───────────────────\n';
+  // sweep status do card tático
+  if(climate && climate.length){
+    const bestDown = climate.filter(c=>c.dir==='down').sort((a,b)=>a.score-b.score)[0];
+    const bestUp = climate.filter(c=>c.dir==='up').sort((a,b)=>b.score-a.score)[0];
+    if(bestDown && (bestDown.sweptLow || bestDown.swungLow)) msg += '📡 '+bestDown.tf+' stop hunt vendidos • swing $'+(bestDown.swingLow||0).toLocaleString('en-US')+'\n';
+    if(bestUp && (bestUp.sweptHigh || bestUp.swungHigh)) msg += '📡 '+bestUp.tf+' armadilha comprados • swing $'+(bestUp.swingHigh||0).toLocaleString('en-US')+'\n';
+  }
+  if(dec && dec.action==='plant') msg += '🌱 <b>SINAL PLANTAR:</b> '+dec.reason+'\n';
+  else if(dec && dec.action==='harvest') msg += '🌾 <b>SINAL COLHER:</b> '+dec.reason+'\n';
+  else msg += '⏸️ Sem sinal operacional no momento.\n';
+  return msg;
+}
+
+/* ---------- AGENTE 24/7: tick principal ---------- */
+async function stAgentTick(forceAlert, forceMessage){
+  if(!ST_ALERTS_ENABLED) return;
+  const chatId = process.env.TELEGRAM_CHAT_ID || '';
+  if(!chatId) return;
+  try {
+    const cfg = stLoadOkx() || { execMode:'demo', entryValue:5, totalEntries:10, strategy:'dca', autoPlant:false, autoHarvest:false, entrySpacing:0.5 };
+    const [climate, macro, fng, funding, oiStats] = await Promise.all([stComputeClimate(), stMacro90(), stFearGreed(), stFunding(), stOpenInterest()]);
+    if(!climate.length) return;
+    const regime = stRegime(macro, fng);
+    const st = stLoadState();
+    const dec = stAgentDecide(climate, macro, regime, fng, st, cfg, funding, oiStats);
+    const bal = await stGetBalance(cfg.apiKey?cfg:null, false);
+    const price = macro?macro.price:climate[0].price;
+    const pos = stGetPos(st);
+    const sum = stPosSummary(pos, price);
+    const now = Date.now();
+
+    // ----- MODO AUTOMÁTICO: executa sem pedir autorização -----
+    if(dec.action==='plant' && cfg.autoPlant && cfg.apiKey){
+      const r = await stExecute('plant', 1, cfg, st, price);
+      const b2 = await stGetBalance(cfg, true);
+      const m = r.ok
+        ? '🤖 <b>AUTO PLANTAR executado</b> ['+(cfg.execMode==='demo'?'DEMO':'REAL')+']\n'+r.detail+'\n'+dec.reason+'\n💼 Saldo OKX: $'+(b2.balance!=null?b2.balance.toFixed(2):'?')
+        : '⚠️ <b>AUTO PLANTAR falhou</b>: '+r.error;
+      await stTgSend(chatId, m);
+      st.lastDecision={action:'plant', auto:true, ts:now, executed:r.ok, ordId:r.ordId||null};
+      stSaveState(st);
+      return;
+    }
+    if(dec.action==='harvest' && cfg.autoHarvest && cfg.apiKey){
+      const r = await stExecute('harvest', dec.portion, cfg, st, price);
+      const b2 = await stGetBalance(cfg, true);
+      const m = r.ok
+        ? '🤖 <b>AUTO COLHER executado</b> ['+(cfg.execMode==='demo'?'DEMO':'REAL')+']\n'+r.detail+'\n'+dec.reason+'\n💼 Saldo OKX: $'+(b2.balance!=null?b2.balance.toFixed(2):'?')
+        : '⚠️ <b>AUTO COLHER falhou</b>: '+r.error;
+      await stTgSend(chatId, m);
+      st.lastDecision={action:'harvest', auto:true, ts:now, executed:r.ok, ordId:r.ordId||null};
+      stSaveState(st);
+      return;
+    }
+
+    // ----- LEMBRETE DE APORTE: pool cheio e sem lucro -----
+    const poolFull = pos.entries.length >= (cfg.totalEntries||10);
+    if(poolFull && sum.pnl<=0 && (!st.lastDepositReminder || (now-st.lastDepositReminder)>24*3600*1000)){
+      await stTgSend(chatId, '💰 <b>Severino Trader — hora de novo aporte</b>\n───────────────────\nVocê usou todas as '+pos.entries.length+' entradas ($'+sum.invested+') e a posição ainda não deu lucro para colher (P&L '+(sum.pnl>=0?'+':'')+'$'+sum.pnl+').\n\n📥 Faça um <b>novo aporte</b> no dashboard para continuar plantando no próximo ciclo de baixa.\n💼 Saldo OKX: $'+(bal&&bal.ok&&bal.balance!=null?bal.balance.toFixed(2):'?'));
+      st.lastDepositReminder = now; stSaveState(st);
+    }
+
+    // ----- MODO MANUAL: pede autorização (com cooldown) -----
+    if(!dec.action){
+      if(forceMessage){ await stTgSend(chatId, stBuildMessage({ climate, macro, regime, fng, funding, oiStats, dec, bal, pos, st, cfg }) + '<i>(análise manual — sem sinal operacional)</i>'); }
+      return;
+    }
+    const sig = dec.action+'|'+dec.tf+'|'+(dec.portion||1)+'|'+regime.regime;
+    if(!forceAlert && st.lastSig===sig && (now-(st.lastSent||0)) < ST_COOLDOWN_MIN*60000) return;
+    const keyboard = [];
+    if(dec.action==='plant') keyboard.push([{ text:'✅ Autorizar PLANTAR ($'+Math.max(5,cfg.entryValue||5)+')', callback_data:'st_approve_plant' }]);
+    if(dec.action==='harvest') keyboard.push([{ text:'✅ Autorizar COLHER ('+Math.round((dec.portion||1)*100)+'%)', callback_data:'st_approve_harvest' }]);
+    keyboard.push([{ text:'❌ Rejeitar', callback_data:'st_reject' }]);
+    const msg = stBuildMessage({ climate, macro, regime, fng, funding, oiStats, dec, bal, pos, st, cfg }) + '<i>Toque para autorizar ou rejeitar:</i>';
+    await stTgSend(chatId, msg, keyboard);
+    stSaveState({ ...st, lastSig: sig, lastSent: now, pending: { action: dec.action, portion: dec.portion||1, tf: dec.tf, reason: dec.reason } });
+  } catch(e){ console.error('ST agent error:', e.message); }
+}
+
+
+async function stHandleCallback(cq){
+  const data = cq.data||''; const chatId = cq.message && cq.message.chat ? cq.message.chat.id : null; const msgId = cq.message ? cq.message.message_id : null;
+  if(!chatId) return false;
+  const st = stLoadState();
+  const original = cq.message && cq.message.text ? cq.message.text.split('\n<i>Toque para')[0] : '';
+  const finish = async (novo) => { stSaveState(st); await stTgEdit(chatId, msgId, original + '\n───────────────────\n' + novo); return true; };
+
+  if(data==='st_reject'){
+    st.lastDecision={action:'reject', ts:Date.now(), by: cq.from?cq.from.id:null};
+    await stTgAnswer(cq.id,'Rejeitado ❌');
+    return finish('❌ <b>Sinal rejeitado.</b> Nenhuma ação tomada.');
+  }
+
+  const isPlant = data==='st_approve_plant';
+  const isHarvest = data==='st_approve_harvest';
+  if(!isPlant && !isHarvest) return false;
+
+  const pend = st.pending || {};
+  const action = isPlant ? 'plant' : 'harvest';
+  const portion = isHarvest ? (pend.portion||1) : 1;
+  await stTgAnswer(cq.id, isPlant ? 'Plantar autorizado ✅' : 'Colher autorizado ✅');
+
+  const cfg = stLoadOkx();
+  if(!cfg || !cfg.apiKey || !cfg.secretKey || !cfg.passphrase){
+    st.lastDecision={action, ts:Date.now(), by: cq.from?cq.from.id:null, executed:false, reason:'no_key'};
+    return finish('✅ <b>'+(isPlant?'PLANTAR':'COLHER')+' AUTORIZADO</b>\n\n⚠️ Chave OKX não configurada no painel (⚙️ Config). Ordem NÃO executada.');
+  }
+  // validações de pool
+  const pos = stGetPos(st);
+  if(isPlant && pos.entries.length >= (cfg.totalEntries||10)) return finish('⚠️ <b>PLANTAR ignorado</b> — pool de entradas cheio ('+pos.entries.length+'/'+(cfg.totalEntries||10)+'). Colha parcial ou faça novo aporte.');
+  if(isHarvest && !(pos.open && pos.qty>0)) return finish('⚠️ <b>COLHER ignorado</b> — não há posição aberta para realizar.');
+
+  const macro = await stMacro90();
+  const price = macro?macro.price:0;
+  const r = await stExecute(action, portion, cfg, st, price);
+  const b2 = await stGetBalance(cfg, true);
+  const balLine = '\n💼 Saldo OKX: $'+(b2.balance!=null?b2.balance.toFixed(2):'?');
+  if(r.ok){
+    st.lastDecision={action, portion, ts:Date.now(), by: cq.from?cq.from.id:null, executed:true, ordId:r.ordId, mode:cfg.execMode};
+    return finish('✅ <b>'+(isPlant?'PLANTAR':'COLHER')+' EXECUTADO</b> ['+(cfg.execMode==='demo'?'DEMO':'REAL')+']\n\n🧾 '+r.detail+'\n'+(pend.reason||'')+balLine);
+  }
+  st.lastDecision={action, ts:Date.now(), by: cq.from?cq.from.id:null, executed:false, reason:r.error};
+  return finish('❌ <b>'+(isPlant?'PLANTAR':'COLHER')+' FALHOU</b>\n\n⚠️ OKX: '+(r.error||'erro desconhecido')+balLine);
+}
+/* ===================== FIM SEVERINO TRADER ===================== */
+
+const DB = path.join(DATA_DIR, 'diagnosticos.json');
+const EXT_TREINO = ['pdf','doc','docx','xls','xlsx','csv','txt','md','json','png','jpg','jpeg','webp','gif','mp4','mp3','wav','ogg'];
+
+const mime = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
+};
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ ERRO (não crashou):', err.message);
+});
+
+// ========== RATE LIMIT (30 req/min por IP nas /api/, exceto health) ==========
+const rateLimitMap = new Map();
+function rateLimit(ip) {
+  const now = Date.now();
+  const window = 60_000;
+  const maxReqs = 30;
+  if (!rateLimitMap.has(ip)) rateLimitMap.set(ip, []);
+  const timestamps = rateLimitMap.get(ip).filter(t => now - t < window);
+  if (timestamps.length >= maxReqs) return false;
+  timestamps.push(now);
+  rateLimitMap.set(ip, timestamps);
+  return true;
+}
+
+// ========== TELEMETRY & METRICS ==========
+const TELEMETRY_FILE = path.join(DATA_DIR, 'telemetry_stats.json');
+let telemetryStats = {
+  totalUniqueVisitors: new Set(),
+  dailyVisits: {},
+  totalAlertsCreated: 0,
+  sessions: new Map(),
+};
+if (fs.existsSync(TELEMETRY_FILE)) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(TELEMETRY_FILE, 'utf8'));
+    telemetryStats.dailyVisits = raw.dailyVisits || {};
+    telemetryStats.totalAlertsCreated = raw.totalAlertsCreated || 0;
+    if (Array.isArray(raw.uniqueVisitorIds)) telemetryStats.totalUniqueVisitors = new Set(raw.uniqueVisitorIds);
+  } catch (e) {}
+}
+function saveTelemetryStats() {
+  try {
+    fs.writeFileSync(TELEMETRY_FILE, JSON.stringify({
+      dailyVisits: telemetryStats.dailyVisits,
+      totalAlertsCreated: telemetryStats.totalAlertsCreated,
+      uniqueVisitorIds: Array.from(telemetryStats.totalUniqueVisitors)
+    }, null, 2));
+  } catch (e) {}
+}
+function cleanupStaleSessions() {
+  const now = Date.now();
+  for (const [sid, sess] of telemetryStats.sessions.entries()) {
+    if (now - sess.lastSeen > 90000) telemetryStats.sessions.delete(sid);
+  }
+}
+setInterval(cleanupStaleSessions, 30000);
+
+// ========== HELPERS ==========
+function readJSON(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return []; } }
+function writeJSON(file, data) { fs.writeFileSync(file, JSON.stringify(data, null, 2)); }
+function parseBody(req) {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({}); } });
+  });
+}
+function parseBodyLimit(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    let total = 0;
+    let tooLarge = false;
+    req.on('data', chunk => {
+      total += chunk.length;
+      if (maxBytes && total > maxBytes) { tooLarge = true; req.destroy(); return; }
+      body += chunk;
+    });
+    req.on('end', () => {
+      if (tooLarge) return reject(Object.assign(new Error('Payload too large'), { code: '413' }));
+      try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+    });
+  });
+}
+
+// ========== LICENÇAS 7 dias ==========
+const LICENSE_PATH = path.join(DATA_DIR, 'licenses.json');
+if (!fs.existsSync(LICENSE_PATH)) writeJSON(LICENSE_PATH, {});
+function loadLicenses() { return readJSON(LICENSE_PATH); }
+function generateCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = 'VIP7-';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+function getTier(activatedAt) {
+  if (!activatedAt) return 'pending';
+  const daysSince = (Date.now() - new Date(activatedAt).getTime()) / 86400000;
+  if (daysSince <= 7) return 'vip';
+  return 'basic';
+}
+
+function emitirTrialAtivado({ code, email = '', nome = '', telegramId = null, source = '' }) {
+  try {
+    const payload = JSON.stringify({
+      tipo: 'trial.ativado',
+      origem: 'btc:' + (source || 'ativacao'),
+      produto: 'btcweather',
+      payload: {
+        leadId: 'lic-' + code, nome, telegramId, email, produto: 'btcweather', code, origem: source || 'ativacao'
+      }
+    });
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port: parseInt(process.env.ECOSISTEMA_PORT || '3335', 10),
+      path: '/api/ecosystem/enviar',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Secret': process.env.SECRET_KEY || '',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => { res.resume(); });
+    req.on('error', (e) => console.error('❌ emitirTrialAtivado:', e.message));
+    req.write(payload);
+    req.end();
+  } catch (e) { console.error('❌ emitirTrialAtivado:', e.message); }
+}
+
+function emitirVendaConfirmada({ code, email = '', nome = '', value = 0, plan = '', productName = '' }) {
+  try {
+    const payload = JSON.stringify({
+      tipo: 'venda.confirmada',
+      origem: 'btc:kiwify',
+      produto: 'btcweather',
+      payload: { leadId: 'lic-' + code, customer_email: email, customer_name: nome, value, code, produto: 'btcweather', plan, product_name: productName }
+    });
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port: parseInt(process.env.ECOSISTEMA_PORT || '3335', 10),
+      path: '/api/ecosystem/enviar',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Secret': process.env.SECRET_KEY || '',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => { res.resume(); });
+    req.on('error', (e) => console.error('❌ emitirVendaConfirmada:', e.message));
+    req.write(payload);
+    req.end();
+  } catch (e) { console.error('❌ emitirVendaConfirmada:', e.message); }
+}
+
+http.createServer(async (req, res) => {
+  const origin = req.headers.origin || '';
+  const allowedOrigins = ['http://localhost', 'http://127.0.0.1', 'https://btcweatherpanel.com', 'https://app.btcweatherpanel.com', 'http://187.127.42.146'];
+  if (origin && allowedOrigins.some(a => origin.startsWith(a))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'https://btcweatherpanel.com');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
+
+  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
+  const rawUrl = req.url.split('?')[0];
+  const url = rawUrl;
+  const method = req.method;
+
+  // Health SEM rate limit
+  if (method === 'GET' && rawUrl === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, name: 'btc-weather-panel', port: PORT, ts: new Date().toISOString() }));
+  }
+
+  if (rawUrl.startsWith('/api/')) {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+    if (!rateLimit(ip)) {
+      res.writeHead(429, { 'Retry-After': '60' });
+      return res.end(JSON.stringify({ error: 'Muitas requisições. Tente novamente em 60 segundos.' }));
+    }
+  }
+
+  // ========== TELEGRAM WEBHOOK (bot compartilhado do ecossistema) ==========
+  if (method === 'POST' && rawUrl === '/api/telegram/webhook') {
+    // Intercepta callbacks do Severino Trader (st_*) antes de delegar ao bot compartilhado
+    let stBody = '';
+    req.on('data', c => stBody += c);
+    req.on('end', () => {
+      let update = null;
+      try { update = JSON.parse(stBody); } catch (e) {}
+      const cq = update && update.callback_query;
+      if (cq && typeof cq.data === 'string' && cq.data.indexOf('st_') === 0) {
+        Promise.resolve(stHandleCallback(cq)).catch(e => console.error('st callback error:', e.message));
+        res.writeHead(200); return res.end('ok');
+      }
+      if (telegramBot && telegramBot.handleWebhook) {
+        const fakeReq = new PassThrough();
+        fakeReq.end(stBody);
+        return telegramBot.handleWebhook(fakeReq, res);
+      }
+      res.writeHead(200); return res.end('ok');
+    });
+    return;
+  }
+
+  // ========== SEVERINO TRADER: status p/ dashboard (saldo + posicao + regime) ==========
+  if (method === 'GET' && rawUrl.endsWith('/api/st/status')) {
+    try {
+      const cfg = stLoadOkx() || { execMode:'demo', entryValue:5, totalEntries:10 };
+      const [macro, fng, climate] = await Promise.all([stMacro90(), stFearGreed(), stComputeClimate()]);
+      const regime = stRegime(macro, fng);
+      const st = stLoadState();
+      const bal = await stGetBalance(cfg.apiKey?cfg:null, false);
+      const price = macro?macro.price:(climate.length?climate[0].price:0);
+      const pos = stGetPos(st); const sum = stPosSummary(pos, price);
+      const dec = stAgentDecide(climate, macro, regime, fng, st, cfg);
+      const fib = stFibonacci(macro);
+      const aporte = stAporteDue(cfg, st);
+      const needsDeposit = pos.entries.length >= (cfg.totalEntries||10) && sum.pnl<=0;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok:true, price, regime: regime.regime, regimeScore: regime.score, fng, balance: bal.ok?bal.balance:null, mode: cfg.execMode, configured: !!(cfg&&cfg.apiKey), autoPlant: !!cfg.autoPlant, autoHarvest: !!cfg.autoHarvest, position: sum, totalEntries: cfg.totalEntries||10, needsDeposit, decision: dec.action?{action:dec.action, reason:dec.reason, portion:dec.portion||1}:null, signal: dec.action==='plant'?'plant':(dec.action==='harvest'?'harvest':'maintain'), signalLabel: dec.action==='plant'?'🌱 PLANTAR':(dec.action==='harvest'?'🌾 COLHER':'🟡 MANTER'), signalColor: dec.action==='plant'?'#00e676':(dec.action==='harvest'?'#ff3d71':'#ffd166'), fib: fib?{currentLevel:fib.currentLevel, zone:fib.zone, inGoldenZone:fib.inGoldenZone}:null, aporte: aporte.due?{amount:aporte.amount, reason:aporte.reason}:null }));
+    } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok:false, error: e.message })); }
+  }
+
+  
+  // ========== SEVERINO TRADER: sinal visual p/ dashboard (plantar/manter/colher) ==========
+  if (method === 'GET' && rawUrl.endsWith('/api/st/signal')) {
+    try {
+      const cfg = stLoadOkx() || { execMode:'demo', entryValue:5, totalEntries:10 };
+      const [macro, fng, climate] = await Promise.all([stMacro90(), stFearGreed(), stComputeClimate()]);
+      const regime = stRegime(macro, fng);
+      const st = stLoadState();
+      const price = macro?macro.price:(climate.length?climate[0].price:0);
+      const pos = stGetPos(st); const sum = stPosSummary(pos, price);
+      const dec = stAgentDecide(climate, macro, regime, fng, st, cfg);
+      const fib = stFibonacci(macro);
+      const aporte = stAporteDue(cfg, st);
+      let signal = 'maintain';
+      let signalLabel = '🟡 MANTER';
+      let signalColor = '#ffd166';
+      if(dec.action==='plant'){ signal='plant'; signalLabel='🌱 PLANTAR'; signalColor='#00e676'; }
+      else if(dec.action==='harvest'){ signal='harvest'; signalLabel='🌾 COLHER'; signalColor='#ff3d71'; }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok:true, signal, signalLabel, signalColor, reason: dec.reason||'sem sinal', fib: fib?{currentLevel:fib.currentLevel, zone:fib.zone, inGoldenZone:fib.inGoldenZone}:null, aporte: aporte.due?{amount:aporte.amount, reason:aporte.reason}:null, position: sum, regime: regime.regime, regimeScore: regime.score }));
+    } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok:false, error: e.message })); }
+  }
+
+// ========== SEVERINO TRADER: ligar/desligar modo automático ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/st/automode')) {
+    const dados = await parseBody(req);
+    const cfg = stLoadOkx() || { execMode:'demo', entryValue:5, totalEntries:10 };
+    if(dados.autoPlant!==undefined) cfg.autoPlant = !!dados.autoPlant;
+    if(dados.autoHarvest!==undefined) cfg.autoHarvest = !!dados.autoHarvest;
+    stSaveOkx(cfg);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok:true, autoPlant: cfg.autoPlant, autoHarvest: cfg.autoHarvest }));
+  }
+
+  // ========== SEVERINO TRADER: disparar alerta manual (teste) ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/st/alert')) {
+    const dados = await parseBody(req);
+    if (!dados.secret || dados.secret !== (process.env.SECRET_KEY || '')) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'forbidden' })); }
+    stSaveState({ ...stLoadState(), lastSig: '', lastSent: 0 }); // forca reenvio
+    stAgentTick(true, !!dados.forceMessage);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, message: 'Agente Severino Trader disparado' }));
+  }
+
+  // ========== SEVERINO TRADER: validar/salvar chave OKX ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/st/okxconfig')) {
+    const dados = await parseBody(req);
+    const cfg = { apiKey: (dados.okxKey||'').trim(), secretKey: (dados.okxSecret||'').trim(), passphrase: (dados.okxPass||'').trim(), execMode: (dados.execMode==='real'?'real':'demo'), entryValue: Math.max(5, Number(dados.entryValue)||5), totalEntries: Math.max(1, Number(dados.totalEntries)||10), strategy: (dados.strategy==='smc'?'smc':'dca'), entrySpacing: Math.max(0.1, Number(dados.entrySpacing)||0.5), autoPlant: !!dados.autoPlant, autoHarvest: !!dados.autoHarvest, aporteSchedule: dados.aporteSchedule||'off', aporteAmount: Math.max(5, Number(dados.aporteAmount)||5), aporteDay: dados.aporteDay!==undefined?Number(dados.aporteDay):1 };
+    if(!cfg.apiKey || !cfg.secretKey || !cfg.passphrase){ res.writeHead(400, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok:false, error:'Preencha API Key, Secret e Passphrase.' })); }
+    try {
+      const bal = await okxGetBalance(cfg);
+      if(!bal.ok){ res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok:false, error:'OKX recusou: '+(bal.error||'credenciais inválidas') })); }
+      stSaveOkx(cfg);
+      const chatId = process.env.TELEGRAM_CHAT_ID || '';
+      const mode = cfg.execMode==='demo' ? 'DEMO/Simulado' : 'REAL';
+      stTgSend(chatId, '🔑 <b>Severino Trader — chave OKX validada</b>\n───────────────────\n✅ Conexão OK · modo <b>'+mode+'</b> · SPOT\n💵 Saldo USDT: <b>$'+(bal.balance!=null?bal.balance.toFixed(2):'?')+'</b>\n🌱 Ordem: $'+cfg.entryValue+' × '+cfg.totalEntries+' entradas · Estratégia: '+cfg.strategy.toUpperCase()+'\n⚡ Auto: Plantar '+(cfg.autoPlant?'ON':'OFF')+' · Colher '+(cfg.autoHarvest?'ON':'OFF'));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok:true, message:'Chave OKX válida ('+mode+')', balance: bal.balance!=null?+bal.balance.toFixed(2):null, mode: cfg.execMode }));
+    } catch(e){ res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok:false, error: e.message })); }
+  }
+
+  // ========== WEBHOOK CLIMA ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/webhook/clima')) {
+    const dados = await parseBody(req);
+    const CONFIG_PATH = path.join(DATA_DIR, 'weather_alert_config.json');
+    let config = { telegram_token: process.env.TELEGRAM_TOKEN, telegram_chat_id: process.env.TELEGRAM_CHAT_ID, whatsapp_enabled: false, whatsapp_group_id: "", whatsapp_client_id: process.env.WHATSAPP_CLIENT_ID || "severino", secret_key: process.env.SECRET_KEY };
+    if (fs.existsSync(CONFIG_PATH)) {
+      try { config = { ...config, ...JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) }; } catch (e) {}
+    } else {
+      try { fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2)); } catch (e) {}
+    }
+    const { secret, mensagem, chat_id } = dados;
+    if (!secret || secret !== config.secret_key) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Não autorizado' }));
+    }
+    if (!mensagem) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Mensagem obrigatória' }));
+    }
+    const finalChatId = chat_id || config.telegram_chat_id;
+    const finalToken = config.telegram_token;
+    let telegramSent = false;
+    if (finalToken && finalChatId) {
+      try {
+        const https = require('https');
+        const payload = JSON.stringify({ chat_id: finalChatId, text: mensagem, parse_mode: 'HTML' });
+        await new Promise((resolve, reject) => {
+          const q = https.request({
+            hostname: 'api.telegram.org', port: 443,
+            path: `/bot${finalToken}/sendMessage`, method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+          }, (resTg) => { let d = ''; resTg.on('data', c => d += c); resTg.on('end', () => { if (resTg.statusCode === 200) { telegramSent = true; resolve(); } else reject(new Error(d)); }); });
+          q.on('error', reject);
+          q.write(payload);
+          q.end();
+        });
+      } catch (err) { console.error('❌ Webhook clima → Telegram:', err.message); }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, telegram: telegramSent, message: 'Alerta disparado com sucesso!' }));
+  }
+
+  // ========== WEATHER CONFIG ==========
+  if (rawUrl.endsWith('/api/weather/config')) {
+    const CONFIG_PATH = path.join(DATA_DIR, 'weather_alert_config.json');
+    let config = { telegram_token: process.env.TELEGRAM_TOKEN, telegram_chat_id: process.env.TELEGRAM_CHAT_ID, whatsapp_enabled: false, whatsapp_group_id: "", whatsapp_client_id: process.env.WHATSAPP_CLIENT_ID || "severino", secret_key: process.env.SECRET_KEY, whatsapp: "5511999998888", linkVip: "https://pay.kiwify.com.br/ffphj4e", linkQuarter: "", linkSemester: "", linkElite: "https://pay.kiwify.com.br/vim8bDb", alertsEnabled: true, googleClientId: "" };
+    if (fs.existsSync(CONFIG_PATH)) {
+      try { config = { ...config, ...JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) }; } catch (e) {}
+    }
+    if (method === 'GET') {
+      const urlParts = req.url.split('?');
+      let clientSecret = '';
+      if (urlParts.length > 1) clientSecret = new URLSearchParams(urlParts[1]).get('secret');
+      if (clientSecret && clientSecret === config.secret_key) {
+        const adminResponse = {
+          whatsapp: config.whatsapp || "5511999998888",
+          linkVip: config.linkVip || "https://kiwify.com.br/",
+          linkQuarter: config.linkQuarter || "",
+          linkSemester: config.linkSemester || "",
+          linkElite: config.linkElite || "https://kiwify.com.br/",
+          vipKey: config.secret_key,
+          tgChatId: config.telegram_chat_id,
+          waGroupId: config.whatsapp_group_id || "",
+          alertsEnabled: config.whatsapp_enabled !== false,
+          googleClientId: config.googleClientId || ""
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(adminResponse));
+      } else {
+        const publicConfig = {
+          whatsapp: config.whatsapp || "5511999998888",
+          linkVip: config.linkVip || "https://kiwify.com.br/",
+          linkElite: config.linkElite || "https://kiwify.com.br/",
+          alertsEnabled: config.whatsapp_enabled !== false
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(publicConfig));
+      }
+    }
+    if (method === 'POST') {
+      const dados = await parseBody(req);
+      const { secret } = dados;
+      if (!secret || secret !== config.secret_key) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: 'Não autorizado' }));
+      }
+      if (dados.whatsapp !== undefined) config.whatsapp = dados.whatsapp;
+      if (dados.linkVip !== undefined) config.linkVip = dados.linkVip;
+      if (dados.linkQuarter !== undefined) config.linkQuarter = dados.linkQuarter;
+      if (dados.linkSemester !== undefined) config.linkSemester = dados.linkSemester;
+      if (dados.linkElite !== undefined) config.linkElite = dados.linkElite;
+      if (dados.vipKey !== undefined) config.secret_key = dados.vipKey;
+      if (dados.tgChatId !== undefined) config.telegram_chat_id = dados.tgChatId;
+      if (dados.waGroupId !== undefined) config.whatsapp_group_id = dados.waGroupId;
+      if (dados.alertsEnabled !== undefined) config.whatsapp_enabled = dados.alertsEnabled;
+      if (dados.googleClientId !== undefined) config.googleClientId = dados.googleClientId;
+      try {
+        fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, message: 'Configurações salvas no servidor!' }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    }
+  }
+
+  // ========== TELEMETRY PING ==========
+  if (method === 'POST' && rawUrl.endsWith('/api/telemetry/ping')) {
+    const dados = await parseBody(req);
+    const { sessionId, device, alertsCount } = dados;
+    const now = Date.now();
+    const today = new Date().toISOString().split('T')[0];
+    if (sessionId) {
+      if (!telemetryStats.totalUniqueVisitors.has(sessionId)) {
+        telemetryStats.totalUniqueVisitors.add(sessionId);
+        saveTelemetryStats();
+      }
+      telemetryStats.dailyVisits[today] = (telemetryStats.dailyVisits[today] || 0) + 1;
+      telemetryStats.sessions.set(sessionId, { lastSeen: now, device: device || 'desktop', alertsCount: typeof alertsCount === 'number' ? alertsCount : 0 });
+    }
+    cleanupStaleSessions();
+    const activeSessions = Array.from(telemetryStats.sessions.values());
+    const activeNow = activeSessions.length;
+    const mobileCount = activeSessions.filter(s => s.device === 'mobile').length;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      ok: true, activeNow, totalVisitors: telemetryStats.totalUniqueVisitors.size,
+      todayVisits: telemetryStats.dailyVisits[today] || activeNow,
+      mobileCount, desktopCount: activeNow - mobileCount
+    }));
+  }
+
+  // ========== ADMIN METRICS ==========
+  if (method === 'GET' && rawUrl.endsWith('/api/admin/metrics')) {
+    cleanupStaleSessions();
+    const today = new Date().toISOString().split('T')[0];
+    const activeSessions = Array.from(telemetryStats.sessions.values());
+    const activeNow = activeSessions.length;
+    const mobileCount = activeSessions.filter(s => s.device === 'mobile').length;
+    const desktopCount = activeNow - mobileCount;
+    const totalConfiguredAlerts = activeSessions.reduce((acc, s) => acc + (s.alertsCount || 0), 0);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      ok: true, activeNow,
+      totalVisitors: telemetryStats.totalUniqueVisitors.size,
+      todayVisits: telemetryStats.dailyVisits[today] || activeNow,
+      totalAlertsCreated: Math.max(telemetryStats.totalAlertsCreated, totalConfiguredAlerts),
+      activeAlertsCount: totalConfiguredAlerts,
+      mobilePct: activeNow > 0 ? Math.round((mobileCount / activeNow) * 100) : 0,
+      desktopPct: activeNow > 0 ? Math.round((desktopCount / activeNow) * 100) : 0,
+      timestamp: new Date().toISOString()
+    }));
+  }
+
+  // ========== PUBLIC METRICS (dashboard público) ==========
+  if (method === 'GET' && rawUrl.endsWith('/api/public/metrics')) {
+    cleanupStaleSessions();
+    const today = new Date().toISOString().split('T')[0];
+    const activeSessions = Array.from(telemetryStats.sessions.values());
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      ok: true,
+      todayVisits: telemetryStats.dailyVisits[today] || activeSessions.length,
+      totalAlertsCreated: telemetryStats.totalAlertsCreated,
+      totalUniqueVisitors: telemetryStats.totalUniqueVisitors.size,
+      activeNow: activeSessions.length
+    }));
+  }
+
+  // ========== VITRINE VIVA (ferramentas do ecossistema em rotação) ==========
+  if (method === 'GET' && rawUrl === '/api/vitrine') {
+    const VITRINE_PATH = path.join(WEATHER_ROOT, 'vitrine.json');
+    let data = { items: [] };
+    try { data = JSON.parse(fs.readFileSync(VITRINE_PATH, 'utf8')); } catch (e) {}
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+    return res.end(JSON.stringify({ ok: true, ...data }));
+  }
+
+  // ========== LEAD ==========
+  if (method === 'POST' && rawUrl === '/api/lead') {
+    const body = await parseBody(req);
+    const email = (body.email || '').toString().trim().toLowerCase();
+    const telegram = (body.telegram || '').toString().trim().replace(/^@/, '');
+    const nome = (body.nome || '').toString().trim();
+    if (!email.includes('@') || !email.includes('.')) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'E-mail inválido' }));
+    }
+    const LEADS_PATH = path.join('/root/severino/ecosystem', 'leads.json');
+    if (!fs.existsSync(LEADS_PATH)) writeJSON(LEADS_PATH, []);
+    const leads = readJSON(LEADS_PATH);
+    const idx = leads.findIndex(l => l.email && String(l.email).toLowerCase() === email);
+    if (idx >= 0) {
+      leads[idx].telegram_username = telegram || leads[idx].telegram_username;
+      leads[idx].fonte = 'site';
+      leads[idx].updatedAt = new Date().toISOString();
+    } else {
+      leads.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        nome, email, telegram_username: telegram, fonte: 'site', status: 'novo', score: 1,
+        createdAt: new Date().toISOString()
+      });
+    }
+    writeJSON(LEADS_PATH, leads);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, email, telegram: telegram || '' }));
+  }
+
+  // ========== LICENÇAS ==========
+  if (method === 'POST' && rawUrl === '/api/license/generate') {
+    const adminSecret = req.headers['x-admin-secret'];
+    if (adminSecret !== process.env.SECRET_KEY) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    }
+    const body = await parseBody(req);
+    const count = Math.min(Math.max(parseInt(body.count) || 1, 1), 50);
+    const source = body.source || 'api';
+    const licenses = loadLicenses();
+    const codes = [];
+    for (let i = 0; i < count; i++) {
+      let code = generateCode();
+      while (licenses[code]) code = generateCode();
+      licenses[code] = { createdAt: new Date().toISOString(), activatedAt: null, source };
+      codes.push(code);
+    }
+    writeJSON(LICENSE_PATH, licenses);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, codes }));
+  }
+
+  if (method === 'GET' && rawUrl === '/api/license/validate') {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const code = urlObj.searchParams.get('code');
+    if (!code) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'code required' }));
+    }
+    // Código ADMIN (ADMIN_CODE do .env) → acesso VIP eterno + flag admin
+    if (process.env.ADMIN_CODE && code === process.env.ADMIN_CODE) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ valid: true, code, tier: 'vip', daysLeft: 999, admin: true, activatedAt: true, createdAt: new Date().toISOString() }));
+    }
+    const licenses = loadLicenses();
+    const license = licenses[code];
+    if (!license) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ valid: false, error: 'Código inválido' }));
+    }
+    // VIP vitalício (cadastro gratuito) nunca expira
+    if (license.vitalicio) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ valid: true, code, tier: 'vip', daysLeft: null, vitalicio: true, activatedAt: !!license.activatedAt, createdAt: license.createdAt }));
+    }
+    const tier = getTier(license.activatedAt);
+    const activatedAt = license.activatedAt;
+    const daysLeft = activatedAt ? Math.max(0, 7 - Math.floor((Date.now() - new Date(activatedAt).getTime()) / 86400000)) : 7;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ valid: true, code, tier, daysLeft, activatedAt: !!activatedAt, createdAt: license.createdAt }));
+  }
+
+  if (method === 'POST' && rawUrl === '/api/license/activate') {
+    const body = await parseBody(req);
+    const code = body.code;
+    if (!code) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'code required' }));
+    }
+    const licenses = loadLicenses();
+    const license = licenses[code];
+    if (!license) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Código inválido' }));
+    }
+    if (license.activatedAt) {
+      res.writeHead(409, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Código já ativado', activatedAt: license.activatedAt }));
+    }
+    license.activatedAt = new Date().toISOString();
+    writeJSON(LICENSE_PATH, licenses);
+    emitirTrialAtivado({ code, email: license.customerEmail || '', nome: license.customerName || '', source: license.source || 'activate' });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, code, activatedAt: license.activatedAt, tier: 'vip' }));
+  }
+
+  if (method === 'POST' && rawUrl === '/api/trial') {
+    const body = await parseBody(req);
+    const licenses = loadLicenses();
+    let code = generateCode();
+    while (licenses[code]) code = generateCode();
+    const source = body.source || 'frontend-offer';
+    const email = String(body.email || '').trim().toLowerCase();
+    const nome = String(body.nome || '').trim();
+    const telegram = body.telegram || '';
+    // Email obrigatório para chamadas públicas (impede lead 'trader' sem contato).
+    // Chamadas internas (x-ecosystem:1 do prospector) já registram lead próprio.
+    const ehInterno = req.headers['x-ecosystem'] === '1';
+    if (!ehInterno && (!email || !email.includes('@') || !email.includes('.'))) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'email obrigatório para ativar o teste grátis' }));
+    }
+    // VIP vitalício: cadastro (email) libera acesso VIP sem expiração.
+    // O produto virou topo de funil — a monetização acontece nas ferramentas do ecossistema.
+    const lic = { createdAt: new Date().toISOString(), activatedAt: new Date().toISOString(), source, vitalicio: true };
+    if (email) lic.customerEmail = email;
+    if (nome) lic.customerName = nome;
+    if (telegram) lic.telegram = telegram;
+    licenses[code] = lic;
+    writeJSON(LICENSE_PATH, licenses);
+    if (req.headers['x-ecosystem'] !== '1') {
+      emitirTrialAtivado({ code, email, nome, source });
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, code, tier: 'vip', vitalicio: true, daysLeft: null }));
+  }
+
+  // ========== EVENT + COHORT ==========
+  const EVENTS_LOG = path.join(DATA_DIR, 'events.jsonl');
+  const COHORT_PATH = path.join(DATA_DIR, 'pricing-state.json');
+  if (!fs.existsSync(COHORT_PATH)) writeJSON(COHORT_PATH, { totalSignups: 0, totalActivations: 0, cohorts: [] });
+
+  if (method === 'POST' && rawUrl === '/api/event') {
+    const body = await parseBody(req);
+    const event = { event: body.event || 'unknown', timestamp: new Date().toISOString(), ...body };
+    delete event.secret;
+    try {
+      fs.appendFileSync(EVENTS_LOG, JSON.stringify(event) + '\n');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: e.message }));
+    }
+  }
+
+  if (method === 'GET' && rawUrl === '/api/cohort') {
+    const state = readJSON(COHORT_PATH);
+    const discountTier = state.totalSignups <= 100 ? 0 : state.totalSignups <= 200 ? 1 : state.totalSignups <= 300 ? 2 : 3;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      totalSignups: state.totalSignups, totalActivations: state.totalActivations, discountTier,
+      slotsLeft: Math.max(0, 100 - state.totalSignups),
+      discounts: {
+        foundingMember: state.totalSignups < 100 ? 40 : state.totalSignups < 200 ? 35 : state.totalSignups < 300 ? 30 : 25,
+        annualExtra: 10
+      }
+    }));
+  }
+
+  if (method === 'POST' && rawUrl === '/api/cohort/increment') {
+    const adminSecret = req.headers['x-admin-secret'];
+    if (adminSecret !== process.env.SECRET_KEY) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    }
+    const body = await parseBody(req);
+    const field = body.field === 'activation' ? 'totalActivations' : 'totalSignups';
+    const state = readJSON(COHORT_PATH);
+    state[field] = (state[field] || 0) + 1;
+    writeJSON(COHORT_PATH, state);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, [field]: state[field] }));
+  }
+
+  // ========== PURCHASE WEBHOOK (Kiwify) — BTC + Severino ==========
+  if (method === 'POST' && rawUrl.startsWith('/api/purchase/webhook')) {
+    const body = await parseBody(req);
+    const expectedSecrets = [process.env.KIWIFY_WEBHOOK_SECRET, process.env.SECRET_KEY].filter(Boolean);
+    const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const providedSecret = urlObj.searchParams.get('secret') || req.headers['x-webhook-secret'] || req.headers['x-kiwify-token'] || body.secret || '';
+    if (!expectedSecrets.length || !expectedSecrets.includes(providedSecret)) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    }
+    if (body.data && typeof body.data === 'object') Object.assign(body, body.data);
+    const hasOrderData = body.event || body.order_id || body.transaction || body.id || body.customer || body.customer_email || body.email || body.purchase || body.order_status || body.product;
+    if (!hasOrderData) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, heartbeat: true }));
+    }
+    const PAID_EVENTS = ['compra_aprovada', 'order.paid', 'order.payment_confirmed', 'purchase_approved', 'payment_confirmed', 'payment_received'];
+    const IGNORED_EVENTS = ['compra_reembolsada', 'compra_recusada', 'compra_recusado', 'chargeback', 'boleto_gerado', 'pix_gerado', 'carrinho_abandonado', 'subscription_canceled', 'subscription_late'];
+    const evt = (body.event || '').toLowerCase();
+    if (evt) {
+      if (IGNORED_EVENTS.includes(evt)) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, ignored: evt }));
+      }
+      if (!PAID_EVENTS.includes(evt)) {
+        const st = (body.order_status || '').toLowerCase();
+        if (st && st !== 'paid' && st !== 'approved' && st !== 'completed') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, ignored: evt }));
+        }
+      }
+    } else if (body.order_status && !['paid', 'approved', 'completed'].includes(String(body.order_status).toLowerCase())) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, ignored: body.order_status }));
+    }
+
+    const gateway = body.gateway || (req.headers['x-gateway'] || 'kiwify');
+    let customerName = body.customer_name || body.name || body.nome || '';
+    if (body.customer && body.customer.full_name) customerName = body.customer.full_name;
+    if (body.buyer && body.buyer.name) customerName = body.buyer.name;
+    if (body.kiwify && body.kiwify.customer_name) customerName = body.kiwify.customer_name;
+    let customerEmail = body.customer_email || body.email || '';
+    if (body.customer && body.customer.email) customerEmail = body.customer.email;
+    if (body.buyer && body.buyer.email) customerEmail = body.buyer.email;
+    if (body.kiwify && body.kiwify.customer_email) customerEmail = body.kiwify.customer_email;
+    let productName = body.product_name || body.produto || '';
+    if (body.product && body.product.product_name) productName = body.product.product_name;
+    if (body.kiwify && body.kiwify.product_name) productName = body.kiwify.product_name;
+    const plan = body.plan || productName || 'vip_mensal';
+    let value = body.value || body.price || body.amount || 0;
+    if (body.purchase && body.purchase.original_offer_price) value = body.purchase.original_offer_price;
+    if (gateway === 'kiwify' && value > 0 && value < 100000) value = value / 100;
+    let tx = body.transaction || body.id || body.transaction_id || '';
+    if (body.order_id) tx = body.order_id;
+    if (body.kiwify && body.kiwify.id) tx = body.kiwify.id;
+    if (!customerEmail && !tx) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'customer_email or transaction id required' }));
+    }
+
+    const ehSeverino = /severino|vendedor|consul|basico|básico|pro/.test(String(productName || plan || '').toLowerCase());
+    if (ehSeverino && vendedor_ai) {
+      try {
+        const vendedoresDir = path.join(DATA_DIR, 'vendedores');
+        let dbV = [];
+        try { dbV = JSON.parse(fs.readFileSync(path.join(vendedoresDir, 'vendedores.json'), 'utf8')); } catch (e) {}
+        const emailNorm = String(customerEmail || '').trim().toLowerCase();
+        const vendedor = dbV.find(v =>
+          (v.email && String(v.email).toLowerCase() === emailNorm) ||
+          (v.whatsapp && customerEmail && String(v.whatsapp).replace(/\D/g, '') === String(customerEmail).replace(/\D/g, ''))
+        );
+        if (!vendedor) {
+          const esperaPath = path.join(DATA_DIR, 'vendedores', 'compra_sem_cadastro.json');
+          let espera = [];
+          try { espera = JSON.parse(fs.readFileSync(esperaPath, 'utf8')); } catch (e) {}
+          espera.push({ email: emailNorm, nome: customerName, plano: plan, valor: value, tx, criadoEm: new Date().toISOString() });
+          try { fs.writeFileSync(esperaPath, JSON.stringify(espera, null, 2)); } catch (e) {}
+          if (telegramBot) telegramBot.sendTelegram(process.env.TELEGRAM_CHAT_ID,
+            '🛒 <b>SEVERINO: compra sem cadastro!</b>\n\n👤 ' + (customerName || '—') + '\n📧 ' + (emailNorm || '—') + '\n📦 ' + plan + '\n💰 R$ ' + value + '\n🧾 ' + tx, process.env.TELEGRAM_TOKEN);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, status: 'aguardando_cadastro', product: 'severino' }));
+        }
+        vendedor.status = 'ativo';
+        vendedor.pagoEm = new Date().toISOString();
+        vendedor.transactionId = tx;
+        vendedor.valorPago = value;
+        vendedor.ativoAte = new Date(Date.now() + (vendedor.frequencia === 'anual' ? 365 : vendedor.frequencia === 'semestral' ? 180 : 30) * 86400000).toISOString();
+        const treino = await vendedor_ai.treinar(vendedor, vendedoresDir);
+        vendedor.contextoTreinado = true;
+        vendedor.contextoArquivo = treino.arquivo;
+        vendedor.treinadoEm = new Date().toISOString();
+        try { fs.writeFileSync(path.join(vendedoresDir, 'vendedores.json'), JSON.stringify(dbV, null, 2)); } catch (e) {}
+        const link = vendedor_ai.linkAcesso(vendedor);
+        if (telegramBot) telegramBot.sendTelegram(process.env.TELEGRAM_CHAT_ID,
+          '✅ <b>SEVERINO PAGO E ATIVADO (automático)</b>\n\n🏪 ' + vendedor.negocio + '\n📦 Plano: ' + vendedor.plano + ' | 💰 R$ ' + value + '\n📧 ' + (emailNorm || '—') + '\n🧾 ' + tx + '\n🔗 Acesso: ' + link, process.env.TELEGRAM_TOKEN);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, status: 'ativo', product: 'severino', vendedorId: vendedor.id, link }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: 'Erro na ativação automática: ' + e.message }));
+      }
+    }
+
+    const licenses = loadLicenses();
+    let code = generateCode();
+    while (licenses[code]) code = generateCode();
+    licenses[code] = {
+      createdAt: new Date().toISOString(), activatedAt: null, source: 'purchase:' + gateway,
+      plan, customerName, customerEmail, transactionId: tx, value
+    };
+    writeJSON(LICENSE_PATH, licenses);
+    const purchasesPath = path.join(DATA_DIR, 'purchases.json');
+    let purchases = [];
+    try { purchases = JSON.parse(fs.readFileSync(purchasesPath, 'utf8')); } catch (e) {}
+    purchases.push({ transactionId: tx, gateway, customerName, customerEmail, plan, value, code, createdAt: new Date().toISOString() });
+    writeJSON(purchasesPath, purchases);
+    emitirVendaConfirmada({ code, email: customerEmail, nome: customerName, value, plan, productName });
+
+    const tgToken = process.env.TELEGRAM_TOKEN || '';
+    const adminChat = process.env.TELEGRAM_CHAT_ID || '';
+    const linkAtivar = 'https://btcweatherpanel.com/btc-weather-panel/?code=' + code;
+    const nomeComprador = customerName || 'Cliente';
+    const msgResumo = `🛒 <b>NOVA COMPRA</b>\n\n👤 Cliente: ${nomeComprador}\n📧 Email: ${customerEmail || '—'}\n📦 Plano: ${plan}\n💰 Valor: R$ ${value}\n🧾 Tx: ${tx}\n\n🔑 Código: <code>${code}</code>\n🌐 Ativar: ${linkAtivar}`;
+    if (tgToken && adminChat && telegramBot) {
+      telegramBot.sendTelegram(adminChat, msgResumo, tgToken);
+    }
+    if (customerEmail && tgToken && telegramBot) {
+      try {
+        const notifPath = path.join(DATA_DIR, 'notifications.json');
+        const notifUsers = fs.existsSync(notifPath) ? JSON.parse(fs.readFileSync(notifPath, 'utf8')) : {};
+        const buyer = Object.values(notifUsers).find(u => u.email && String(u.email).toLowerCase() === String(customerEmail).toLowerCase());
+        if (buyer && buyer.telegramId) {
+          const msgWelcome = `🎉 <b>Bem-vindo(a) ao BTC Weather Panel, ${nomeComprador}!</b>\n\nSeu acesso VIP está liberado:\n\n🔑 <b>Código:</b> <code>${code}</code>\n📦 <b>Plano:</b> ${plan}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n✅ <b>Passo 1 — Ative seu acesso:</b>\n${linkAtivar}\n\n💬 <b>Passo 2 — Receba suas notificações:</b>\nEnvie aqui /vincular ${code} e ative:\n• 📊 Análise diária do BTC às 9h\n• 🌦️ Alertas de mudança de clima\n• 📡 Sinais operacionais\n\n📋 <b>Passo 3 — Confira:</b>\nUse /status para ver seu VIP.\n\n❓ Precisa de ajuda? Envie /ajuda.`;
+          telegramBot.sendTelegram(buyer.telegramId, msgWelcome, tgToken);
+        }
+      } catch (e) { console.error('❌ Erro na entrega do código por Telegram:', e.message); }
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, code, customerName, customerEmail, plan }));
+  }
+
+  // ========== ROBOTS.TXT ==========
+  if (method === 'GET' && (rawUrl === '/robots.txt' || rawUrl === '/btc-weather-panel/robots.txt')) {
+    const rPath = path.join(WEATHER_ROOT, 'robots.txt');
+    if (fs.existsSync(rPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' });
+      return res.end(fs.readFileSync(rPath));
+    }
+  }
+
+  // ========== SITEMAP.XML (dinâmico) ==========
+  if (method === 'GET' && (rawUrl === '/sitemap.xml' || rawUrl === '/btc-weather-panel/sitemap.xml')) {
+    const pagesDir = WEATHER_ROOT;
+    const files = fs.readdirSync(pagesDir).filter(f => f.endsWith('.html') || f.endsWith('.htm'));
+    const hoje = new Date().toISOString().slice(0, 10);
+    const baseUrl = 'https://btcweatherpanel.com';
+    const urls = [];
+    urls.push({ loc: baseUrl + '/btc-weather-panel/', priority: '1.0', changefreq: 'daily' });
+    urls.push({ loc: baseUrl + '/btc-weather-panel/robots.txt', priority: '0.1', changefreq: 'monthly' });
+    files.forEach(f => {
+      const name = f.replace(/\.html?$/, '');
+      if (name === 'index' || name === 'app' || name === 'admin-dashboard' || name === 'oferta' || name.startsWith('_')) return;
+      urls.push({ loc: baseUrl + '/' + name + '/', priority: '0.6', changefreq: 'weekly' });
+    });
+    const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+      urls.map(u => `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${hoje}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`).join('\n') +
+      '\n</urlset>';
+    res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(xml);
+  }
+
+  // ========== GOOGLE SEARCH CONSOLE VERIFICATION ==========
+  if (method === 'GET' && rawUrl.startsWith('/google')) {
+    const fPath = path.join(WEATHER_ROOT, rawUrl.replace(/^\//, ''));
+    if (fs.existsSync(fPath) && fPath.endsWith('.html') && fPath.startsWith(WEATHER_ROOT)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+      return res.end(fs.readFileSync(fPath));
+    }
+  }
+
+  // ========== ARQUIVOS ESTÁTICOS ==========
+  if (rawUrl.startsWith('/weather-panel') || rawUrl.startsWith('/btc-weather-panel')) {
+    let relativePath = 'index.html';
+    if (url !== '/weather-panel' && url !== '/btc-weather-panel' && url !== '/weather-panel/' && url !== '/btc-weather-panel/') {
+      relativePath = url.replace('/weather-panel/', '').replace('/btc-weather-panel/', '');
+    }
+    const weatherPath = path.join(WEATHER_ROOT, relativePath);
+    if (fs.existsSync(weatherPath) && fs.statSync(weatherPath).isFile()) {
+      const extname = path.extname(weatherPath).toLowerCase();
+      res.writeHead(200, {
+        'Content-Type': mime[extname] || 'application/octet-stream',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      return res.end(fs.readFileSync(weatherPath));
+    }
+  }
+
+  // Raiz: app.btcweatherpanel.com → app.html; outros → redirect /btc-weather-panel/
+  if (url === '/') {
+    const host = (req.headers.host || '').toLowerCase();
+    if (host === 'app.btcweatherpanel.com') {
+      const appPath = path.join(WEATHER_ROOT, 'app.html');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(fs.readFileSync(appPath));
+    }
+    res.writeHead(302, { 'Location': '/btc-weather-panel/' });
+    return res.end();
+  }
+
+  // Arquivos soltos do produto (app.html, admin-dashboard.html, oferta.html, ebook-btc.html, etc.)
+  if (url.startsWith('/app') || url.startsWith('/admin-dashboard') || url.startsWith('/oferta') || url.startsWith('/ebook') || url.startsWith('/ebook-btc')) {
+    let clean = url.split('?')[0].replace(/^\//, '');
+    const alias = { 'ebook': 'ebook-btc.html' };
+    if (alias[clean]) clean = alias[clean];
+    let fPath = path.join(WEATHER_ROOT, clean);
+    if (!fs.existsSync(fPath) || !fs.statSync(fPath).isFile()) {
+      fPath = path.join(WEATHER_ROOT, clean + '.html');
+    }
+    if (fs.existsSync(fPath) && fs.statSync(fPath).isFile()) {
+      const extname = path.extname(fPath).toLowerCase();
+      res.writeHead(200, { 'Content-Type': mime[extname] || 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(fs.readFileSync(fPath));
+    }
+  }
+
+  // Arquivos estáticos genéricos (imagens, vídeo, fontes) na raiz do produto
+  const ext = path.extname(url.split('?')[0]).toLowerCase();
+  if (ext && mime[ext]) {
+    const fPath = path.join(WEATHER_ROOT, url.split('?')[0].replace(/^\//, ''));
+    if (fs.existsSync(fPath) && fs.statSync(fPath).isFile()) {
+      res.writeHead(200, { 'Content-Type': mime[ext], 'Cache-Control': 'public, max-age=86400' });
+      return res.end(fs.readFileSync(fPath));
+    }
+  }
+
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  return res.end('404');
+}).listen(PORT, () => {
+  console.log('🪙 BTC Weather Panel — Servidor Independente');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`🌐 http://localhost:${PORT}/ → /btc-weather-panel/ (app)`);
+  console.log(`🔑 API Licenças: /api/trial · /api/license/*`);
+  console.log(`🌦️ API Clima: /api/weather/config · /api/webhook/clima`);
+  console.log(`📊 Metrics: /api/admin/metrics · /api/public/metrics`);
+  console.log(`🤖 Telegram Webhook: /api/telegram/webhook`);
+  console.log(`💳 Kiwify: /api/purchase/webhook`);
+
+  // Severino Agente Trader: análise 24/7 (macro 90d + clima + sentimento)
+  const ST_INTERVAL_MIN = parseInt(process.env.ST_ALERT_INTERVAL_MIN || '5', 10);
+  if (ST_ALERTS_ENABLED) {
+    setTimeout(()=>stAgentTick(false), 60000); // 1 min apos subir
+    setInterval(()=>stAgentTick(false), ST_INTERVAL_MIN * 60000);
+    console.log(`🌱 Severino Agente Trader: análise 24/7 a cada ${ST_INTERVAL_MIN} min (macro 90d + clima + funding + OI + sweep)`);
+  }
+});

@@ -1,0 +1,5 @@
+# robots.txt — BTC Weather Panel
+User-agent: *
+Allow: /
+
+Sitemap: https://btcweatherpanel.com/sitemap.xml

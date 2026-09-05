@@ -1,0 +1,114 @@
+{
+  "vmt3us02jf563": {
+    "id": "vmt3us02jf563",
+    "token": "597fedf071b5",
+    "criadoEm": "2026-08-22T04:03:11.324Z",
+    "status": "ativo",
+    "plano": "Assinatura",
+    "qtdVendedores": 1,
+    "canais": [
+      "whatsapp"
+    ],
+    "pagoEm": "2026-08-22T04:08:13.931Z",
+    "ativoAte": "2026-09-21T04:08:13.931Z",
+    "negocio": "Bar do Deploy",
+    "ramo": "Bar",
+    "whatsapp": "11988887777",
+    "email": "deploy@test.com",
+    "redes": "",
+    "produtos": [],
+    "personalidade": {
+      "nomeBot": "Severino",
+      "tomVoz": "cordial",
+      "idiomaAtend": "pt",
+      "horario": "24h",
+      "regras": "Sempre ser honesto, nunca inventar preço ou prazo."
+    },
+    "treino": {
+      "texto": "",
+      "linkRef": ""
+    },
+    "contexto": null,
+    "treinado": false,
+    "treinadoEm": null,
+    "transacao": "TXN-DEPLOY-003",
+    "valorPago": 67.89
+  },
+  "vmt3usbxje0ba": {
+    "id": "vmt3usbxje0ba",
+    "token": "e104f0f02e8f",
+    "criadoEm": "2026-08-22T04:03:26.695Z",
+    "status": "pendente",
+    "plano": "Assinatura",
+    "qtdVendedores": 1,
+    "canais": [
+      "whatsapp"
+    ],
+    "pagoEm": null,
+    "ativoAte": null,
+    "negocio": "Bar do Deploy",
+    "ramo": "Bar",
+    "whatsapp": "11988887777",
+    "email": "deploy@test.com",
+    "redes": "",
+    "produtos": [],
+    "personalidade": {
+      "nomeBot": "Severino",
+      "tomVoz": "cordial",
+      "idiomaAtend": "pt",
+      "horario": "24h",
+      "regras": "Sempre ser honesto, nunca inventar preço ou prazo."
+    },
+    "treino": {
+      "texto": "",
+      "linkRef": ""
+    },
+    "contexto": null,
+    "treinado": false,
+    "treinadoEm": null
+  },
+  "severino-vendas": {
+    "id": "severino-vendas",
+    "token": "vendas-auto",
+    "criadoEm": "2026-08-22T17:51:29.332Z",
+    "status": "ativo",
+    "plano": "Interno",
+    "qtdVendedores": 1,
+    "canais": [
+      "whatsapp",
+      "widget"
+    ],
+    "pagoEm": "2026-08-22T17:51:29.332Z",
+    "ativoAte": "2027-08-22T17:51:29.332Z",
+    "negocio": "Severino Vendedor IA",
+    "ramo": "Software como Servico (SaaS)",
+    "whatsapp": "+5511999990000",
+    "email": "vendas@severinobot.com",
+    "produtos": [
+      {
+        "nome": "Assinatura Mensal",
+        "preco": 67.89,
+        "desc": "1 vendedor IA por 30 dias. Inclui treinamento, widget, webhook."
+      },
+      {
+        "nome": "Vendedor Extra",
+        "preco": 33.95,
+        "desc": "Segundo vendedor com 50% de desconto para o mesmo negocio."
+      }
+    ],
+    "personalidade": {
+      "nomeBot": "Severino",
+      "tomVoz": "entusiasta e direto",
+      "idiomaAtend": "pt",
+      "horario": "24h",
+      "regras": "Nunca inventar preco, desconto, prazo ou funcionalidade. Ser honesto sobre limites. Nao prometer integracao que nao existe. Falar o valor exato de R$ 67,89."
+    },
+    "treino": {
+      "texto": "O Severino Vendedor IA é um SaaS brasileiro que cria vendedores de IA para pequenos negocios.\nPreco: R$ 67,89/mes por vendedor. Segundo vendedor: R$ 33,95 (50% off).\nFunciona 24h/dia, 7 dias/semana. Atende clientes pelo chat web (widget embed).\nNao precisa saber programar. O usuario cadastra negocio, produtos, precos, regras e treino.\nA IA nunca inventa informacao. Leva 3 minutos para configurar.\nPagamento via PIX ou cartao (Kiwify). 30 dias de garantia.\nNao faz integracao com WhatsApp ainda (apenas widget web + API).\nPara comecar: acesse vendedor.severinobot.com e crie seu vendedor.",
+      "linkRef": "https://vendedor.severinobot.com"
+    },
+    "contexto": "Negócio: Severino Vendedor IA\nRamo: Software como Servico (SaaS)\nWhatsApp: +5511999990000\nNome do vendedor: Severino\nTom de voz: entusiasta e direto\nIdioma: pt\nHorário: 24h\nProdutos:\n- Assinatura Mensal (R$ 67.89): 1 vendedor IA por 30 dias. Inclui treinamento, widget, webhook.\n- Vendedor Extra (R$ 33.95): Segundo vendedor com 50% de desconto para o mesmo negocio.\nRegras:\nNunca inventar preco, desconto, prazo ou funcionalidade. Ser honesto sobre limites. Nao prometer integracao que nao existe. Falar o valor exato de R$ 67,89.\nConhecimento:\nO Severino Vendedor IA é um SaaS brasileiro que cria vendedores de IA para pequenos negocios.\nPreco: R$ 67,89/mes por vendedor. Segundo vendedor: R$ 33,95 (50% off).\nFunciona 24h/dia, 7 dias/semana. Atende clientes pelo chat web (widget embed).\nNao precisa saber programar. O usuario cadastra negocio, produtos, precos, regras e treino.\nA IA nunca inventa informacao. Leva 3 minutos para configurar.\nPagamento via PIX ou cartao (Kiwify). 30 dias de garantia.\nNao faz integracao com WhatsApp ainda (apenas widget web + API).\nPara comecar: acesse vendedor.severinobot.com e crie seu vendedor.\nRef: https://vendedor.severinobot.com",
+    "treinado": true,
+    "treinadoEm": "2026-08-22T20:13:08.798Z"
+  }
+}

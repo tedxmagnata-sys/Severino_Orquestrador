@@ -1,0 +1,259 @@
+{
+  "macro": {
+    "rankings": [
+      {
+        "periodo": "7d",
+        "melhor": "ema_cross",
+        "justificativa": "Score deterministico",
+        "score": 48,
+        "timeframe_recomendado": "5m"
+      },
+      {
+        "periodo": "30d",
+        "melhor": "ema_cross",
+        "justificativa": "Score deterministico",
+        "score": 48,
+        "timeframe_recomendado": "4H"
+      },
+      {
+        "periodo": "60d",
+        "melhor": "ema_cross",
+        "justificativa": "Score deterministico",
+        "score": 48,
+        "timeframe_recomendado": "1D"
+      },
+      {
+        "periodo": "90d",
+        "melhor": "ema_cross",
+        "justificativa": "Score deterministico",
+        "score": 48,
+        "timeframe_recomendado": "1D"
+      }
+    ],
+    "recomendacao_geral": "ema_cross",
+    "justificativa_geral": "Analise matematica pura (LLM indisponivel)",
+    "mercado_atual": "tendencia_alta",
+    "confianca": 77,
+    "analise_tecnica": "Score deterministico: mercado tendencia_alta, confianca 77%",
+    "sugestao_timeframe_operacional": "5m",
+    "_deterministic": {
+      "scores": {
+        "rsi_scalper": 22,
+        "ema_cross": 48,
+        "bb_reversal": 28,
+        "macd_momentum": 17,
+        "grid_scalper": 25,
+        "smart_breakout": 10
+      },
+      "mercado": "tendencia_alta",
+      "confianca": 77,
+      "por_ativo": {
+        "BTC-USDT": {
+          "didi": {
+            "curta": "-0.88",
+            "longa": "-2.91",
+            "trend": "bullish",
+            "value": "2.03"
+          },
+          "qqe": {
+            "line": "71.0",
+            "dar": "2.12",
+            "trend": "bullish"
+          },
+          "squeeze": {
+            "active": true,
+            "momentum": "0.06",
+            "ready": true
+          },
+          "bos": {
+            "trend": "bearish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "46.7",
+            "ema1": "46.7",
+            "ema2": "46.7"
+          }
+        },
+        "ETH-USDT": {
+          "didi": {
+            "curta": "0.19",
+            "longa": "-1.35",
+            "trend": "bullish",
+            "value": "1.54"
+          },
+          "qqe": {
+            "line": "64.4",
+            "dar": "2.12",
+            "trend": "bullish"
+          },
+          "squeeze": {
+            "active": true,
+            "momentum": "0.11",
+            "ready": true
+          },
+          "bos": {
+            "trend": "bullish",
+            "patterns": 0
+          },
+          "rsi": {
+            "value": "51.9",
+            "ema1": "51.9",
+            "ema2": "51.9"
+          }
+        },
+        "SOL-USDT": {
+          "didi": {
+            "curta": "0.04",
+            "longa": "-0.02",
+            "trend": "bullish",
+            "value": "0.06"
+          },
+          "qqe": {
+            "line": "64.6",
+            "dar": "2.12",
+            "trend": "bullish"
+          },
+          "squeeze": {
+            "active": true,
+            "momentum": "0.17",
+            "ready": true
+          },
+          "bos": {
+            "trend": "bullish",
+            "patterns": 1
+          },
+          "rsi": {
+            "value": "63.5",
+            "ema1": "63.5",
+            "ema2": "63.5"
+          }
+        }
+      }
+    },
+    "_full": true,
+    "_ts": 1788639767547
+  },
+  "macroTs": 1788639768550,
+  "quick": {
+    "rankings": [
+      {
+        "periodo": "7d",
+        "melhor": "ema_cross",
+        "score": 803,
+        "timeframe_recomendado": "5m",
+        "justificativa": "Score institucional multi-indicador"
+      },
+      {
+        "periodo": "30d",
+        "melhor": "ema_cross",
+        "score": 723,
+        "timeframe_recomendado": "4H"
+      },
+      {
+        "periodo": "60d",
+        "melhor": "ema_cross",
+        "score": 642,
+        "timeframe_recomendado": "1D"
+      },
+      {
+        "periodo": "90d",
+        "melhor": "ema_cross",
+        "score": 602,
+        "timeframe_recomendado": "1D"
+      }
+    ],
+    "recomendacao_geral": "ema_cross",
+    "justificativa_geral": "Didi+QQE+Squeeze: tendencia_baixa. Consenso multi-ativo.",
+    "mercado_atual": "tendencia_baixa",
+    "confianca": 81,
+    "analise_tecnica": "BTC-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=19.8 | ETH-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=21.2 | SOL-USDT: Didi=bearish QQE=bearish Squeeze=OFF RSI=38.6",
+    "sugestao_timeframe_operacional": "5m",
+    "por_ativo": {
+      "BTC-USDT": {
+        "didi": {
+          "curta": "-61.60",
+          "longa": "96.18",
+          "trend": "bearish",
+          "value": "-157.78"
+        },
+        "qqe": {
+          "line": "1.6",
+          "dar": "2.12",
+          "trend": "bearish"
+        },
+        "squeeze": {
+          "active": false,
+          "momentum": "-0.25",
+          "ready": false
+        },
+        "bos": {
+          "trend": "bearish",
+          "patterns": 1
+        },
+        "rsi": {
+          "value": "19.8",
+          "ema1": "19.8",
+          "ema2": "19.8"
+        }
+      },
+      "ETH-USDT": {
+        "didi": {
+          "curta": "-2.51",
+          "longa": "6.37",
+          "trend": "bearish",
+          "value": "-8.88"
+        },
+        "qqe": {
+          "line": "0.7",
+          "dar": "2.12",
+          "trend": "bearish"
+        },
+        "squeeze": {
+          "active": false,
+          "momentum": "-0.47",
+          "ready": false
+        },
+        "bos": {
+          "trend": "lateral",
+          "patterns": 0
+        },
+        "rsi": {
+          "value": "21.2",
+          "ema1": "21.2",
+          "ema2": "21.2"
+        }
+      },
+      "SOL-USDT": {
+        "didi": {
+          "curta": "-0.10",
+          "longa": "0.30",
+          "trend": "bearish",
+          "value": "-0.40"
+        },
+        "qqe": {
+          "line": "8.5",
+          "dar": "2.12",
+          "trend": "bearish"
+        },
+        "squeeze": {
+          "active": false,
+          "momentum": "-0.49",
+          "ready": false
+        },
+        "bos": {
+          "trend": "bearish",
+          "patterns": 1
+        },
+        "rsi": {
+          "value": "38.6",
+          "ema1": "38.6",
+          "ema2": "38.6"
+        }
+      }
+    },
+    "_full": false,
+    "_ts": 1788642216508
+  },
+  "quickTs": 1788642216509
+}
