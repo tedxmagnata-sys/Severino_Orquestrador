@@ -99,7 +99,7 @@ async function publicarNoPostiz(integration, texto, media) {
 
 function legendaFinal(legenda, produtoId, linkNaBio) {
   const info = produtos[produtoId] || produtos.btcweather;
-  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
+  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/epSCeE8';
   const link = linkNaBio ? 'link na bio 👆' : checkout;
   let txt = String(legenda || '')
     .replace(/\[link\]/gi, link)

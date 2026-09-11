@@ -34,7 +34,7 @@ function templateConvite(lead, info) {
   const linkBot = `https://t.me/${BOT_USERNAME}`;
   // Deep link: Telegram envia "/start CODIGO" quando o usuário toca no link.
   const linkStart = `${linkBot}?start=${trialCode}`;
-  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
+  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/epSCeE8';
 
   const texto = `${sauda} 👋
 

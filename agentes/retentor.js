@@ -46,9 +46,9 @@ async function enviarFollowup(lead, etapa) {
   const info = produtos[lead.produto] || produtos.btcweather;
   const nome = lead.nome || '';
   let ok = false;
-  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
+  const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/epSCeE8';
   const valor = precoDoProduto(info);
-  const linkAnual = (info && info.checkoutAnualUrl) || 'https://pay.kiwify.com.br/vim8bDb';
+  const linkAnual = (info && info.checkoutAnualUrl) || 'https://pay.kiwify.com.br/epSCeE8';
   if (etapa === 'checkin') {
     const msg = `Oi ${nome}! Vi que você está aproveitando o ${info.nome} há uns dias. Está curtindo os sinais? Qualquer dúvida é só me chamar 🙂`;
     ok = lead.telegramId
@@ -120,10 +120,10 @@ async function processar(evento, ctx) {
       // Reativação: trial venceu e não pagou → UMA mensagem de recuperação
       if (dias >= REATIVACAO_DIAS && lead.status === 'vip' && !lead.reativado) {
         const info = produtos[lead.produto] || produtos.btcweather;
-        const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/ffphj4e';
+        const checkout = (info && info.checkoutUrl) || 'https://pay.kiwify.com.br/epSCeE8';
         const valor = precoDoProduto(info);
         // Oferta com as 2 opções (mensal + anual) pra não perder quem prefere anual.
-        const linkAnual = (info && info.checkoutAnualUrl) || 'https://pay.kiwify.com.br/vim8bDb';
+        const linkAnual = (info && info.checkoutAnualUrl) || 'https://pay.kiwify.com.br/epSCeE8';
         const msg = `Oi ${lead.nome || ''}! Seu teste gratuito terminou 😉 Se gostou dos sinais, dá pra continuar:\n\n📆 Mensal: ${valor}/mês → ${checkout}\n📅 Anual (melhor preço): → ${linkAnual}\n\nAinda dá tempo de pegar o valor promocional de lançamento.`;
         try {
           const ok = telegramId

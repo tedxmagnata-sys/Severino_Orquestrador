@@ -36,7 +36,7 @@ async function processar(evento, ctx) {
         `Você é o Qualificador de vendas do ecossistema da BTC Weather Panel. ` +
         `Produtos disponíveis (escolha APENAS desta lista): ${VALIDOS.join(', ')}. ` +
         `"btcweather" = investidor de cripto querendo sinais de tendência; ` +
-        `"severino-consultor-ia" = empreendedor/CLT querendo consultoria IA 24/7. ` +
+        `"severino-consultor-ia" = pequeno negocio que quer um vendedor IA 24/7 no WhatsApp; "severino-ebook" = empreendedor que quer montar o proprio vendedor (R$19,90). ` +
         (jaCliente ? `ATENÇÃO: este lead JÁ é cliente do produto "${jaClienteDe}". ` +
           `Se o contexto indicar outro interesse, escolha outro produto (cross-sell). ` : '') +
         `Avalie o lead com score 1-5 (5=muito quente). Responda APENAS em JSON: ` +

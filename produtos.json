@@ -10,20 +10,21 @@
     "pm2": "severino",
     "status": "ativo",
     "plano": {
-      "preco": 47,
+      "preco": 0,
       "moeda": "BRL",
       "periodo": "mensal",
-      "trialDias": 7
+      "trialDias": 7,
+      "status": "gratuito"
     },
-    "checkout": "Kiwify",
-    "checkoutUrl": "https://pay.kiwify.com.br/ffphj4e",
+    "checkout": "gratuito",
+    "checkoutUrl": "https://btcweatherpanel.com/oferta",
     "canal": "telegram",
-    "persona": "Investidor de cripto que quer melhorar timing de entrada e saída sem depender de análise técnica complexa.",
+    "persona": "Investidor de cripto que quer melhorar timing de entrada e saida sem analise tecnica complexa.",
     "argumentos": [
-      "Sinais objetivos de tendência para BTC",
-      "7 dias grátis sem cartão",
-      "R$47/mês, cancela quando quiser",
-      "Garantia de satisfação (reembolso sem perguntas)"
+      "Sinais objetivos de tendencia para BTC",
+      "Acesso VIP gratuito ao cadastrar o email",
+      "Painel de clima do Bitcoin (medo/ganancia + RSI)",
+      "Comunidade no Telegram"
     ],
     "ativacao": {
       "tipo": "trial",
@@ -31,36 +32,40 @@
       "linkTemplate": "https://btcweatherpanel.com/btc-weather-panel/?code={code}",
       "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAbra o link, use o código e aproveite 7 dias VIP do BTC Weather Panel. Qualquer dúvida, me chama!"
     },
-    "checkoutAnualUrl": "https://pay.kiwify.com.br/vim8bDb"
+    "posicao": "topo-de-funil (isca gratuita)"
   },
   "severino-consultor-ia": {
     "id": "severino-consultor-ia",
     "slug": "vendedor",
-    "nome": "SeverinoConsultorIA",
-    "url": "https://vendedor.severinobot.com/",
-    "subdominio": "vendedor.severinobot.com",
+    "nome": "Severino Vendedor IA",
+    "url": "https://severinobot.com/consultor",
+    "subdominio": "severinobot.com",
     "caminho": "/root/.openclaw/canvas/",
     "porta": null,
     "pm2": null,
-    "status": "teste",
+    "status": "ativo",
     "plano": {
-      "preco": null,
+      "preco": 67.89,
       "moeda": "BRL",
-      "periodo": null,
-      "status": "teste"
+      "periodo": "mensal",
+      "trialDias": 7
     },
-    "checkout": null,
+    "checkout": "Kiwify",
     "canal": "telegram",
-    "persona": "Empreendedor/CLT que quer respostas de consultoria estratégica 24/7 por um custo acessível.",
+    "persona": "Pequeno negocio (barbearia, clinica, pet shop, restaurante) que perde vendas por demora no atendimento no WhatsApp.",
     "argumentos": [
-      "Consultoria IA 24/7",
-      "Em validação (teste gratuito)"
+      "Um vendedor IA que atende no WhatsApp 24/7, treinado no SEU negocio",
+      "Configura em 3 minutos — sem folga, sem salario",
+      "Captura de leads e webhook Kiwify",
+      "7 dias de teste — cancele quando quiser",
+      "R$67,89/mes"
     ],
     "ativacao": {
       "tipo": "link",
-      "link": "https://vendedor.severinobot.com/",
-      "mensagem": "🎉 Seu acesso ao SeverinoConsultorIA está liberado, {nome}!\n👉 {link}\n\nO produto está em validação (teste gratuito). Qualquer dúvida, me chama!"
-    }
+      "link": "https://severinobot.com/consultor",
+      "mensagem": "Otimo, {nome}! Seu Vendedor IA esta te esperando.\n👉 {link}\n\nAssine em 3 minutos e tenha um vendedor 24/7 no seu WhatsApp. Qualquer duvida, me chama!"
+    },
+    "checkoutUrl": "https://pay.kiwify.com.br/epSCeE8"
   },
   "padrao-produto-novo": {
     "id": "padrao-produto-novo",
@@ -91,6 +96,67 @@
       "endpoint": "http://127.0.0.1:334X/api/trial",
       "linkTemplate": "https://severinobot.com/severino-ia/?code={code}",
       "mensagem": "🎉 Acesso grátis liberado, {nome}!\n\nSeu código: <b>{code}</b>\n👉 {link}\n\nAproveite 7 dias VIP. Qualquer dúvida, me chama!"
+    }
+  },
+  "severino-ebook": {
+    "id": "severino-ebook",
+    "slug": "ebook",
+    "nome": "Ebook - Crie Seu Proprio Vendedor IA",
+    "url": "https://severinobot.com/ebook/",
+    "subdominio": "severinobot.com",
+    "status": "ativo",
+    "posicao": "tripwire (R$19,90 pagamento unico)",
+    "plano": {
+      "preco": 19.9,
+      "moeda": "BRL",
+      "periodo": "unico",
+      "trialDias": 0
+    },
+    "checkout": "Kiwify",
+    "checkoutUrl": "https://pay.kiwify.com.br/a7FABsp",
+    "canal": "email",
+    "persona": "Empreendedor que quer montar o proprio Vendedor IA e nao pagar mensalidade.",
+    "argumentos": [
+      "Guia PDF + setup .bat de 1 clique",
+      "Usa opencode + OpenRouter + VPS (barato)",
+      "Passo a passo real do severinobot.com",
+      "Setup custa ~$26/mes e fica seu"
+    ],
+    "ativacao": {
+      "tipo": "link",
+      "link": "https://severinobot.com/ebook/",
+      "mensagem": "Boa, {nome}! O material esta aqui:\n👉 {link}\n\nDuvida na instalacao? Me chama!"
+    }
+  },
+  "monte-seu-severino": {
+    "id": "monte-seu-severino",
+    "slug": "monte-seu-severino",
+    "nome": "Monte Seu Severino — Seu Agente de IA na Nuvem",
+    "url": "https://severinobot.com/",
+    "subdominio": "severinobot.com",
+    "status": "ativo",
+    "posicao": "tripwire (R$47 pagamento unico)",
+    "plano": {
+      "preco": 47,
+      "moeda": "BRL",
+      "periodo": "unico",
+      "trialDias": 0
+    },
+    "checkout": "Kiwify",
+    "checkoutUrl": "https://pay.kiwify.com.br/x4x75TZ",
+    "canal": "email",
+    "persona": "Empreendedor/infoprodutor que quer montar o proprio agente IA na nuvem, do zero e sem programar.",
+    "argumentos": [
+      "Passo a passo do zero, sem programar",
+      "Instalador de 1 clique",
+      "Treinamento no SEU negocio",
+      "Comunidade de suporte",
+      "Custo de manutencao ~$26/mes"
+    ],
+    "ativacao": {
+      "tipo": "link",
+      "link": "https://pay.kiwify.com.br/x4x75TZ",
+      "mensagem": "Boa, {nome}! Garanta o seu guia Monte Seu Severino:\n👉 {link}\n\nEm poucas horas voce tem seu agente IA no ar, atendendo 24h."
     }
   }
 }
