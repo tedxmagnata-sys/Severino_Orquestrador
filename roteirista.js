@@ -76,9 +76,9 @@ function carregarConhecimento(nicho) {
       '- Ebook "Crie Seu Próprio Vendedor IA": R$19,90\n' +
       '- BTC Weather Panel: grátis (30 dias)\n' +
       '- Consultoria personalizada: R$497\n\n' +
-      'Comunidade: t.me/severino_ia\n' +
+      'Comunidade e suporte: t.me/severino_ia\n' +
       'Site: severinobot.com\n' +
-      'WhatsApp: (91) 98194-0000';
+      'WhatsApp: apenas para clientes de mentoria R$497';
   } else {
     base = 'BTC Weather Panel — painel meteorológico do Bitcoin.\n' +
       'Lê o mercado BTC em 7 períodos diferentes.\n' +
