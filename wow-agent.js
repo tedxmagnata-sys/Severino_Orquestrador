@@ -21,11 +21,10 @@ const WOW_HISTORY_PATH = path.join(DATA_DIR, 'wow-history.json');
 
 // ===================== Configuração do Contrato =====================
 const CONFIG = {
-  contractAddress: '0xdd0721bbce5529210f097971760f46470423bef8',
+  contractAddress: '0x6c06524c7f85554bd280a29bce13f9ac4ac6485a',
   network: 'base-sepolia',
   rpcUrl: 'https://sepolia.base.org',
   explorer: 'https://sepolia.basescan.org',
-  // Wallet será carregada do .env
 };
 
 // ===================== Helpers =====================
@@ -244,8 +243,9 @@ async function executarDCA(wowResult, saldoDisponivel) {
     return { executou: false, motivo: 'Valor mínimo não atingido (min $5).', valorExecucao };
   }
 
-  // Em modo simulação, não chama o contrato
-  if (process.argv.includes('--simulate')) {
+  // Em modo simulação ou sem wallet configurada, não chama o contrato
+  const isSimulate = process.argv.includes('--simulate') || !ia.env('WOW_WALLET_KEY', '');
+  if (isSimulate) {
     console.log(`[WOW] 🔷 SIMULAÇÃO: Executaria DCA de $${valorExecucao} (${wowResult.alocacao}% do saldo $${saldoDisponivel})`);
     return {
       executou: true,
@@ -274,7 +274,8 @@ async function executarDCA(wowResult, saldoDisponivel) {
       'function totalUsdc() view returns (uint256)',
       'function usdc() view returns (address)',
       'function poolFee() view returns (uint24)',
-      'function lastBtcUsdPrice() view returns (uint256)'
+      'function lastBtcUsdPrice() view returns (uint256)',
+      'function owner() view returns (address)'
     ];
     const contract = new ethers.Contract(CONFIG.contractAddress, abi, wallet);
 
@@ -341,8 +342,18 @@ async function cicloWOW() {
   }
 
   // 2. Carregar estado e saldo
-  const estado = carregarEstado();
-  const saldoDisponivel = estado.saldoUsdc;
+  // Auto-incrementar saldo semanal: simula depósitos aleatórios
+    // Em modo real, você deposita USDC manualmente. Em simulação, o agente
+    // adiciona depósitos semanais automaticamente pra testar a lógica.
+    // Auto-incrementar saldo semanal: simula depósitos aleatórios
+    const isSim = process.argv.includes('--simulate') || !ia.env('WOW_WALLET_KEY', '');
+    const estado = carregarEstado();
+    if (isSim && estado.saldoUsdc < 50) {
+      estado.saldoUsdc += 300;
+      console.log('[WOW] 💰 Recarga automática de $300 (modo simulação)');
+      salvarEstado(estado);
+    }
+    const saldoDisponivel = estado.saldoUsdc;
   console.log(`[WOW] Saldo disponível: $${saldoDisponivel}`);
 
   // 3. Calcular WOW Score (IA)
