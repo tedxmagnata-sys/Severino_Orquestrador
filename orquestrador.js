@@ -724,7 +724,28 @@ http
       return json(res, { ok: true, total: eventos.length, eventos });
     }
 
-    return json(res, { error: 'Not Found' }, 404);
+    
+    // 👑 Conselho Estrategico — status
+    if (method === 'GET' && rawUrl === '/api/ecosystem/conselho') {
+      try {
+        const c = require('./agentes/conselho');
+        return json(res, c.status());
+      } catch (e) {
+        return json(res, { reunioes: 0, erro: e.message });
+      }
+    }
+    // POST /api/ecosystem/conselho/convocar — forcar reuniao manual
+    if (method === 'POST' && rawUrl === '/api/ecosystem/conselho/convocar') {
+      try {
+        if (!podeEscrever(req)) return json(res, { error: 'Unauthorized' }, 401);
+        const c = require('./agentes/conselho');
+        c.convocar().then(r => {}).catch(e => {});
+        return json(res, { ok: true, msg: 'Conselho convocado' });
+      } catch (e) {
+        return json(res, { ok: false, error: e.message }, 500);
+      }
+    }
+return json(res, { error: 'Not Found' }, 404);
   })
   .listen(API_PORT, () => {
     console.log(`🛰️ Orquestrador do Ecossistema — API na porta ${API_PORT}`);
@@ -866,6 +887,21 @@ setInterval(() => {
 }, SALDO_TICK_INTERVAL);
 // Resumo diário do guardião: posta saldo.resumo a cada 24h com o saldo de todas
 // as plataformas. Reaproveita o relógio do relatório diário (24h).
+
+// 👑 Tick do Conselho Estrategico: convoca reuniao diaria (24h).
+// Posta tick.conselho a cada CONselho_INTERVAL (default 86400s = 24h).
+const CONSELHO_INTERVAL = parseInt(process.env.ECOSISTEMA_CONSELHO_INTERVAL || '86400', 10) * 1000;
+setInterval(() => {
+  try {
+    bus.postar({ tipo: 'tick.conselho', origem: 'orquestrador', produto: null, payload: {} });
+  } catch {}
+}, CONSELHO_INTERVAL);
+// Primeira reuniao 5min apos o start (nao esperar 24h)
+setTimeout(() => {
+  try {
+    bus.postar({ tipo: 'tick.conselho', origem: 'orquestrador', produto: null, payload: { tipo: 'convocar' } });
+  } catch {}
+}, 300000);
 const SALDO_RESUMO_INTERVAL = parseInt(process.env.ECOSISTEMA_SALDO_RESUMO_INTERVAL || '86400', 10) * 1000;
 setInterval(() => {
   try {

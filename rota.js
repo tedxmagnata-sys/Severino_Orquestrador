@@ -39,6 +39,7 @@ const AGENTES = {
   'tick.conteudo': 'videasta',
   'conteudo.pronto': 'observador',
   'tick.saldo': 'guardiao',
+  'tick.conselho': 'conselho',
   'saldo.resumo': 'guardiao'
 };
 

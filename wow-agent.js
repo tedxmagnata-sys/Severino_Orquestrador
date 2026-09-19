@@ -13,6 +13,8 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+let ethers;
+try { ethers = require('ethers'); } catch {}
 const ia = require('./ia');
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -21,10 +23,11 @@ const WOW_HISTORY_PATH = path.join(DATA_DIR, 'wow-history.json');
 
 // ===================== Configuração do Contrato =====================
 const CONFIG = {
-  contractAddress: '0x6c06524c7f85554bd280a29bce13f9ac4ac6485a',
-  network: 'base-sepolia',
-  rpcUrl: 'https://sepolia.base.org',
-  explorer: 'https://sepolia.basescan.org',
+  contractAddress: '0x17CcB86BcAd08dB4BBB13827b609e8bd632F89b5',
+  network: 'base-mainnet',
+  rpcUrl: 'https://mainnet.base.org',
+  explorer: 'https://basescan.org',
+  priceFeed: '0xFaaaBC9A5c6c42ee6F942e517C2C77596b233bC8'
 };
 
 // ===================== Helpers =====================
@@ -259,7 +262,7 @@ async function executarDCA(wowResult, saldoDisponivel) {
 
   // --- Modo real: requer ethers.js + wallet ---
   try {
-    const { ethers } = require('ethers');
+    if (!ethers) return { executou: false, motivo: 'ethers.js nao instalado' };
     const walletKey = ia.env('WOW_WALLET_KEY', '');
     if (!walletKey) {
       return { executou: false, motivo: 'WOW_WALLET_KEY não configurada no .env' };
@@ -335,6 +338,9 @@ async function cicloWOW() {
   }
   console.log(`[WOW] BTC: $${btcDados.preco} (${btcDados.variacao24h?.toFixed(2)}% 24h)`);
 
+  // Atualiza o PriceFeed mock no contrato com o preço real
+  await atualizarPriceFeed(btcDados.preco);
+
   const candles = await buscarOHLC(30);
   if (!candles || candles.length < 20) {
     console.log('[WOW] ❌ Dados OHLC insuficientes.');
@@ -399,7 +405,12 @@ async function cicloWOW() {
   estado.ultimaAnalise = new Date().toISOString();
   salvarEstado(estado);
 
-  // 6. Relatório no console
+  // 6. Verificar colheita (harvest) — se P&L > 5%, realiza lucro e reinveste
+  if (!isSim && estado.totalInvestido > 0) {
+    await verificarColheita(estado, wowResult, btcDados.preco);
+  }
+
+  // 7. Relatório no console
   console.log('\n' + '='.repeat(50));
   console.log('📊 RELATÓRIO WOW');
   console.log('='.repeat(50));
@@ -445,6 +456,61 @@ async function alertarTelegram(estado, wow, exec) {
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
   });
   req.write(data); req.end();
+}
+
+// ===================== PriceFeed Update =====================
+async function atualizarPriceFeed(precoUsd) {
+  if (!CONFIG.priceFeed || !ia.env('WOW_WALLET_KEY', '')) return;
+  try {
+    if (!ethers) return;
+    const provider = new ethers.JsonRpcProvider(CONFIG.rpcUrl);
+    const wallet = new ethers.Wallet(ia.env('WOW_WALLET_KEY', ''), provider);
+    const feedAbi = ['function setData(uint80, int256, uint256, uint256, uint80) external'];
+    const feed = new ethers.Contract(CONFIG.priceFeed, feedAbi, wallet);
+    const price = BigInt(Math.round(precoUsd * 1e8));
+    const now = Math.floor(Date.now() / 1000);
+    const tx = await feed.setData(1, price, now, now, 1, { gasLimit: 50000 });
+    await tx.wait();
+    console.log(`[WOW] ✅ PriceFeed atualizado: $${precoUsd}`);
+  } catch (e) {
+    console.log(`[WOW] ⚠️ PriceFeed erro (ignorado): ${e.message}`);
+  }
+}
+
+// ===================== Colheita (Harvest) =====================
+async function verificarColheita(estado, wowResult, precoAtual) {
+  if (estado.totalInvestido <= 0 || !precoAtual) return;
+
+  // Estimar P&L não realizado (baseado no saldo investido vs valor atual)
+  // Como o contrato segura o cbBTC, estimamos pelo preço atual do BTC
+  const btcTotalEstimado = estado.trades.reduce((a, t) => a + (t.valor / (t.precoBTC || precoAtual)), 0);
+  const valorAtual = btcTotalEstimado * precoAtual;
+  const pnl = valorAtual - estado.totalInvestido;
+  const pnlPercent = estado.totalInvestido > 0 ? (pnl / estado.totalInvestido) * 100 : 0;
+
+  console.log(`[WOW] 📊 P&L estimado: ${pnlPercent.toFixed(2)}% ($${pnl.toFixed(2)})`);
+
+  // Se P&L > 8%, sugere colheita no relatório
+  if (pnlPercent > 8) {
+    console.log(`[WOW] 🏆 Lucro acima de 8%! Hora de colher e replantar.`);
+    estado.ultimaColheitaSugerida = {
+      data: new Date().toISOString(),
+      pnl: pnlPercent,
+      valor: pnl,
+      sugerido: true
+    };
+    salvarEstado(estado);
+
+    // Alerta Telegram sobre colheita
+const token = ia.env('TELEGRAM_COMMUNITY_TOKEN', '');
+      const chatId = ia.env('TELEGRAM_CHAT_ID', '');
+    if (token && chatId) {
+      const msg = `🏆 <b>COLHEITA DISPONÍVEL!</b>\n\n📈 Lucro atual: <b>$${pnl.toFixed(2)} (${pnlPercent.toFixed(1)}%)</b>\n\n💰 É hora de colher as frutinhas 🌾 e replantar as sementes 🌱 para o próximo ciclo!\n\n👉 Quer autorizar a colheita automática? Me confirma no privado.`;
+      const d = JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML', disable_web_page_preview: true });
+      const req = https.request(`https://api.telegram.org/bot${token}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(d)} });
+      req.write(d); req.end();
+    }
+  }
 }
 
 // ===================== Modo Daemon =====================
