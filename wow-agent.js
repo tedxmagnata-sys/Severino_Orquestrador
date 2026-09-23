@@ -369,6 +369,9 @@ async function cicloWOW() {
   console.log(`[WOW] Alocação sugerida: ${wowResult.alocacao}%`);
   console.log(`[WOW] Análise: ${wowResult.analise}`);
 
+  // 4. JEV verifica a decisão
+  const jevCheck = await verificarComJEV(btcDados, wowResult);
+
   // 4. Decidir se executa
   let resultadoExec = { executou: false, motivo: 'WOW Score baixo ou saldo insuficiente.' };
   if (wowResult.wowScore >= 40 && saldoDisponivel >= 5) {
@@ -423,11 +426,11 @@ async function cicloWOW() {
   console.log('='.repeat(50));
 
   // 7. Alerta Telegram
-  await alertarTelegram(estado, wowResult, resultadoExec);
+  await alertarTelegram(estado, wowResult, resultadoExec, jevCheck);
 }
 
 // ===================== Telegram =====================
-async function alertarTelegram(estado, wow, exec) {
+async function alertarTelegram(estado, wow, exec, jev) {
   const token = ia.env('TELEGRAM_COMMUNITY_TOKEN', '');
   const chatId = ia.env('TELEGRAM_CHAT_ID', '');
   if (!token || !chatId) return;
@@ -449,6 +452,12 @@ async function alertarTelegram(estado, wow, exec) {
   }
 
   msg += `\n📊 Trades até hoje: ${estado.trades.length}`;
+
+  if (jev) {
+    msg += `\n\n🤖 <b>JEV Verificador:</b>\n`;
+    msg += `Comprar: ${(jev.comprar * 100).toFixed(0)}% | Sinal: ${jev.sinal} | Risco: ${jev.risco}\n`;
+    msg += jev.concordam ? '✅ WOW + JEV concordam' : '⚠️ WOW e JEV discordam';
+  }
 
   const data = JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML', disable_web_page_preview: true });
   const req = https.request(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -474,6 +483,59 @@ async function atualizarPriceFeed(precoUsd) {
     console.log(`[WOW] ✅ PriceFeed atualizado: $${precoUsd}`);
   } catch (e) {
     console.log(`[WOW] ⚠️ PriceFeed erro (ignorado): ${e.message}`);
+  }
+}
+
+// ===================== JEV Verificador =====================
+async function verificarComJEV(btcDados, wowResult) {
+  const jevKey = ia.env('JEV_API_KEY', '');
+  if (!jevKey) { console.log('[JEV] ⏭️ Sem API Key'); return null; }
+
+  const state = {
+    btc_preco_usd: btcDados?.preco || 0,
+    btc_variacao_24h_pct: btcDados?.variacao24h || 0,
+    rsi_14: Math.round(wowResult.rsi || 50),
+    bb_position_pct: Math.round(wowResult.bbPos || 50),
+    saldo_usdc: 99.97,
+    wow_score: wowResult.wowScore
+  };
+
+  const body = JSON.stringify({
+    model: 'jev-latest',
+    state,
+    questions: {
+      deve_comprar: { type: 'noul', instructions: 'Devo comprar BTC agora?' },
+      sinal: { type: 'choice', instructions: 'Sinal do mercado', criteria: { options: ['PLANTAR', 'CULTIVAR', 'COLHER'] } },
+      risco: { type: 'choice', instructions: 'Risco do mercado', criteria: { options: ['BAIXO', 'MEDIO', 'ALTO'] } }
+    }
+  });
+
+  try {
+    const resp = await fetch('https://api.typesafe.ai/v1/systemone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jevKey },
+      body
+    });
+    if (!resp.ok) { console.log('[JEV] ⚠️ HTTP', resp.status); return null; }
+    const j = await resp.json();
+    const a = j.answers || {};
+    const comprar = a.deve_comprar?.noul ?? -1;
+    const sinal = a.sinal?.choice || '?';
+    const risco = a.risco?.choice || '?';
+
+    const wowDeveComprar = wowResult.wowScore >= 40 ? 1 : 0;
+    const concordam = (comprar >= 0.5 && wowDeveComprar) || (comprar < 0.5 && !wowDeveComprar);
+
+    console.log(`[JEV] Comprar: ${(comprar * 100).toFixed(0)}% | Sinal: ${sinal} | Risco: ${risco} | ${concordam ? '✅ Concordo' : '⚠️ Discordam!'}`);
+
+    if (!concordam) {
+      console.log(`[JEV] ⚠️ JEV discordou do WOW Agent! WOW queria ${wowDeveComprar ? 'COMPRAR' : 'ESPERAR'}, JEV sugere ${comprar < 0.5 ? 'ESPERAR' : 'COMPRAR'}`);
+    }
+
+    return { comprar, sinal, risco, concordam };
+  } catch (e) {
+    console.log('[JEV] ⚠️ Erro:', e.message);
+    return null;
   }
 }
 
