@@ -581,7 +581,27 @@ if (require.main === module && !process.argv.includes('--help')) {
   console.log(`[WOW] 🤖 WOW Agent iniciado ${isSimulate ? '(MODO SIMULAÇÃO)' : '(MODO REAL)'}`);
   console.log(`[WOW] Contrato: ${CONFIG.contractAddress}`);
   console.log(`[WOW] Rede: ${CONFIG.network}`);
-  console.log('[WOW] Ciclo a cada 6h');
+  console.log('[WOW] Ciclo a cada 6h + fast check a cada 3min');
+
+  // Fast check a cada 3 min (indicadores apenas, sem IA, custo zero)
+  setInterval(async () => {
+    try {
+      const btcDados = await buscarBTC();
+      const candles = await buscarOHLC(30);
+      if (!btcDados || !candles) return;
+      const prices = candles.map(c => c.close);
+      const rsis = calcularRSI(prices);
+      const rsi = rsis[rsis.length - 1] || 50;
+      const variacao = Math.abs(btcDados.variacao24h || 0);
+      console.log(`[WOW] 🔍 Fast check: BTC $${btcDados.preco} | RSI ${rsi.toFixed(1)} | ${btcDados.variacao24h?.toFixed(2)}%`);
+
+      // Se condição promissora, dispara ciclo completo
+      if ((rsi < 40 && variacao > 2) || rsi < 35) {
+        console.log('[WOW] ⚡ Fast check detectou oportunidade! Disparando análise completa...');
+        cicloWOW();
+      }
+    } catch(e) {}
+  }, 3 * 60 * 1000);
 
   // Executa imediatamente
   cicloWOW().catch(e => console.error('[WOW] Erro:', e.message));
