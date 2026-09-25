@@ -239,7 +239,7 @@ async function calcularWOWScore(btcDados, candles) {
 }
 
 // ===================== Smart Contract Integration =====================
-async function executarDCA(wowResult, saldoDisponivel) {
+async function executarDCA(wowResult, saldoDisponivel, precoBTC) {
   const valorExecucao = Math.round(saldoDisponivel * (wowResult.alocacao / 100) * 100) / 100;
 
   if (valorExecucao < 5) {
@@ -282,12 +282,21 @@ async function executarDCA(wowResult, saldoDisponivel) {
     ];
     const contract = new ethers.Contract(CONFIG.contractAddress, abi, wallet);
 
-    // Calcula amountOutMinimum com slippage dinâmico
-    const btcPrice = await contract.lastBtcUsdPrice();
+    // Calcula amountOutMinimum usando o PREÇO DE MERCADO (não o do contrato,
+// que só é setado após a 1ª compra bem-sucedida — evitando divisão por zero)
+    let preco = Number(precoBTC) || 0;
+    if (!preco || preco <= 0) {
+      try { preco = Number(ethers.formatUnits(await contract.lastBtcUsdPrice(), 8)); } catch(e) {}
+    }
+    if (!preco || preco <= 0) {
+      return { executou: false, motivo: 'Preço BTC indisponível — abortando para segurança', valorExecucao };
+    }
     const slippage = wowResult.wowScore > 70 ? 0.005 : wowResult.wowScore > 50 ? 0.01 : 0.02;
+    const btcOutEsperado = valorExecucao / preco;
     const amountOutMin = ethers.parseUnits(
-      (valorExecucao / (Number(ethers.formatUnits(btcPrice, 8)) * (1 + slippage))).toFixed(8), 8
+      (btcOutEsperado * (1 - slippage)).toFixed(8), 8
     );
+    console.log(`[WOW] 🧮 Swap: $${valorExecucao} → ~${btcOutEsperado.toFixed(8)} cbBTC (min ${ethers.formatUnits(amountOutMin,8)}, slippage ${(slippage*100).toFixed(1)}%)`);
 
     const tx = await contract.executeDCA(amountOutMin, 0, {
       gasLimit: 500000
@@ -376,7 +385,7 @@ async function cicloWOW() {
   let resultadoExec = { executou: false, motivo: 'WOW Score baixo ou saldo insuficiente.' };
   if (wowResult.wowScore >= 40 && saldoDisponivel >= 5) {
     console.log(`[WOW] 🚀 Executando DCA (Score ${wowResult.wowScore})...`);
-    resultadoExec = await executarDCA(wowResult, saldoDisponivel);
+    resultadoExec = await executarDCA(wowResult, saldoDisponivel, btcDados?.preco);
     if (resultadoExec.executou) {
       console.log(`[WOW] ✅ DCA executado: $${resultadoExec.valorExecucao}`);
       if (resultadoExec.txHash) console.log(`[WOW] TX: ${resultadoExec.explorerUrl}`);
