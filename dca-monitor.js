@@ -33,13 +33,14 @@ const server = http.createServer((req, res) => {
           totalInv = trades.reduce((s,t)=>s+(t.valor||0), 0);
         }
         var ts = w.totalSacado || 0;
+        var tr = (w.trades || []).map(t => ({data:t.data,valor:t.valor,precoBTC:t.precoBTC,wowScore:t.wowScore}));
       } catch(e) {}
       res.setHeader('Access-Control-Allow-Origin','*');
       res.writeHead(200,{'Content-Type':'application/json'});
-      res.end(JSON.stringify({usdc,cbbtc,totalDepositado:totalInv,totalSacado:ts,diasSemDCA:d,maxDiasSemComprar:6,podeSacar:cbbtc>1e-6}));
+      res.end(JSON.stringify({usdc,cbbtc,totalDepositado:totalInv,totalSacado:ts,trades:tr,diasSemDCA:d,maxDiasSemComprar:6,podeSacar:cbbtc>1e-6}));
     }).catch(() => {
       res.setHeader('Access-Control-Allow-Origin','*');
-      res.end(JSON.stringify({usdc:0,cbbtc:0,totalDepositado:99.97,totalSacado:0,diasSemDCA:0,maxDiasSemComprar:6,podeSacar:false}));
+      res.end(JSON.stringify({usdc:0,cbbtc:0,totalDepositado:99.97,totalSacado:0,trades:[],diasSemDCA:0,maxDiasSemComprar:6,podeSacar:false}));
     });
     return;
   }
