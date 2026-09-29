@@ -11,7 +11,7 @@ const RPC = 'https://mainnet.base.org';
 function rpcCall(to) {
   return new Promise(r => {
     const b = JSON.stringify({jsonrpc:'2.0',method:'eth_call',params:[{to,data:PAD},'latest'],id:1});
-    const q = https.request(RPC, {method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(b)}}, res => {
+    const q = https.request(RPC, {method:'POST',headers:{'Content-Type':'application/json'}}, res => {
       let d = ''; res.on('data',c=>d+=c); res.on('end',()=>{try{r(JSON.parse(d))}catch(e){r(null)}});
     });
     q.write(b); q.end(); q.setTimeout(5000,()=>{q.destroy();r(null)});
@@ -24,7 +24,7 @@ const server = http.createServer((req, res) => {
     Promise.all([rpcCall(USDC), rpcCall(CBTC)]).then(([r1,r2]) => {
       const usdc = r1&&r1.result&&r1.result!=='0x'?parseInt(r1.result,16)/1e6:0;
       const cbbtc = r2&&r2.result&&r2.result!=='0x'?parseInt(r2.result,16)/1e8:0;
-      let d = 0, totalInv = 0;
+      let d = 0, totalInv = 0, ts = 0, tr = [];
       try {
         const w = JSON.parse(fs.readFileSync('/root/severino/ecosystem/data/wow-state.json','utf8'));
         const trades = w.trades || [];
@@ -32,105 +32,94 @@ const server = http.createServer((req, res) => {
           d = Math.floor((Date.now()-new Date(trades[trades.length-1].data).getTime())/86400000);
           totalInv = trades.reduce((s,t)=>s+(t.valor||0), 0);
         }
-        var ts = w.totalSacado || 0;
-        var tr = (w.trades || []).map(t => ({data:t.data,valor:t.valor,precoBTC:t.precoBTC,wowScore:t.wowScore}));
+        ts = w.totalSacado || 0;
+        tr = (w.trades || []).map(t => ({data:t.data,valor:t.valor,precoBTC:t.precoBTC,wowScore:t.wowScore}));
+        var tx = w.totalTaxas || 0;
       } catch(e) {}
       res.setHeader('Access-Control-Allow-Origin','*');
       res.writeHead(200,{'Content-Type':'application/json'});
-      res.end(JSON.stringify({usdc,cbbtc,totalDepositado:totalInv,totalSacado:ts,trades:tr,diasSemDCA:d,maxDiasSemComprar:6,podeSacar:cbbtc>1e-6}));
+      res.end(JSON.stringify({usdc,cbbtc,totalDepositado:totalInv,totalSacado:ts,totalTaxas:tx,trades:tr,diasSemDCA:d,maxDiasSemComprar:6,podeSacar:cbbtc>1e-6}));
     }).catch(() => {
       res.setHeader('Access-Control-Allow-Origin','*');
-      res.end(JSON.stringify({usdc:0,cbbtc:0,totalDepositado:99.97,totalSacado:0,trades:[],diasSemDCA:0,maxDiasSemComprar:6,podeSacar:false}));
+      res.end(JSON.stringify({usdc:0,cbbtc:0,totalDepositado:99.97,totalSacado:0,totalTaxas:0,trades:[],diasSemDCA:0,maxDiasSemComprar:6,podeSacar:false}));
     });
     return;
   }
   if (req.url === '/api/dca/history') {
     try {
-      const w = JSON.parse(require('fs').readFileSync('/root/severino/ecosystem/data/wow-state.json','utf8'));
+      const w = JSON.parse(fs.readFileSync('/root/severino/ecosystem/data/wow-state.json','utf8'));
       const trades = (w.trades || []).filter(t => t.txHash && t.txHash !== '0xSIMULATED');
+      const depositos = w.depositos || [];
+      const saques = w.saques || [];
       res.setHeader('Access-Control-Allow-Origin','*');
       res.writeHead(200,{'Content-Type':'application/json'});
-      res.end(JSON.stringify({trades}));
+      res.end(JSON.stringify({trades,depositos,saques,totalTaxas:w.totalTaxas||0}));
     } catch(e) {
       res.setHeader('Access-Control-Allow-Origin','*');
       res.writeHead(200,{'Content-Type':'application/json'});
-      res.end(JSON.stringify({trades:[]}));
+      res.end(JSON.stringify({trades:[],depositos:[],saques:[],totalTaxas:0}));
     }
     return;
   }
   if (req.url === '/api/jev/analysis') {
-    const jevKey = require('fs').readFileSync('/root/severino/.env','utf8').match(/JEV_API_KEY=(.+)/)?.[1]?.trim();
+    const jevKey = fs.readFileSync('/root/severino/.env','utf8').match(/JEV_API_KEY=(.+)/)?.[1]?.trim();
     if (!jevKey) { res.writeHead(500); res.end(JSON.stringify({erro:'Sem JEV_KEY'})); return; }
     
-    // Buscar dados de mercado
-    Promise.all([
-      new Promise(r => { https.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true', {headers:{'User-Agent':'Mozilla/5.0'}}, res => { let d=''; res.on('data',c=>d+=c); res.on('end',()=>{try{r(JSON.parse(d).bitcoin)}catch(e){r(null)}})}).on('error',()=>r(null)); }),
-      new Promise(r => { https.get('https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd&days=3', {headers:{'User-Agent':'Mozilla/5.0'}}, res => { let d=''; res.on('data',c=>d+=c); res.on('end',()=>{try{r(JSON.parse(d))}catch(e){r(null)}})}).on('error',()=>r(null)); })
-    ]).then(([btc, ohlc]) => {
-      if (!btc || !ohlc) { res.writeHead(200); res.end(JSON.stringify({erro:'Sem dados',jev:{}})); return; }
+    // Buscar dados de mercado via Promise
+    var mercado = {};
+    var prom = [
+      new Promise(function(r2){
+        https.get('https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd&days=7', {headers:{'User-Agent':'Mozilla/5.0'}}, function(res2) {
+          var d=''; res2.on('data',function(c){d+=c;}); res2.on('end',function(){try{r2(JSON.parse(d));}catch(e){r2(null);}});
+        }).on('error',function(){r2(null);});
+      }),
+      new Promise(function(r2){
+        https.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true', {headers:{'User-Agent':'Mozilla/5.0'}}, function(res2) {
+          var d=''; res2.on('data',function(c){d+=c;}); res2.on('end',function(){try{r2(JSON.parse(d).bitcoin);}catch(e){r2(null);}});
+        }).on('error',function(){r2(null);});
+      })
+    ];
+    
+    Promise.all(prom).then(function(results){
+      var ohlc = results[0], btc = results[1];
+      if(!btc||!ohlc||!Array.isArray(ohlc)||!btc.usd){
+        res.writeHead(200); res.end(JSON.stringify({erro:'Sem dados',jev:{}})); return;
+      }
+      var prices = ohlc.map(function(c){return c[4];});
+      // RSI
+      var g=[],l=[],rs=[],i;
+      for(i=1;i<prices.length;i++){var di=prices[i]-prices[i-1];g.push(di>0?di:0);l.push(di<0?-di:0);}
+      var ag=g.slice(0,14).reduce(function(a,b){return a+b;},0)/14,il=l.slice(0,14).reduce(function(a,b){return a+b;},0)/14;
+      for(i=14;i<g.length;i++){rs.push(il===0?100:100-100/(1+ag/il));ag=(ag*13+g[i])/14;il=(il*13+l[i])/14;}
+      var rsi = rs.length ? rs[rs.length-1] : 50, preco = btc.usd, variacao = btc.usd_24h_change || 0;
+      // BB
+      var period=20,bbs=[],j;
+      for(j=period-1;j<prices.length;j++){
+        var s=prices.slice(j-period+1,j+1),m=s.reduce(function(a,b){return a+b;},0)/period,v=s.reduce(function(a,b){return a+(b-m)*(b-m);},0)/period,sd=Math.sqrt(v);
+        bbs.push({upper:m+2*sd,middle:m,lower:m-2*sd});
+      }
+      var bb=bbs.length?bbs[bbs.length-1]:null,bbPos=bb?((preco-bb.lower)/(bb.upper-bb.lower)*100):50;
       
-      // Calcular RSI
-      const prices = ohlc.map(c => c[4]);
-      const rsis = (() => { const p=prices,g=[],l=[];for(let i=1;i<p.length;i++){const d=p[i]-p[i-1];g.push(d>0?d:0);l.push(d<0?-d:0)}const r=[];let a=g.slice(0,14).reduce((s,v)=>s+v,0)/14,il=l.slice(0,14).reduce((s,v)=>s+v,0)/14;for(let i=14;i<g.length;i++){r.push(il===0?100:100-100/(1+a/il));a=(a*13+g[i])/14;il=(il*13+l[i])/14}return r;})();
-      const rsi = rsis.length ? rsis[rsis.length-1] : 50;
-      const preco = btc.usd;
-      const variacao = btc.usd_24h_change || 0;
+      var state = {btc_preco_usd:Math.round(preco),btc_variacao_24h_pct:variacao.toFixed(2),rsi_14:Math.round(rsi),bb_position_pct:Math.round(bbPos),macd_histogram:0,volume_relativo:'normal'};
+      var body = JSON.stringify({model:'jev-latest',state,questions:{
+        sinal:{type:'choice',instructions:'Sinal do mercado Bitcoin agora',criteria:{options:['PLANTAR','CULTIVAR','COLHER']}},
+        risco:{type:'choice',instructions:'Nivel de risco',criteria:{options:['BAIXO','MEDIO','ALTO','EXTREMO']}},
+        tendencia:{type:'choice',instructions:'Tendencia de curto prazo',criteria:{options:['ALTA','BAIXA','LATERAL']}},
+        comprar:{type:'noul',instructions:'Momento de comprar BTC?'}
+      }});
       
-      // Calcular BB
-      const period = 20;
-      const bbs = (() => { const r=[]; for(let i=period-1;i<prices.length;i++){const s=prices.slice(i-period+1,i+1);const m=s.reduce((a,b)=>a+b,0)/period;const v=s.reduce((a,b)=>a+(b-m)**2,0)/period;const std=Math.sqrt(v);r.push({upper:m+2*std,middle:m,lower:m-2*std})}return r;})();
-      const bb = bbs.length ? bbs[bbs.length-1] : null;
-      const bbPos = bb ? ((preco - bb.lower) / (bb.upper - bb.lower) * 100) : 50;
-      
-      // Calcular MACD
-      const ema = (data, period) => { const k=2/(period+1); let e=data.slice(0,period).reduce((a,b)=>a+b,0)/period; for(let i=period;i<data.length;i++) e=data[i]*k+e*(1-k); return e; };
-      const macd = (() => { const f=ema(prices,12), s=ema(prices,26); return f - s; })();
-      const macdSignal = ema(prices.slice(-9), 9);
-      const macdHist = macd - macdSignal;
-      
-      // State pra JEV
-      const state = {
-        btc_preco_usd: Math.round(preco),
-        btc_variacao_24h_pct: variacao.toFixed(2),
-        rsi_14: Math.round(rsi),
-        bb_position_pct: Math.round(bbPos),
-        macd_histogram: Math.round(macdHist),
-        volume_relativo: variacao > 3 ? 'alto' : variacao < -3 ? 'alto' : 'normal'
-      };
-      
-      // Chamar JEV
-      const body = JSON.stringify({
-        model: 'jev-latest',
-        state,
-        questions: {
-          sinal: { type: 'choice', instructions: 'Sinal do mercado Bitcoin agora', criteria: { options: ['PLANTAR', 'CULTIVAR', 'COLHER'] } },
-          risco: { type: 'choice', instructions: 'Nivel de risco', criteria: { options: ['BAIXO', 'MEDIO', 'ALTO', 'EXTREMO'] } },
-          tendencia: { type: 'choice', instructions: 'Tendencia de curto prazo', criteria: { options: ['ALTA', 'BAIXA', 'LATERAL'] } },
-          comprar: { type: 'noul', instructions: 'Momento de comprar BTC?' }
-        }
-      });
-      
-      https.request('https://api.typesafe.ai/v1/systemone', {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jevKey}}, r => {
-        let d=''; r.on('data',c=>d+=c); r.on('end',()=>{
-          try {
-            const j = JSON.parse(d).answers || {};
-            res.setHeader('Access-Control-Allow-Origin','*');
-            res.writeHead(200,{'Content-Type':'application/json'});
-            res.end(JSON.stringify({
-              btc:{preco, variacao, rsi, bbPos:Math.round(bbPos)},
-              jev:{sinal:j.sinal?.choice||'?', risco:j.risco?.choice||'?', tendencia:j.tendencia?.choice||'?', comprar:Math.round((j.comprar?.noul||0)*100)},
-              state
-            }));
-          } catch(e) {
-            res.writeHead(200); res.end(JSON.stringify({erro:e.message,jev:{}}));
-          }
+      var q = https.request('https://api.typesafe.ai/v1/systemone',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jevKey}},function(r2){
+        var d=''; r2.on('data',function(c){d+=c;}); r2.on('end',function(){
+          try{var j=JSON.parse(d).answers||{};res.setHeader('Access-Control-Allow-Origin','*');res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({btc:{preco,variacao,rsi,bbPos:Math.round(bbPos)},jev:{sinal:j.sinal&&j.sinal.choice||'?',risco:j.risco&&j.risco.choice||'?',tendencia:j.tendencia&&j.tendencia.choice||'?',comprar:Math.round((j.comprar&&j.comprar.noul||0)*100)},state}));}
+          catch(e){res.writeHead(200);res.end(JSON.stringify({erro:e.message,jev:{}}));}
         });
-      }).end(body);
-    }).catch(e => { res.writeHead(500); res.end(JSON.stringify({erro:e.message})); });
+      });
+      q.write(body); q.end();
+    }).catch(function(e){res.writeHead(500);res.end(JSON.stringify({erro:e.message}));});
     return;
   }
   res.writeHead(404); res.end();
 });
 
-const PORT = 3351;
-server.listen(PORT, () => console.log('dca-monitor on :'+PORT));
+const PORT = 3353;
+server.listen(PORT, function(){console.log('dca-monitor on :'+PORT);});
