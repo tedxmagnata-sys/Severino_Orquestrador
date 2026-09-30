@@ -24,28 +24,94 @@ const server = http.createServer((req, res) => {
     Promise.all([rpcCall(USDC), rpcCall(CBTC)]).then(([r1,r2]) => {
       const usdc = r1&&r1.result&&r1.result!=='0x'?parseInt(r1.result,16)/1e6:0;
       const cbbtc = r2&&r2.result&&r2.result!=='0x'?parseInt(r2.result,16)/1e8:0;
-      let d = 0, totalInv = 0, ts = 0, tr = [];
+      
+      // Read state (sync)
+      let d = 0, tr = [], totalDepositados = 0, ts = 0, tx = 0;
+      let w = {};
       try {
-        const w = JSON.parse(fs.readFileSync('/root/severino/ecosystem/data/wow-state.json','utf8'));
+        w = JSON.parse(fs.readFileSync('/root/severino/ecosystem/data/wow-state.json','utf8'));
         const trades = w.trades || [];
         if (trades.length) {
           d = Math.floor((Date.now()-new Date(trades[trades.length-1].data).getTime())/86400000);
-          totalInv = trades.reduce((s,t)=>s+(t.valor||0), 0);
         }
+        totalDepositados = (w.depositos || []).reduce((s,t)=>s+(t.valor||0), 0);
         ts = w.totalSacado || 0;
         tr = (w.trades || []).map(t => ({data:t.data,valor:t.valor,precoBTC:t.precoBTC,wowScore:t.wowScore}));
-        var tx = w.totalTaxas || 0;
+        tx = w.totalTaxas || 0;
       } catch(e) {}
-      res.setHeader('Access-Control-Allow-Origin','*');
-      res.writeHead(200,{'Content-Type':'application/json'});
-      res.end(JSON.stringify({usdc,cbbtc,totalDepositado:totalInv,totalSacado:ts,totalTaxas:tx,trades:tr,diasSemDCA:d,maxDiasSemComprar:6,podeSacar:cbbtc>1e-6}));
+      
+      // Fetch BTC price then respond
+      const http = require('https');
+      
+      function sendResponse(res, usdc, cbbtc, precoBTC, w, d, tr, totalDepositados, ts, tx) {
+        const valorContrato = usdc + cbbtc * precoBTC;
+        const totalSacadoUSD = (w.saques || []).reduce((s,t)=>s+(t.valor||0), 0);
+        const valorWallet = totalSacadoUSD;
+        const valorTotal = valorContrato + valorWallet;
+        
+        // P&L metrics
+        const trades = w.trades || [];
+        const totalBTC = trades.reduce((s,t)=>s+(t.valor/t.precoBTC), 0);
+        const investidoTrades = trades.reduce((s,t)=>s+t.valor, 0);
+        const precoMedio = totalBTC > 0 ? investidoTrades / totalBTC : 0;
+        const valorBTCAtual = totalBTC * precoBTC;
+        const pnlUSD = valorBTCAtual - investidoTrades;
+        const pnlPct = investidoTrades > 0 ? (pnlUSD / investidoTrades * 100) : 0;
+        
+        res.setHeader('Access-Control-Allow-Origin','*');
+        res.writeHead(200,{'Content-Type':'application/json'});
+        res.end(JSON.stringify({
+          usdc, cbbtc,
+          totalDepositado: totalDepositados,
+          totalSacado: ts,
+          totalTaxas: tx,
+          valorTotal: valorTotal,
+          valorContrato: valorContrato,
+          valorWallet: valorWallet,
+          precoBTC: precoBTC,
+          // P&L metrics
+          btcAcumulado: totalBTC,
+          precoMedio: precoMedio,
+          investidoTrades: investidoTrades,
+          valorBTCAtual: valorBTCAtual,
+          pnlUSD: pnlUSD,
+          pnlPct: pnlPct,
+          trades: tr,
+          diasSemDCA: d,
+          maxDiasSemComprar: 6,
+          podeSacar: cbbtc > 1e-6
+        }));
+      }
+      
+      function fetchBinancePrice(res, usdc, cbbtc, w, d, tr, totalDepositados, ts, tx) {
+        http.get('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {headers:{'User-Agent':'Mozilla/5.0'}}, (r) => {
+          let body=''; r.on('data',c=>body+=c); r.on('end',()=>{
+            let precoBTC = 0;
+            try { precoBTC = parseFloat(JSON.parse(body).price) || 0; } catch {}
+            sendResponse(res, usdc, cbbtc, precoBTC, w, d, tr, totalDepositados, ts, tx);
+          });
+        }).on('error',()=>sendResponse(res, usdc, cbbtc, 0, w, d, tr, totalDepositados, ts, tx));
+      }
+      
+      // Try Coingecko first
+      http.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd', {headers:{'User-Agent':'Mozilla/5.0'}}, (r) => {
+        let body=''; r.on('data',c=>body+=c); r.on('end',()=>{
+          let precoBTC = 0;
+          try { precoBTC = JSON.parse(body).bitcoin?.usd || 0; } catch {}
+          if (precoBTC > 0) {
+            sendResponse(res, usdc, cbbtc, precoBTC, w, d, tr, totalDepositados, ts, tx);
+          } else {
+            fetchBinancePrice(res, usdc, cbbtc, w, d, tr, totalDepositados, ts, tx);
+          }
+        });
+      }).on('error',()=>fetchBinancePrice(res, usdc, cbbtc, w, d, tr, totalDepositados, ts, tx));
+      
     }).catch(() => {
       res.setHeader('Access-Control-Allow-Origin','*');
       res.end(JSON.stringify({usdc:0,cbbtc:0,totalDepositado:99.97,totalSacado:0,totalTaxas:0,trades:[],diasSemDCA:0,maxDiasSemComprar:6,podeSacar:false}));
     });
     return;
-  }
-  if (req.url === '/api/dca/history') {
+  }  if (req.url === '/api/dca/history') {
     try {
       const w = JSON.parse(fs.readFileSync('/root/severino/ecosystem/data/wow-state.json','utf8'));
       const trades = (w.trades || []).filter(t => t.txHash && t.txHash !== '0xSIMULATED');
