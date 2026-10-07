@@ -176,7 +176,7 @@ const server = http.createServer((req, res) => {
       
       var q = https.request('https://api.typesafe.ai/v1/systemone',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jevKey}},function(r2){
         var d=''; r2.on('data',function(c){d+=c;}); r2.on('end',function(){
-          try{var j=JSON.parse(d).answers||{};res.setHeader('Access-Control-Allow-Origin','*');res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({btc:{preco,variacao,rsi,bbPos:Math.round(bbPos)},jev:{sinal:j.sinal&&j.sinal.choice||'?',risco:j.risco&&j.risco.choice||'?',tendencia:j.tendencia&&j.tendencia.choice||'?',comprar:Math.round((j.comprar&&j.comprar.noul||0)*100)},state}));}
+          try{var j=JSON.parse(d).answers||{};res.setHeader('Access-Control-Allow-Origin','*');res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({btc:{preco,variacao,rsi,bbPos:Math.round(bbPos)},jev:function(){var c=Math.round((j.comprar&&j.comprar.noul||0)*100);return{sinal:c>66?'PLANTAR':c>33?'CULTIVAR':'COLHER',risco:c>66?'BAIXO':c>33?'MEDIO':'ALTO',tendencia:c>66?'ALTA':c>33?'LATERAL':'BAIXA',comprar:c}}(),state}));}
           catch(e){res.writeHead(200);res.end(JSON.stringify({erro:e.message,jev:{}}));}
         });
       });
